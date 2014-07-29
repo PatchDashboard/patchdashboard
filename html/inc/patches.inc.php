@@ -5,8 +5,8 @@
 	$supressed_list .= " '$val'";
  }
 	$supressed_list = str_replace("' '","', '",$supressed_list);
- $link = mysql_connect("127.0.0.1","root","*****");
- mysql_select_db("reports",$link);
+ $link = mysql_connect(DB_HOST,DB_USER,DB_PASS);
+ mysql_select_db(DB_NAME,$link);
  $nsupressed_sql = "select count(distinct(server_name)) as total from patches where package_name NOT IN($supressed_list) and package_name != '';";
  $nsupressed_res = mysql_query($nsupressed_sql);
  $nsupressed_row = mysql_fetch_array($nsupressed_res);

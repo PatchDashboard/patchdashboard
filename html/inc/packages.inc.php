@@ -1,7 +1,7 @@
 <?php
  include 'inc/supressed_patches.inc.php';
- $link = mysql_connect("127.0.0.1","root","*****");
- mysql_select_db("reports",$link);
+ $link = mysql_connect(DB_HOST,DB_USER,DB_PASS);
+ mysql_select_db(DB_NAME,$link);
  $server_name = filter_var($_GET['server'],FILTER_SANITIZE_MAGIC_QUOTES);
  $sql1 = "select * from patch_allpackages where server_name='$server_name';";
  $res1 = mysql_query($sql1);
