@@ -1,10 +1,10 @@
 #!/bin/bash
 os=`cat /etc/issue|head -1|awk '{print $1}'`
-if [ "$os" = "Ubuntu" ]; then
+if [ "$os" = "Ubuntu" ] || [ "$os" = "Debian" ]; then
 	web_dir="/var/www/patch_manager/"
 	web_user="www-data"
 	web_service="apache2"
-elif [ "$os" = "CentOS" ]; then
+elif [ "$os" = "CentOS" ] || [ "$os" = "Fedora" ] || [ "$os" = "Red" ]; then
 	web_dir="/var/www/html/patch_manager/"
 	web_user="apache"
 	web_service="httpd"
@@ -62,22 +62,24 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^([^/]*)$ /index.php?page=$1 [QSA,L]"
 
 php_config="<?php
-define(DB_HOST,'$db_host');
-define(DB_USER,'$db_user');
-define(DB_PASS,'$db_pass');
-define(DB_NAME,'$db_name');
+define('DB_HOST',$db_host);
+define('DB_USER',$db_user);
+define('DB_PASS',$db_pass);
+define('DB_NAME',$db_name);
+define('BASE_PATH',$relative_path);
 ?>"
 bash_config="db_host='$db_host'
 db_user='$db_user'
 db_pass='$db_pass'
 db_name='$db_name'"
 mkdir -p /root/patch_scripts/
-cp install/patch_scripts/* /root/patch_scripts/ -R
+cp scripts/* /root/patch_scripts/ -R
 mkdir -p $web_dir
-cp install/web_scripts/* $web_dir -R
+cp html/* $web_dir -R
 find $web_dir -type d -print0|xargs -0 chmod 755
 find $web_dir -type f -print0|xargs -0 chmod 644
 echo "$rewrite_config" > ${web_dir}.htaccess
+echo "$php_config" > ${web_dir}lib/db_config.php
 chown $web_user:$web_user $web_dir -R
 echo "$php_config" > /root/patch_scripts/db_config.php
 echo "$bash_config" > /root/patch_scripts/db_config.sh

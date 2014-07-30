@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="">
     <meta name="author" content="">
-    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="shortcut icon" href="<?php echo BASE_PATH;?>favicon.ico">
 
     <title>Patch Management Dashboard</title>
 
@@ -14,8 +14,8 @@
     <link href="/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Custom styles for this template -->
-    <link href="/css/dashboard.css" rel="stylesheet">
-    <link href="/css/jquery.easy-pie-chart.css" rel="stylesheet">
+    <link href="<?php echo BASE_PATH;?>css/dashboard.css" rel="stylesheet">
+    <link href="<?php echo BASE_PATH; ?>css/jquery.easy-pie-chart.css" rel="stylesheet">
   </head>
 
   <body onload="initPieChart();">
@@ -33,7 +33,7 @@
         </div>
         <div class="navbar-collapse collapse">
           <ul class="nav navbar-nav navbar-right">
-            <li><a href="/patches">Patch List</a></li>
+            <li><a href="<?php echo BASE_PATH; ?>patches">Patch List</a></li>
           </ul>
           <!--<form class="navbar-form navbar-right"> -->
 		<div class="navbar-form navbar-right">

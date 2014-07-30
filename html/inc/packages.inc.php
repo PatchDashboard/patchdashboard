@@ -5,11 +5,12 @@
  $server_name = filter_var($_GET['server'],FILTER_SANITIZE_MAGIC_QUOTES);
  $sql1 = "select * from patch_allpackages where server_name='$server_name';";
  $res1 = mysql_query($sql1);
+ $base_path = BASE_PATH;
  while ($row1 = mysql_fetch_assoc($res1)){
      $package_name = $row1['package_name'];
      $package_version = $row1['package_version'];
      $table .= "                <tr>
-                  <td><a href='/search/exact/$package_name' style='color:green'>$package_name</a></td>
+                  <td><a href='${base_path}search/exact/$package_name' style='color:green'>$package_name</a></td>
 		  <td>$package_version</td>
                 </tr>
 ";

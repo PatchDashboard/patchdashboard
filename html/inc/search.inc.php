@@ -11,14 +11,15 @@
 	$sql1 = "select * from patch_allpackages where package_name like '%$package%';";
  }
  $res1 = mysql_query($sql1);
+ $base_path = BASE_PATH;
  while ($row1 = mysql_fetch_assoc($res1)){
      $count++;
      $package_name = $row1['package_name'];
      $package_version = $row1['package_version'];
      $server_name = $row1['server_name'];
      $table .= "                <tr>
-		  <td><a href='/patches/server/$server_name' style='color:black'>$server_name</a></td>
-                  <td><a href='/search/exact/$package_name' style='color:green'>$package_name</a></td>
+		  <td><a href='${base_path}patches/server/$server_name' style='color:black'>$server_name</a></td>
+                  <td><a href='${base_path}search/exact/$package_name' style='color:green'>$package_name</a></td>
 		  <td>$package_version</td>
                 </tr>
 ";

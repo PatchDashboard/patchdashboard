@@ -1,11 +1,19 @@
 <?php
  include 'inc/supressed_patches.inc.php';
  $link = mysql_connect(DB_HOST,DB_USER,DB_PASS);
+ $package_count = 0;
  mysql_select_db(DB_NAME,$link);
  $server_name = filter_var($_GET['server'],FILTER_SANITIZE_MAGIC_QUOTES);
+ $distro_sql1 = "SELECT * from servers where server_name='$server_name';";
+ $distro_res1 = mysql_query($distro_sql1);
+ $distro_row1 = mysql_fetch_array($distro_res1);
+ $distro_id = $distro_row1['distro_id'];
+ $distro_sql2 = "SELECT * from distro where id=$distro_id limit 1;";
+ $distro_res2 = mysql_query($distro_sql2);
+ $distro_row2 = mysql_fetch_array($distro_res2);
+ $apt_cmd = $distro_row2['upgrade_command'];
  $sql1 = "select * from patches where server_name='$server_name';";
  $res1 = mysql_query($sql1);
-$apt_cmd = "apt-get -y install";
  while ($row1 = mysql_fetch_assoc($res1)){
      $package_name = $row1['package_name'];
      $package_name_orig = $package_name;
@@ -14,6 +22,7 @@ $apt_cmd = "apt-get -y install";
      }
      else{
 	$apt_cmd .= " $package_name";
+	$package_count++;
      }
      $current = $row1['current'];
      $new = $row1['new'];
@@ -52,7 +61,7 @@ $apt_cmd = "apt-get -y install";
                 </tr>
 ";
  }
-if ($apt_cmd == "apt-get -y install"){
+if ($package_count == 0){
 	$apt_cmd = "";
 }
 else{

@@ -3,7 +3,7 @@
  * @author Jon Harris
  * All rights reserved.
  */
-#include 'lib/config.inc.php';
+include 'lib/db_config.php';
 #if (OFFLINE == true){
 #    include 'inc/offline_header.inc.php';
 #    include 'inc/offline_navbar.inc.php';

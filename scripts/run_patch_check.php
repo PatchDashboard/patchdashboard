@@ -1,10 +1,11 @@
 #!/usr/bin/php
 <?php
+include '/root/scripts/db_config.php';
 $server_name = filter_var($_SERVER['argv'][1],FILTER_SANITIZE_MAGIC_QUOTES);
 $data = filter_var($_SERVER['argv'][2],FILTER_SANITIZE_MAGIC_QUOTES);
 $supression_list = filter_var($_SERVER['argv'][3],FILTER_SANITIZE_MAGIC_QUOTES);
-$link = mysql_connect("localhost",'root','*****');
-mysql_select_db("reports",$link);
+$link = mysql_connect(DB_HOST,DB_USER,DB_PASS);
+mysql_select_db(DB_NAME,$link);
 $package_array = explode("\n",$data);
 $supression_array = explode(" ",$supression_list);
 foreach($package_array as $val){

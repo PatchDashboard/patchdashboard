@@ -1,4 +1,4 @@
-&copy; 2014 YOUR NAME
+&copy; 2014 <?php echo YOUR_COMPANY;?>
 </div>
 <div id="footer"></div>
     </div>
@@ -6,14 +6,14 @@
     <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
-    <script src="/js/jquery.min.js"></script>
-    <script src="/js/bootstrap.min.js"></script>
-    <script src="/js/docs.min.js"></script>
-    <script src="/js/jquery.easy-pie-chart.js"></script>
-    <script src="/js/excanvas.js"></script>
+    <script src="<?php echo BASE_PATH; ?>js/jquery.min.js"></script>
+    <script src="<?php echo BASE_PATH; ?>js/bootstrap.min.js"></script>
+    <script src="<?php echo BASE_PATH; ?>js/docs.min.js"></script>
+    <script src="<?php echo BASE_PATH; ?>js/jquery.easy-pie-chart.js"></script>
+    <script src="<?php echo BASE_PATH; ?>js/excanvas.js"></script>
             <script type="text/javascript">
 		function NewURL(val){
-			base = '/search/'
+			base = '<?php echo BASE_PATH; ?>search/'
 			window.location.assign(base + val);
 		}
             var initPieChart = function() {

@@ -1,6 +1,5 @@
 <?php
  include 'inc/supressed_patches.inc.php';
- $supressed_list = "";
  foreach($supressed as $val){
 	$supressed_list .= " '$val'";
  }
@@ -11,7 +10,7 @@
  $nsupressed_res = mysql_query($nsupressed_sql);
  $nsupressed_row = mysql_fetch_array($nsupressed_res);
  $nsupressed_total = $nsupressed_row['total'];
- $sql1 = "select distinct(server_name) from patches;";
+ $sql1 = "select server_name from servers;";
  $res1 = mysql_query($sql1);
  $table = "";
  $total_count = 0;
@@ -19,13 +18,18 @@
  while ($row1 = mysql_fetch_assoc($res1)){
      $server_count++;
      $server_name = $row1['server_name'];
+	 $distro_id = $row1['distro_id'];
+	 $dist_sql = "SELECT * FROM distro WHERE id='$distro_id';";
+	 $dist_res = mysql_query($dist_sql);
+	 $dist_row = mysql_fetch_array($dist_res);
+	 $dist_img = BASE_DIR.$dist_row['icon_path'];
      $sql2 = "SELECT COUNT(*) as `total` FROM patches where server_name='$server_name' and package_name NOT IN($supressed_list) and package_name != '';";
      $res2 = mysql_query($sql2);
      $row2 = mysql_fetch_array($res2);
      $count = $row2['total'];
      $total_count = $total_count + $count;
      $table .= "                <tr>
-                  <td><a href='/patches/server/$server_name'><img src='/img/ubuntu.png' height='32' width='32' border='0'>&nbsp;$server_name</a></td>
+                  <td><a href='/patches/server/$server_name'><img src='$dist_img' height='32' width='32' border='0'>&nbsp;$server_name</a></td>
                   <td>$count</td>
                 </tr>
 ";
