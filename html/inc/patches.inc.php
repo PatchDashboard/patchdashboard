@@ -1,5 +1,6 @@
 <?php
  include 'inc/supressed_patches.inc.php';
+ $supressed = array("nadda");
  foreach($supressed as $val){
 	$supressed_list .= " '$val'";
  }
@@ -10,7 +11,7 @@
  $nsupressed_res = mysql_query($nsupressed_sql);
  $nsupressed_row = mysql_fetch_array($nsupressed_res);
  $nsupressed_total = $nsupressed_row['total'];
- $sql1 = "select server_name from servers;";
+ $sql1 = "select * from servers;";
  $res1 = mysql_query($sql1);
  $table = "";
  $total_count = 0;
@@ -22,7 +23,7 @@
 	 $dist_sql = "SELECT * FROM distro WHERE id='$distro_id';";
 	 $dist_res = mysql_query($dist_sql);
 	 $dist_row = mysql_fetch_array($dist_res);
-	 $dist_img = BASE_DIR.$dist_row['icon_path'];
+	 $dist_img = BASE_PATH.$dist_row['icon_path'];
      $sql2 = "SELECT COUNT(*) as `total` FROM patches where server_name='$server_name' and package_name NOT IN($supressed_list) and package_name != '';";
      $res2 = mysql_query($sql2);
      $row2 = mysql_fetch_array($res2);

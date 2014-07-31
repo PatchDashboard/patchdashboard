@@ -8,7 +8,6 @@ CREATE TABLE `patch_allpackages` (
   KEY `ix_server_name` (`server_name`),
   KEY `ix_package_name` (`package_name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-DROP TABLE IF EXISTS `patch_allpackages`;
 
 DROP TABLE IF EXISTS `servers`;
 CREATE TABLE `servers` (
@@ -37,7 +36,7 @@ CREATE TABLE `distro` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
   `distro_name` varchar(20) NOT NULL,
   `icon_path` varchar(255) NOT NULL,
-  `upgrade_command` varchar(50) NOT NULL, /* Example: "apt-get -y install" (minus the space at the end */
+  `upgrade_command` varchar(50) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `ix_distro_name` (`distro_name`),
   KEY `ix_icon_path` (`icon_path`)
@@ -53,10 +52,10 @@ CREATE TABLE `distro_version` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
   `version_num` varchar(20) NOT NULL,
   `distro_id` mediumint(8) NOT NULL,
-  `eol_date` datetime() NOT NULL, /* Example: "apt-get -y install" (minus the space at the end */
+  `eol_date` datetime NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `ix_version_num` (`distro_name`),
-  KEY `ix_distro_id` (`icon_path`),
+  KEY `ix_version_num` (`version_num`),
+  KEY `ix_distro_id` (`distro_id`),
   KEY `ix_eol_date` (`eol_date`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('10.04 Desktop',1,'2013-05-31');
