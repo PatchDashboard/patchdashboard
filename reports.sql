@@ -45,7 +45,7 @@ INSERT INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(1,'Ubuntu','
 INSERT INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(2,'Debian','img/icon/debian.png','apt-get -y install');
 INSERT INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(3,'Fedora','img/icon/fedora.png','yum -y install');
 INSERT INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(4,'CentOS','img/icon/centos.png','yum -y install');
-INSERT INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(5,'Red Hat Enterprise Linux','img/icon/rhel.png','yum -y install');
+INSERT INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(5,'RHEL','img/icon/rhel.png','yum -y install');
 
 DROP TABLE IF EXISTS `distro_version`;
 CREATE TABLE `distro_version` (
@@ -58,12 +58,12 @@ CREATE TABLE `distro_version` (
   KEY `ix_distro_id` (`distro_id`),
   KEY `ix_eol_date` (`eol_date`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('10.04 Desktop',1,'2013-05-31');
-INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('10.04 Server',1,'2015-04-30');
-INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('12.04 Desktop',1,'2017-04-30');
-INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('12.04 Server',1,'2017-04-30');
-INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('14.04 Desktop',1,'2019-04-30');
-INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('14.04 Server',1,'2019-04-30');
+INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('10.04_Desktop',1,'2013-05-31');
+INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('10.04_Server',1,'2015-04-30');
+INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('12.04_Desktop',1,'2017-04-30');
+INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('12.04_Server',1,'2017-04-30');
+INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('14.04_Desktop',1,'2019-04-30');
+INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('14.04_Server',1,'2019-04-30');
 INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('6',2,'2016-02-28');
 INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('7',2,'2024-07-26');
 INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('15',3,'2012-06-26');

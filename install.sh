@@ -97,10 +97,10 @@ define(DB_NAME,'$db_name');
 define(BASE_PATH,'$relative_path');
 define(YOUR_COMPANY,'$your_company');
 ?>"
-bash_config="db_host='$db_host'
-db_user='$db_user'
-db_pass='$db_pass'
-db_name='$db_name'"
+bash_config="DB_HOST='$db_host'
+DB_USER='$db_user'
+DB_PASS='$db_pass'
+DB_NAME='$db_name'"
 mkdir -p /root/scripts/
 cp scripts/* /root/scripts/ -R
 echo "$rewrite_config" > html/.htaccess
