@@ -1,5 +1,5 @@
 #!/bin/bash
-user="whoami"
+user=`whoami`
 if [ "$user" != "root" ]; then
 	echo "You must be root to install this"
 	exit 0
