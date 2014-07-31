@@ -43,7 +43,7 @@ read -s db_pass
 echo "Please enter the Database Name:"
 read db_name
 mysql -u $db_user -h $db_host -p"$db_pass" -e "create database $db_name;"
-mysql -u $db_user -h $db_host -p"$db_pass" < reports.sql
+mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < reports.sql
 echo "Please enter location for web interface [$web_dir]:"
 read new_web_dir
 echo "Please enter the relative path [$relative_path]"
