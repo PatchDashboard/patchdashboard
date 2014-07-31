@@ -11,7 +11,7 @@
     <title>Patch Management Dashboard</title>
 
     <!-- Bootstrap core CSS -->
-    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="<?php echo BASE_PATH;?>css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Custom styles for this template -->
     <link href="<?php echo BASE_PATH;?>css/dashboard.css" rel="stylesheet">
@@ -29,7 +29,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="/">Patch Management Dashboard</a>
+          <a class="navbar-brand" href="<?php echo BASE_PATH;?>">Patch Management Dashboard</a>
         </div>
         <div class="navbar-collapse collapse">
           <ul class="nav navbar-nav navbar-right">
