@@ -83,7 +83,7 @@ RewriteRule ${relative_path}search/(.*)$ ${relative_path}search?package=$1 [QSA,
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule${relative_path}rewrite_check/(.*)$ ${relative_path}rewrite_check.php [QSA,NC,L]
+RewriteRule ${relative_path}rewrite_check/(.*)$ ${relative_path}rewrite_check.php [QSA,NC,L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
