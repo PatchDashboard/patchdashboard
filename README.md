@@ -21,13 +21,13 @@ To install:
 * cd into patchdashboard (cd patchdashboard)
 * run install.sh (./install.sh)
 
+It will ask you some questions. Simply provide the answers, or accept the default answers found in the "[]" boxes
+If it doesn't have anything in "[]", you must provide an answer.
+
 To add a node:
 * run "/root/scripts/add_server.sh"
  * follow prompts
 
-
-It will ask you some questions. Simply provide the answers, or accept the default answers found in the "[]" boxes
-If it doesn't have anything in "[]", you must provide an answer.
 
 On each node:
 
