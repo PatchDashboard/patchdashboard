@@ -11,7 +11,7 @@ a per-server or a global basis, as well as tell the system to install a single p
 server.
 
 ===============
-## Install
+##Install
 
 To install:
 * install the full LAMP stack on your distro of choice. If you're not sure how to do that:
@@ -21,11 +21,26 @@ To install:
 * cd into patchdashboard (cd patchdashboard)
 * run install.sh (./install.sh)
 
+To add a node:
+* run "/root/scripts/add_server.sh"
+ * follow prompts
+
+
 It will ask you some questions. Simply provide the answers, or accept the default answers found in the "[]" boxes
 If it doesn't have anything in "[]", you must provide an answer.
-===============
-TODO: A LOT!
 
+On each node:
+
+* make sure root can log in, and is not blocked by sshd_config directives
+* if root cannot log in (their password is hashed, but SSH allows them), make sure to copy the contents of "id_rsa.pub" in /root/.ssh into /root/.ssh/authorized_keys on each node
+ * after adding the shared key, from the patch server, ssh into the node as root to make sure the keypair works.
+* if root can log in (they have a password set), run this from the patch server:
+ * ssh-copy-id root@SERVER_IP (change SERVER_IP to the nodes IP address)
+
+
+
+TODO: A LOT!
+===============
 
 * ~~Complete installer script~~
 * Add more distros
