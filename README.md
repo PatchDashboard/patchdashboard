@@ -14,12 +14,12 @@ server.
 ## Install
 
 To install:
-1. install the full LAMP stack on your distro of choice. If you're not sure how to do that:
+* install the full LAMP stack on your distro of choice. If you're not sure how to do that:
  * https://community.rackspace.com/products/f/25/t/49
-2. create a database user with a password and a database for this system.
-3. simply clone this git (git clone https://github.com/jonsjava/patchdashboard.git)
-4. cd into patchdashboard (cd patchdashboard)
-5. run install.sh (./install.sh)
+* create a database user with a password and a database for this system.
+* simply clone this git (git clone https://github.com/jonsjava/patchdashboard.git)
+* cd into patchdashboard (cd patchdashboard)
+* run install.sh (./install.sh)
 
 It will ask you some questions. Simply provide the answers, or accept the default answers found in the "[]" boxes
 If it doesn't have anything in "[]", you must provide an answer.
