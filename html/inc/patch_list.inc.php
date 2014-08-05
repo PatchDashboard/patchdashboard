@@ -2,6 +2,7 @@
  include 'inc/supressed_patches.inc.php';
  $link = mysql_connect(DB_HOST,DB_USER,DB_PASS);
  $package_count = 0;
+ $base_path=BASE_PATH;
  mysql_select_db(DB_NAME,$link);
  $server_name = filter_var($_GET['server'],FILTER_SANITIZE_MAGIC_QUOTES);
  $distro_sql1 = "SELECT * from servers where server_name='$server_name';";
@@ -53,7 +54,7 @@
 		$urgency = "<td>$urgency</td>";
      }
      $table .= "                <tr>
-                  <td><a href='/search/exact/$package_name_orig' style='color:green'>$package_name</a></td>
+                  <td><a href='${base_path}search/exact/$package_name_orig' style='color:green'>$package_name</a></td>
 		  <td>$current</td>
                   <td>$new</td>
 		  $urgency
@@ -71,7 +72,7 @@ else{
         <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
 
           <h1 class="page-header">Patch List</h1>
-          <h2 class="sub-header"><?php echo $server_name;?>(<a href="/packages/server/<?php echo $server_name;?>">List all installed packages</a>)</h2>
+          <h2 class="sub-header"><?php echo $server_name;?>(<a href="<?php echo $base_path;?>/packages/server/<?php echo $server_name;?>">List all installed packages</a>)</h2>
           <div class="table-responsive">
             <table class="table table-striped">
               <thead>

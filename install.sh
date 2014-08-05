@@ -67,27 +67,27 @@ fi
 rewrite_config="RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ${relative_path}patches/server/(.*)$ ${relative_path}patch_list?server=$1 [QSA,NC,L]
+RewriteRule patches/server/(.*)$ ${relative_path}index.php?page=patch_list&server=$1 [QSA,NC,L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ${relative_path}packages/server/(.*)$ ${relative_path}packages?server=$1 [QSA,NC,L]
+RewriteRule packages/server/(.*)$ ${relative_path}index.php?page=packages&$1=$2 [QSA,NC,L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ${relative_path}search/exact/(.*)$ ${relative_path}search?package=$1&exact=true [QSA,NC,L]
+RewriteRule search/exact/(.*)$ ${relative_path}index.php?page=search&package=$1&exact=true [QSA,NC,L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ${relative_path}search/(.*)$ ${relative_path}search?package=$1 [QSA,NC,L]
+RewriteRule search/(.*)$ ${relative_path}index.php?page=search&package=$2 [QSA,NC,L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ${relative_path}rewrite_check/(.*)$ ${relative_path}rewrite_check.php [QSA,NC,L]
+RewriteRule rewrite_check/(.*)$ ${relative_path}rewrite_check.php [QSA,NC,L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^([^/]*)$ ${relative_path}index.php?page=$1 [QSA,L]"
+RewriteRule ^([^/]*)$ ${relative_path}index.php?page= [QSA,L]"
 
 php_config="<?php
 define(DB_HOST,'$db_host');
