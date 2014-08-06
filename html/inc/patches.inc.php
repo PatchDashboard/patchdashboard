@@ -1,6 +1,7 @@
 <?php
  include 'inc/supressed_patches.inc.php';
  $supressed = array("nadda");
+ $supressed_list = "";
  foreach($supressed as $val){
 	$supressed_list .= " '$val'";
  }
