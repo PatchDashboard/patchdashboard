@@ -11,4 +11,4 @@ ssh -i /root/.ssh/id_rsa root@$server_ip 'apt-get update;mkdir -p /root/scripts/
 scp -i /root/.ssh/id_rsa $script root@$server_ip:~/scripts/
 ssh -i /root/.ssh/id_rsa root@$server_ip "chmod +x $script"
 data=`ssh -i /root/.ssh/id_rsa root@${server_ip} "bash $script"`
-/root/dev/scripts/run_patch_check.php "$server" "$data" "$supression_list"
+/root/scripts/run_patch_check.php "$server" "$data" "$supression_list"

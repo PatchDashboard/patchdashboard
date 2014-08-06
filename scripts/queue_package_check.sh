@@ -10,4 +10,4 @@ ssh -i /root/.ssh/id_rsa root@$server_ip 'mkdir -p /root/scripts/'
 scp -i /root/.ssh/id_rsa $script root@$server_ip:~/scripts/
 ssh -i /root/.ssh/id_rsa root@$server_ip "chmod +x $script"
 data=`ssh -i /root/.ssh/id_rsa root@${server_ip} "bash $script"`
-/root/dev/scripts/run_get_package_list.php "$server" "$data"
+/root/scripts/run_get_package_list.php "$server" "$data"
