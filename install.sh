@@ -71,7 +71,7 @@ RewriteRule patches/server/(.*)$ ${relative_path}index.php?page=patch_list&serve
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule packages/server/(.*)$ ${relative_path}index.php?page=packages&\$1=\$2 [QSA,NC,L]
+RewriteRule packages/server/(.*)$ ${relative_path}index.php?page=packages&server=\$1 [QSA,NC,L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
