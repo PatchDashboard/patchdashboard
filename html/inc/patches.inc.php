@@ -17,6 +17,7 @@
  $table = "";
  $total_count = 0;
  $server_count = 0;
+ $base_path=BASE_PATH;
  while ($row1 = mysql_fetch_assoc($res1)){
      $server_count++;
      $server_name = $row1['server_name'];
@@ -31,7 +32,7 @@
      $count = $row2['total'];
      $total_count = $total_count + $count;
      $table .= "                <tr>
-                  <td><a href='/patches/server/$server_name'><img src='$dist_img' height='32' width='32' border='0'>&nbsp;$server_name</a></td>
+                  <td><a href='{$base_path}patches/server/$server_name'><img src='$dist_img' height='32' width='32' border='0'>&nbsp;$server_name</a></td>
                   <td>$count</td>
                 </tr>
 ";
