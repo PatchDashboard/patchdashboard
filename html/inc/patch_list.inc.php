@@ -72,7 +72,7 @@ else{
         <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
 
           <h1 class="page-header">Patch List</h1>
-          <h2 class="sub-header"><?php echo $server_name;?>(<a href="<?php echo $base_path;?>/packages/server/<?php echo $server_name;?>">List all installed packages</a>)</h2>
+          <h2 class="sub-header"><?php echo $server_name;?>(<a href="<?php echo $base_path;?>packages/server/<?php echo $server_name;?>">List all installed packages</a>)</h2>
           <div class="table-responsive">
             <table class="table table-striped">
               <thead>
