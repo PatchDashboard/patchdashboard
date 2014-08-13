@@ -90,12 +90,12 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^([^/]*)$ ${relative_path}index.php?page= [QSA,L]"
 
 php_config="<?php
-define(DB_HOST,'$db_host');
-define(DB_USER,'$db_user');
-define(DB_PASS,'$db_pass');
-define(DB_NAME,'$db_name');
-define(BASE_PATH,'$relative_path');
-define(YOUR_COMPANY,'$your_company');
+define('DB_HOST','$db_host');
+define('DB_USER','$db_user');
+define('DB_PASS','$db_pass');
+define('DB_NAME','$db_name');
+define('BASE_PATH','$relative_path');
+define('YOUR_COMPANY','$your_company');
 ?>"
 bash_config="DB_HOST='$db_host'
 DB_USER='$db_user'
