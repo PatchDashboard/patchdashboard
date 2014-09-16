@@ -51,8 +51,14 @@ read new_relative_path
 if [ "$new_relative_path" != "$relative_path" ] && [ "$new_relative_path" != "" ]; then
 	relative_path="$new_relative_path"
 fi
+if [ "${new_relative_path:LEN}" != "/" ]; then
+	new_relative_path=$new_relative_path"/"
+fi
 if [ "$new_web_dir" != "$web_dir" ] && [ "$new_web_dir" != "" ]; then
 	web_dir="$new_web_dir"
+fi
+if [ "${web_dir:LEN}" != "/" ]; then
+	web_dir=$web_dir"/"
 fi
 echo "Please enter the web user [$web_user]:"
 read new_web_user
