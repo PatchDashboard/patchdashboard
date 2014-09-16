@@ -24,6 +24,11 @@ To install:
 It will ask you some questions. Simply provide the answers, or accept the default answers found in the "[]" boxes
 If it doesn't have anything in "[]", you must provide an answer.
 
+Finally:
+* add /root/scripts/start_package_list.sh to your cron (every 2 hours is what I do)
+* same for /root/scripts/start_patch_check.sh
+
+
 To add a node:
 * run "/root/scripts/add_server.sh"
  * follow prompts
