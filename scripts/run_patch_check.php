@@ -1,6 +1,6 @@
 #!/usr/bin/php
 <?php
-include '/root/scripts/db_config.php';
+include '/usr/scripts/patch_manager/db_config.php';
 $server_name = filter_var($_SERVER['argv'][1],FILTER_SANITIZE_MAGIC_QUOTES);
 $data = filter_var($_SERVER['argv'][2],FILTER_SANITIZE_MAGIC_QUOTES);
 $supression_list = filter_var($_SERVER['argv'][3],FILTER_SANITIZE_MAGIC_QUOTES);
@@ -13,11 +13,11 @@ foreach($package_array as $val){
 	$package_name = $tmp_array[0];
 	$package_from = $tmp_array[1];
 	$package_to = $tmp_array[2];
-	$bug_curl = shell_exec("curl -s http://www.ubuntuupdates.org/bugs?package_name=$package_name|grep '<td>'|head -1");
+	$bug_curl = shell_exec("bash -c \"curl -s http://www.ubuntuupdates.org/bugs?package_name=$package_name|grep '<td>' 2>/dev/null|head -1\"");
 	$url = str_replace("<td><a href='","",$bug_curl);
 	$url_array = explode("'",$url);
 	$the_url = $url_array[0];
-        $urgency_curl = shell_exec("curl http://www.ubuntuupdates.org/package/core/precise/main/updates/$package_name|grep '$package_to'|grep 'urgency='");
+        $urgency_curl = shell_exec("bash -c \"curl http://www.ubuntuupdates.org/package/core/precise/main/updates/$package_name|grep '$package_to'|grep 'urgency='\"");
 	if (stristr($urgency_curl,"emergency")){
 		$urgency = "emergency";
 	}
