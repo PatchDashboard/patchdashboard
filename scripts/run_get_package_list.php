@@ -1,6 +1,6 @@
 #!/usr/bin/php
 <?php
-include '/root/scripts/db_config.php';
+include '/opt/patch_manager/db_config.php';
 $server_name = filter_var($_SERVER['argv'][1],FILTER_SANITIZE_MAGIC_QUOTES);
 $data = filter_var($_SERVER['argv'][2],FILTER_SANITIZE_MAGIC_QUOTES);
 $link = mysql_connect(DB_HOST,DB_USER,DB_PASS);
