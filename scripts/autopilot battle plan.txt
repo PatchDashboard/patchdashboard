@@ -1,0 +1,35 @@
+Auto-pilot plan
+
+App servers
+	If low on RAM, reboot
+	Auto-update packages. Reboot
+	Alert when low on disk space #WUG does this
+
+Comm servers
+	reboot when CPU is too high
+	reboot when RAM is too high
+	alert on low disk space #WUG does this
+	alert if the service crashes. reboot if it does 
+
+DB Servers
+	ensure replication is working
+	ensure db is offloading to the ops_db server
+	ensure ops_db server is up-to-date after offloading
+	auto fail-over on CPU > 6.0
+		rebuild old master into new slave on fail-over (I have the scripts done for that!!!)
+		
+monthly reporting
+
+#reboot when free RAM is less than 25%
+free_ram=`free | awk '/buffers\/cache/{print $4/($3+$4) * 100.0;}'|cut -d '.' -f 1`
+if [ "$free_ram" -lt "25" ]; then
+	## Some logic to e-mail me
+	reboot
+fi
+
+cpu_load=`uptime | sed 's/.*load average: //' | awk -F\, '{print $2}'`
+
+scripts to run, and which order on zenoss:
+	self-check on cpu/RAM/disk space
+	check each app server for updates. Update and reboot each if updates are present.  5 minute sleep between reboots
+	
