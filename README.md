@@ -16,6 +16,7 @@ server.
 To install:
 * install the full LAMP stack on your distro of choice. If you're not sure how to do that:
  * https://community.rackspace.com/products/f/25/t/49
+ * Make sure that you have PHP 5.2.0 or better.
 * create a database user with a password and a database for this system.
 * simply clone this git (git clone https://github.com/jonsjava/patchdashboard.git)
 * cd into patchdashboard (cd patchdashboard)
