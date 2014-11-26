@@ -17,7 +17,7 @@ export server supression_list sql script
 
 function useHost()
 {
-        ssh -i /root/.ssh/id_rsa root@$server 'apt-get update;mkdir -p /usr/scripts/patch_manager/'
+        ssh -i /root/.ssh/id_rsa root@$server 'mkdir -p /usr/scripts/patch_manager/'
         scp -i /root/.ssh/id_rsa $script root@$server:/usr/scripts/patch_manager/
         ssh -i /root/.ssh/id_rsa root@$server "chmod +x $script"
         data=`ssh -i /root/.ssh/id_rsa root@${server} "bash $script"`
@@ -27,7 +27,7 @@ function useHost()
 function useIP()
 {
 	server_ip=`mysql -h $DB_HOST -u $DB_USER -p"$DB_PASS" -Nse "SELECT server_ip from servers where server_name='$server';" $DB_NAME`
-	ssh -i /root/.ssh/id_rsa root@$server_ip 'apt-get update;mkdir -p /usr/scripts/patch_manager/'
+	ssh -i /root/.ssh/id_rsa root@$server_ip 'mkdir -p /usr/scripts/patch_manager/'
 	scp -i /root/.ssh/id_rsa $script root@$server_ip:/usr/scripts/patch_manager/
 	ssh -i /root/.ssh/id_rsa root@$server_ip "chmod +x $script"
 	data=`ssh -i /root/.ssh/id_rsa root@${server_ip} "bash $script"`
