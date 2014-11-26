@@ -1,6 +1,6 @@
 #!/usr/bin/php
 <?php
-include '/usr/scripts/patch_manager/db_config.php';
+include '/opt/patch_manager/db_config.php';
 $server_name = filter_var($_SERVER['argv'][1],FILTER_SANITIZE_MAGIC_QUOTES);
 $data = filter_var($_SERVER['argv'][2],FILTER_SANITIZE_MAGIC_QUOTES);
 $supression_list = filter_var($_SERVER['argv'][3],FILTER_SANITIZE_MAGIC_QUOTES);
