@@ -15,7 +15,6 @@ mysql -u $DB_USER -p"$DB_PASS" -D $DB_NAME -e "$sql" -h $DB_HOST
 script='/usr/scripts/patch_manager/patch_checker.sh'
 export server supression_list sql script
 
-
 function useHost()
 {
         ssh -i /root/.ssh/id_rsa root@$server 'apt-get update;mkdir -p /usr/scripts/patch_manager/'
