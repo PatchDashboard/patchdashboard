@@ -11,7 +11,7 @@ sql="DELETE FROM patches where server_name='$server';"
 
 # define other functions
 supression_list=`mysql -u $DB_USER -p"$DB_PASS" -Nse "SELECT package_name from supressed where server_name in ('$server', 0);" $DB_NAME`
-mysql -u root -p$DB_PASS -D $DB_NAME -e "$sql" -h $DB_HOST
+mysql -u $DB_USER -p"$DB_PASS" -D $DB_NAME -e "$sql" -h $DB_HOST
 script='/usr/scripts/patch_manager/patch_checker.sh'
 export server supression_list sql script
 
