@@ -26,12 +26,12 @@ It will ask you some questions. Simply provide the answers, or accept the defaul
 If it doesn't have anything in "[]", you must provide an answer.
 
 Finally:
-* add /root/scripts/start_package_list.sh to your cron (every 2 hours is what I do)
-* same for /root/scripts/start_patch_check.sh
+* add /opt/patch_manager/start_package_list.sh to your cron (every 2 hours is what I do)
+* same for /opt/patch_manager/start_patch_check.sh
 
 
 To add a node:
-* run "/root/scripts/add_server.sh"
+* run "/opt/patch_manager/add_server.sh"
  * follow instructions
 
 
