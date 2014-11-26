@@ -46,6 +46,7 @@ INSERT INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(2,'Debian','
 INSERT INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(3,'Fedora','img/icon/fedora.png','yum -y install');
 INSERT INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(4,'CentOS','img/icon/centos.png','yum -y install');
 INSERT INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(5,'RHEL','img/icon/rhel.png','yum -y install');
+INSERT INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(6,'Oracle','img/icon/oracle.png','yum -y install');
 
 DROP TABLE IF EXISTS `distro_version`;
 CREATE TABLE `distro_version` (
@@ -77,6 +78,9 @@ INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('6',4,'2020-11
 INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('5',5,'2017-03-31');
 INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('6',5,'2020-11-30');
 INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('7',5,'2024-06-30');
+INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('5',6,'2017-03-31');
+INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('6',6,'2020-11-30');
+INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('7',6,'2024-06-30');
 
 
 DROP TABLE IF EXISTS `patches`;
