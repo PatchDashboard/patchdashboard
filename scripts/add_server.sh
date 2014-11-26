@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # load db config
-. /usr/scripts/patch_manager/db.conf
+. /opt/patch_manager/db.conf
 
 # get osversion from host
 function OSVersion()
