@@ -32,7 +32,7 @@ Finally:
 
 To add a node:
 * run "/root/scripts/add_server.sh"
- * follow prompts
+ * follow instructions
 
 
 On each node:
