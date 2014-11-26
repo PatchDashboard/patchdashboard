@@ -26,7 +26,7 @@ It will ask you some questions. Simply provide the answers, or accept the defaul
 If it doesn't have anything in "[]", you must provide an answer.
 
 Finally:
-* add /opt/patch_manager/start_package_list.sh to your cron (every 2 hours is what I do)
+* add /opt/patch_manager/start_get_package_list.sh to your cron (every 2 hours is what I do)
 * same for /opt/patch_manager/start_patch_check.sh
 
 
