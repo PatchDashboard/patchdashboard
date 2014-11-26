@@ -204,8 +204,8 @@ DB_USER='$db_user'
 DB_PASS='$db_pass'
 DB_NAME='$db_name'"
 target_web_dir=$(echo $new_web_dir|sed 's=/[^/]*$==;s/\.$//')
-mkdir -p /usr/scripts/patch_manager/
-cp scripts/* /usr/scripts/patch_manager/ -R
+mkdir -p /opt/patch_manager/
+cp scripts/* /opt/patch_manager/ -R
 echo "$rewrite_config" > html/.htaccess
 echo "$php_config" > html/lib/db_config.php
 mkdir -p $web_dir
@@ -214,8 +214,8 @@ find $web_dir -type d -print0|xargs -0 chmod 755
 find $web_dir -type f -print0|xargs -0 chmod 644
 echo "$rewrite_config" > ${web_dir}.htaccess
 chown $web_user:$web_user $web_dir -R
-echo "$php_config" > /usr/scripts/patch_manager/db_config.php
-echo "$bash_config" > /usr/scripts/patch_manager/db.conf
+echo "$php_config" > /opt/patch_manager/db_config.php
+echo "$bash_config" > /opt/patch_manager/db.conf
 service $web_service restart
 rewrite_check=`curl -s localhost/rewrite_check|grep 404|wc -l`
 if [ "$rewrite_check" = "1" ]; then
@@ -223,7 +223,7 @@ if [ "$rewrite_check" = "1" ]; then
 	echo -e "\e[31mERROR\e[0m: If you don't, this site won't work.  You've been warned."
 fi
 echo -e "\n\e[32mNOTICE\e[0m: Install is now complete. You can now go to http://localhost$relative_path and begin working with this tool.  To add servers, use the following command:
-	/usr/scripts/patch_manager/add_server.sh -s server_name -ip IP_ADDRESS
+	/opt/patch_manager/add_server.sh -s server_name -ip IP_ADDRESS
 	It will ask you some questions regarding the user, password, and some other things.  Just follow the prompts.
 	
 	To add a server without the script granting super user, you will need to do the following:
