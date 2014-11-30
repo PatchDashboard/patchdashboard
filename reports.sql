@@ -94,7 +94,7 @@ CREATE TABLE `patches` (
   `bug_url` varchar(512) DEFAULT NULL,
   `distro` mediumint(8) DEFAULT NULL,
   `to_upgrade` tinyint(1) NOT NULL DEFAULT '0',
-  `upgraded` tinyint(1),
+  `upgraded` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `server_name` (`server_name`),
   KEY `ix_package_name` (`package_name`)
