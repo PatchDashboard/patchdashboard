@@ -1,5 +1,4 @@
-DROP TABLE IF EXISTS `patch_allpackages`;
-CREATE TABLE `patch_allpackages` (
+CREATE TABLE IF NOT EXISTS `patch_allpackages` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
   `server_name` varchar(20) NOT NULL,
   `package_name` varchar(60) NOT NULL,
@@ -9,8 +8,7 @@ CREATE TABLE `patch_allpackages` (
   KEY `ix_package_name` (`package_name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-DROP TABLE IF EXISTS `servers`;
-CREATE TABLE `servers` (
+CREATE TABLE IF NOT EXISTS `servers` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
   `server_name` varchar(20) NOT NULL,
   `distro_id` mediumint(8) NOT NULL,
@@ -21,8 +19,7 @@ CREATE TABLE `servers` (
   KEY `ix_server_ip` (`server_ip`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-DROP TABLE IF EXISTS `supressed`;
-CREATE TABLE `supressed` (
+CREATE TABLE IF NOT EXISTS `supressed` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
   `package_name` varchar(40) NOT NULL,
   `server_name` varchar(20) NOT NULL, /* 0 for global */
@@ -82,9 +79,17 @@ INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('5',6,'2017-03
 INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('6',6,'2020-11-30');
 INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('7',6,'2024-06-30');
 
+CREATE TABLE IF NOT EXISTS users (
+  `user_id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
+  `email` varchar(80) NOT NULL,
+  `admin` tinyint(1) NOT NULL DEFAULT '0',
+  `display_name` varchar(50) NOT NULL,
+  `password` char(41) NOT NULL,
+  PRIMARY KEY (`user_id`),
+  UNIQUE INDEX (`email`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-DROP TABLE IF EXISTS `patches`;
-CREATE TABLE `patches` (
+CREATE TABLE IF NOT EXISTS `patches` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
   `server_name` varchar(40) NOT NULL,
   `package_name` varchar(60) NOT NULL,
