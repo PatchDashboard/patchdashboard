@@ -8,11 +8,16 @@
 ##
 ## Date: 11/22/2014
 ##
-## Version: 0.3
+## Version: 0.4
 ##
 ## Changelog: 0.1 - Initial Release
 ##            0.2 - Improved base installer for OS detection
-##            0.3 - 
+##            0.3 - Script rework/overhaul. Added sql insert secion
+##                - Cleaned up and organized into functions
+##            0.4 - Added crontab function rather than manual proc
+##                - Lots of logic added to read the existing db users
+##                - Check connections to the provided db info 
+##                - Added virtualhost file to apache/httpd
 ##
 ######################################################################
 
@@ -287,14 +292,39 @@ function WebUIInfo()
 
 function dbUserCreate()
 {
+
+# check if admin user exist
+unset adm_check
+adm_check=$(mysql -u $db_user -h $db_host -p"$db_pass" -e "SELECT user_id from $db_name.users where user_id='$new_web_admin';")
+
+# if not exist, add admin user
+if [[ "$adm_check" = "" ]]; then
+# add passwd hash
+adm_passwd=$(echo $new_web_admin_passwd | sha256sum | awk {'print $1'})
 # add admin user
 mysql -u $db_user -h $db_host -p"$db_pass" << EOF
-INSERT INTO $db_name.users (id,user_id,email,admin,display_name,password) VALUES (NULL, '$new_web_admin', '$new_web_admin_email', '1', '$new_web_admin_email', '$new_web_admin_passwd');
+INSERT INTO $db_name.users (id,user_id,email,admin,display_name,password) VALUES (NULL, '$new_web_admin', '$new_web_admin_email', '1', '$new_web_admin_email', '$adm_passwd');
 EOF
+else
+	echo -e "\e[32mNotice\e[0m: Web Admin User exists: \e[36m$new_web_admin\n\e[0m"
+fi
+
+# check if basic user exists
+unset usr_check
+usr_check=$(mysql -u $db_user -h $db_host -p"$db_pass" -e "SELECT user_id from $db_name.users where user_id='$new_web_duser';")
+
+# if not exist, add basic user
+if [[ "$usr_check" = "" ]]; then
+# add passwd hash
+usr_passwd=$(echo $new_web_duser_passwd | sha256sum | awk {'print $1'})
 # add basic user
 mysql -u $db_user -h $db_host -p"$db_pass" << EOF
-INSERT INTO $db_name.users (id,user_id,email,admin,display_name,password) VALUES (NULL, '$new_web_duser', '$new_web_duser_email', '0', '$new_web_duser_email', '$new_web_duser_passwd');
+INSERT INTO $db_name.users (id,user_id,email,admin,display_name,password) VALUES (NULL, '$new_web_duser', '$new_web_duser_email', '0', '$new_web_duser_email', '$usr_passwd');
 EOF
+else
+        echo -e "\e[32mNotice\e[0m: Web Basic User exists: \e[36m$new_web_duser\n\e[0m"
+fi
+
 }
 
 function InstallApp()
@@ -420,6 +450,16 @@ echo -e "\n\e[32mNotice\e[0m: Install is now complete. You can now go to  http:/
 	Have fun!"
 }
 
+function AddCrontab()
+{
+	if [[ ! -f /etc/cron.d/patch-manager ]]; then
+		echo -e "\e[36m# Adding Crontab entries to /etc/cron.d/patch-manager\e[0m\n"
+		echo "0 */2 * * * /opt/patch_manager/start_get_package_list.sh > /dev/null 2>&1" > /etc/cron.d/patch-manager
+		echo "1 */2 * * * /opt/patch_manager/start_patch_check.sh > /dev/null 2>&1" >> /etc/cron.d/patch-manager
+		echo -e "\e[32mNotice\e[0m: Added Crontab entries for 2 hour runs\e[0m\n"
+	fi
+}
+
 # show script header
 clear
 echo -e "\n###########################################################################"
@@ -473,6 +513,8 @@ WebUIInfo
 # create users in database
 echo -e "\e[32mNotice\e[0m: Adding web admin and web user to \e[36m$db_name\e[0m\n"
 dbUserCreate
+# Add crontab entry for every 2 hours
+AddCrontab
 # Finalize the install
 echo -e "\e[36m# Installing Apache related configurations\e[0m\n"
 InstallApp
