@@ -181,11 +181,11 @@ function dbConnTest()
 function dbCreate()
 {
 	mysql -u $db_user -h $db_host -p"$db_pass" -e "create database $db_name;"
-        mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < reports.sql
+        mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < database/db_create.sql
 }
 function dbUpdate()
 {
-        mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < reports.sql
+        mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < database/db_update.sql
 }
 
 function WebUIInfo()
@@ -235,6 +235,8 @@ function WebUIInfo()
                 echo -e "\e[32mNotice\e[0m: Using Default Company $your_company"
         done
 	echo
+	# convert company name for database
+	comp_id=$(echo $your_company|awk '{print tolower($0)}'|sed 's/[^a-zA-Z 0-9]//g'|sed -e 's/ /-/g')
 
         # Web-UI admin username
 	unset new_web_admin
@@ -325,6 +327,28 @@ INSERT INTO $db_name.users (id,user_id,email,admin,display_name,password) VALUES
 EOF
 else
         echo -e "\e[32mNotice\e[0m: Web Basic User exists: \e[36m$new_web_duser\n\e[0m"
+fi
+
+}
+
+function dbCompCreate()
+{
+
+# check if company exist
+unset comp_name_check
+comp_name_check=$(mysql -u $db_user -h $db_host -p"$db_pass" -e "SELECT name from $db_name.company where name='$comp_id';")
+unset comp_disp_check
+comp_disp_check=$(mysql -u $db_user -h $db_host -p"$db_pass" -e "SELECT name from $db_name.company where display_name='$your_company';")
+
+# if not exist, add company
+if [[ "$comp_name_check" = "" ]] && [[ "$comp_disp_check" = "" ]]; then
+# add company
+echo -e "\e[32mNotice\e[0m: Company added to \e[36m$db_name\e[0m: \e[36m$your_company\e[0m/\e[36m$comp_id\n\e[0m"
+mysql -u $db_user -h $db_host -p"$db_pass" << EOF
+INSERT INTO $db_name.company (id,name,display_name) VALUES (NULL, '$comp_id', '$your_company');
+EOF
+else
+        echo -e "\e[32mNotice\e[0m: Company Name already exists: \e[36m$your_company\e[0m or \e[36m$comp_id\n\e[0m"
 fi
 
 }
@@ -515,6 +539,8 @@ WebUIInfo
 # create users in database
 echo -e "\e[32mNotice\e[0m: Adding web admin and web user to \e[36m$db_name\e[0m\n"
 dbUserCreate
+# Create Company entries in database
+dbCompCreate
 # Add crontab entry for every 2 hours
 AddCrontab
 # Finalize the install
