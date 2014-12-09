@@ -26,11 +26,12 @@ It will ask you some questions. Simply provide the answers, or accept the defaul
 If it doesn't have anything in "[]", you must provide an answer.
 
 Finally:
-* add /opt/patch_manager/start_get_package_list.sh to your cron (every 2 hours is what I do)
-* same for /opt/patch_manager/start_patch_check.sh
+Automated in installer script
+~~* add /opt/patch_manager/start_get_package_list.sh to your cron (every 2 hours is what I do)~~
+~~* same for /opt/patch_manager/start_patch_check.sh~~
 
-0 */2 * * *  /opt/patch_manager/start_get_package_list.sh > /dev/null 2>&1 <br>
-1 */2 * * *  /opt/patch_manager/start_patch_check.sh > /dev/null 2>&1
+~~0 */2 * * *  /opt/patch_manager/start_get_package_list.sh > /dev/null 2>&1 <br>~~
+~~1 */2 * * *  /opt/patch_manager/start_patch_check.sh > /dev/null 2>&1~~
 
 To add a node:
 * run "/opt/patch_manager/add_server.sh"
