@@ -38,7 +38,7 @@ export web_admin web_admin_email web_admin_passwd
 export web_user web_user_email web_user_passwd
 
 # default target path for php files
-relative_path="/patch_manager/"
+relative_path="/patchmgr/"
 
 # get user running installer
 user=`whoami`
@@ -76,29 +76,26 @@ function OSDetect()
 	fi
 	echo -e "Running install for: \e[32m$os\e[0m\n"
 
-	if [ "$os" = "Ubuntu" ] || [ "$os" = "Debian" ] || [ "$os" = "Linux" ]; then
-		if [ -d "/var/www/html" ]; then
-			web_dir="/var/www/html/patch_manager/"
-		else
-			web_dir="/var/www/patch_manager"
-		fi
+	if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
 		apache_exists=`which apache2`
 		if [ "$apache_exists" = "" ]; then
 			echo "Please install the full LAMP stack before trying to install this"
 			exit 0
 		fi
+		web_dir="/var/www/patch_manager"
 		web_user="www-data"
 		web_service="apache2"
 
-	elif [ "$os" = "CentOS" ] || [ "$os" = "Fedora" ] || [ "$os" = "Red Hat" ]; then
-		apache_exists=`which httpd`
-		if [ "$apache_exists" = "" ]; then
+	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
+		httpd_exists=`which httpd`
+		if [ "$httpd_exists" = "" ]; then
 			echo "Please install the full LAMP stack before trying to install this"
 			exit 0
 		fi
-		web_dir="/var/www/html/patch_manager/"
+		web_dir="/var/www/patch_manager/"
 		web_user="apache"
 		web_service="httpd"
+		
 	fi
 }
 
@@ -124,7 +121,7 @@ function dbAskUser()
 	unset db_user
 	read -p "Database User: " db_user
 	while [[ "$db_user" = "" ]]; do
-	        echo -e "\n\e[36mNOTICE\e[0m: Please provide a Database User, please try again.\n"
+	        echo -e "\n\e[36mNotice\e[0m: Please provide a Database User, please try again.\n"
 	        read -p "Database User: " db_user
 	done
 }
@@ -135,7 +132,7 @@ function dbAskPass()
 	read -s -p "Database Pass: " db_pass
 	echo
 	while [[ "$db_pass" = "" ]]; do
-        	echo -e "\n\e[36mNOTICE\e[0m: Please provide a Database Password, please try again.\n"
+        	echo -e "\n\e[36mNotice\e[0m: Please provide a Database Password, please try again.\n"
         	read -s -p "Database Pass: " db_pass
 		echo
 	done
@@ -146,7 +143,7 @@ function dbAskName()
 	unset db_name
 	read -p "Database Name: " db_name
 	while [[ "$db_name" = "" ]]; do
-       		echo -e "\n\e[36mNOTICE\e[0m: Please provide a Database Name, please try again.\n"
+       		echo -e "\n\e[36mNotice\e[0m: Please provide a Database Name, please try again.\n"
        	 	read -p "Database Name: " db_name
 	done
 	export db_name
@@ -190,14 +187,14 @@ function WebUIInfo()
 	unset new_web_dir
 	read -p "Please enter location for web interface [Default: $web_dir]: " new_web_dir
 	while [[ "$new_web_dir" = "" ]]; do
-        	echo -e "\e[32mNOTICE\e[0m: Default Location Used: $web_dir."
+        	echo -e "\e[32mNotice\e[0m: Default Location Used: $web_dir."
         	new_web_dir=$web_dir
 	done
 	echo
 	unset new_relative_path
 	read -p "Please enter the relative path [Default: $relative_path]: " new_relative_path
 	while [[ "$new_relative_path" = "" ]]; do
-        	echo -e "\e[32mNOTICE\e[0m: Default Location Used: $relative_path"
+        	echo -e "\e[32mNotice\e[0m: Default Location Used: $relative_path"
         	new_relative_path=$relative_path
 	done
 	echo
@@ -216,7 +213,7 @@ function WebUIInfo()
 	unset new_web_user
 	read -p "Please enter the web user [Default: $web_user]: " new_web_user
 	while [[ "$new_web_user" = "" ]]; do
-        	echo -e "\e[32mNOTICE\e[0m: Using Default WebUser $web_user"
+        	echo -e "\e[32mNotice\e[0m: Using Default WebUser $web_user"
         	new_web_user=$web_user
 	done
 	echo
@@ -228,7 +225,7 @@ function WebUIInfo()
         read -p "Please enter the name you want this copyrighted to ['YOUR COMPANY']: " your_company
         while [ "$your_company" = "" ]; do
                 your_company='YOUR COMPANY'
-                echo -e "\e[32mNOTICE\e[0m: Using Default Company $your_company"
+                echo -e "\e[32mNotice\e[0m: Using Default Company $your_company"
         done
 	echo
 
@@ -236,7 +233,7 @@ function WebUIInfo()
 	unset new_web_admin
         read -p "Web Interface Admin [Default: $web_admin]: " new_web_admin
         while [[ "$new_web_admin" = "" ]]; do
-                echo -e "\e[32mNOTICE\e[0m: Default Web Admin used: $web_admin"
+                echo -e "\e[32mNotice\e[0m: Default Web Admin used: $web_admin"
                 new_web_admin=$web_admin
         done
 	echo
@@ -245,7 +242,7 @@ function WebUIInfo()
 	unset new_web_admin_email
         read -p "Web Admin Email Address [Default: $web_admin_email]: " new_web_admin_email
         while [[ "$new_web_admin_email" = "" ]]; do
-                echo -e "\e[32mNOTICE\e[0m: Default Web Admin Email used: $web_admin_email"
+                echo -e "\e[32mNotice\e[0m: Default Web Admin Email used: $web_admin_email"
                 new_web_admin_email=$web_admin_email
         done
 	echo
@@ -254,7 +251,7 @@ function WebUIInfo()
 	unset new_web_admin_passwd
         read -p "Web Admin Password [Default: $web_admin_passwd]: " new_web_admin_passwd
         while [[ "$new_web_admin_passwd" = "" ]]; do
-                echo -e "\e[32mNOTICE\e[0m: Default Password used: $web_admin_passwd"
+                echo -e "\e[32mNotice\e[0m: Default Password used: $web_admin_passwd"
                 new_web_admin_passwd=$web_admin_passwd
         done
 	echo
@@ -263,7 +260,7 @@ function WebUIInfo()
 	unset new_web_duser
         read -p "Web Interface User [Default: $web_duser]: " new_web_duser
         while [[ "$new_web_duser" = "" ]]; do
-                echo -e "\e[32mNOTICE\e[0m: Default User used: $web_duser."
+                echo -e "\e[32mNotice\e[0m: Default User used: $web_duser."
                 new_web_duser=$web_duser
         done
 	echo
@@ -272,7 +269,7 @@ function WebUIInfo()
         unset new_web_duser_email
         read -p "Web User Email Address [Default: $web_duser_email]: " new_web_duser_email
         while [[ "$new_web_duser_email" = "" ]]; do
-                echo -e "\e[32mNOTICE\e[0m: Default Web User Email used: $web_duser_email"
+                echo -e "\e[32mNotice\e[0m: Default Web User Email used: $web_duser_email"
                 new_web_duser_email=$web_duser_email
         done
 	echo
@@ -281,7 +278,7 @@ function WebUIInfo()
 	unset new_web_duser_passwd
         read -p "Please enter location for web interface [Default: $web_duser_passwd]: " new_web_duser_passwd
         while [[ "$new_web_duser_passwd" = "" ]]; do
-                echo -e "\e[32mNOTICE\e[0m: Default Web User Password used: $web_duser_passwd"
+                echo -e "\e[32mNotice\e[0m: Default Web User Password used: $web_duser_passwd"
                 new_web_duser_passwd=$web_duser_passwd
         done
 	echo
@@ -290,8 +287,14 @@ function WebUIInfo()
 
 function dbUserCreate()
 {
-        mysql -u $db_user -h $db_host -p"$db_pass" -e "create database $db_name;"
-        mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < reports.sql
+# add admin user
+mysql -u $db_user -h $db_host -p"$db_pass" << EOF
+INSERT INTO $db_name.users (id,user_id,email,admin,display_name,password) VALUES (NULL, '$new_web_admin', '$new_web_admin_email', '1', '$new_web_admin_email', '$new_web_admin_passwd');
+EOF
+# add basic user
+mysql -u $db_user -h $db_host -p"$db_pass" << EOF
+INSERT INTO $db_name.users (id,user_id,email,admin,display_name,password) VALUES (NULL, '$new_web_duser', '$new_web_duser_email', '0', '$new_web_duser_email', '$new_web_duser_passwd');
+EOF
 }
 
 function InstallApp()
@@ -339,6 +342,48 @@ DB_USER='$db_user'
 DB_PASS='$db_pass'
 DB_NAME='$db_name'"
 
+# remove ending forward slash for conf
+patchmgr=$(echo $relative_path|sed 's=/[^/]*$==;s/\.$//')
+targetdir=$(echo $new_web_dir|sed 's=/[^/]*$==;s/\.$//')
+
+# install virtualhost file to default conf.d dir apache/httpd
+if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
+# remove old conf
+if [[ -f /etc/apache2/conf.d/patch_manager.conf ]]; then
+	rm -f /etc/apache2/conf.d/patch_manager.conf
+fi
+# setup virtualhost
+cat <<EOA>> /etc/apache2/conf.d/patch_manager.conf
+Alias $patchmgr $targetdir
+
+<Directory $targetdir>
+        Options FollowSymLinks
+        AllowOverride All
+        Order allow,deny
+        Allow from all
+        RewriteEngine On
+</Directory>
+EOA
+
+elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
+# remove old conf
+if [[ -f /etc/httpd/conf.d/patch_manager.conf ]]; then
+        rm -f /etc/httpd/conf.d/patch_manager.conf
+fi
+# setup virtualhost
+cat <<EOA>> /etc/httpd/conf.d/patch_manager.conf
+Alias $patchmgr $targetdir
+        
+<Directory $targetdir>
+        Options FollowSymLinks
+        AllowOverride All
+        Order allow,deny
+        Allow from all
+        RewriteEngine On
+</Directory>
+EOA
+fi
+
 # main application install
 target_web_dir=$(echo $new_web_dir|sed 's=/[^/]*$==;s/\.$//')
 ## DO NOT CHANGE PATH ##
@@ -355,13 +400,13 @@ chown $web_user:$web_user $web_dir -R
 echo "$php_config" > /opt/patch_manager/db_config.php
 echo "$bash_config" > /opt/patch_manager/db.conf
 service $web_service restart
-rewrite_check=`curl -s localhost/rewrite_check|grep 404|wc -l`
+rewrite_check=`curl -s localhost/patchmgr/rewrite_check|grep 404|wc -l`
 if [ "$rewrite_check" = "1" ]; then
-	echo -e "\n\e[31mERROR\e[0m: Apache Mod_rewrite or .htaccess is not working.  Please ensure you have mod_rewrite installed and enabled.  If it is, please make sure you change 'AllowOverride None' to 'AllowOverride All'"
-	echo -e "\e[31mERROR\e[0m: If you don't, this site won't work.  You've been warned."
+	echo -e "\n\e[31mError\e[0m: Apache Mod_rewrite or .htaccess is not working.  Please ensure you have mod_rewrite installed and enabled.  If it is, please make sure you change 'AllowOverride None' to 'AllowOverride All'"
+	echo -e "\e[31mError\e[0m: If you don't, this site won't work.  You've been warned."
 fi
-echo -e "\n\e[32mNOTICE\e[0m: Install is now complete. You can now go to http://localhost$relative_path and begin working with this tool.  To add servers, use the following command:
-	/opt/patch_manager/add_server.sh -s server_name -ip IP_ADDRESS
+echo -e "\n\e[32mNotice\e[0m: Install is now complete. You can now go to  http://`hostname`$relative_path and begin working with this tool.  To add servers, use the following command:
+	/opt/patch_manager/add_server.sh -s server_name -ip ip_address
 	It will ask you some questions regarding the user, password, and some other things.  Just follow the prompts.
 	
 	To add a server without the script granting super user, you will need to do the following:
@@ -422,7 +467,12 @@ else
 	dbCreate
 fi
 
+# Ask web information
 echo -e "\n\e[36m# Webpage Location, User and Admin information.\e[0m\n"
 WebUIInfo
+# create users in database
+echo -e "\e[32mNotice\e[0m: Adding web admin and web user to \e[36m$db_name\e[0m\n"
+dbUserCreate
+# Finalize the install
 echo -e "\e[36m# Installing Apache related configurations\e[0m\n"
 InstallApp
