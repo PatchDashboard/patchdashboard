@@ -303,7 +303,7 @@ if [[ "$adm_check" = "" ]]; then
 adm_passwd=$(echo $new_web_admin_passwd | sha256sum | awk {'print $1'})
 # add admin user
 mysql -u $db_user -h $db_host -p"$db_pass" << EOF
-INSERT INTO $db_name.users (id,user_id,email,admin,display_name,password) VALUES (NULL, '$new_web_admin', '$new_web_admin_email', '1', '$new_web_admin_email', '$adm_passwd');
+INSERT INTO $db_name.users (id,user_id,email,admin,display_name,password) VALUES (NULL, '$new_web_admin', '$new_web_admin_email', '1', NULL, '$adm_passwd');
 EOF
 else
 	echo -e "\e[32mNotice\e[0m: Web Admin User exists: \e[36m$new_web_admin\n\e[0m"
@@ -319,7 +319,7 @@ if [[ "$usr_check" = "" ]]; then
 usr_passwd=$(echo $new_web_duser_passwd | sha256sum | awk {'print $1'})
 # add basic user
 mysql -u $db_user -h $db_host -p"$db_pass" << EOF
-INSERT INTO $db_name.users (id,user_id,email,admin,display_name,password) VALUES (NULL, '$new_web_duser', '$new_web_duser_email', '0', '$new_web_duser_email', '$usr_passwd');
+INSERT INTO $db_name.users (id,user_id,email,admin,display_name,password) VALUES (NULL, '$new_web_duser', '$new_web_duser_email', '0', NULL, '$usr_passwd');
 EOF
 else
         echo -e "\e[32mNotice\e[0m: Web Basic User exists: \e[36m$new_web_duser\n\e[0m"
