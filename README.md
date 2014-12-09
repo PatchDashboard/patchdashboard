@@ -19,7 +19,7 @@ To install:
  * Make sure that you have PHP 5.2.0 or better.
 * create a database user with a password and a database for this system.
 * simply clone this git (git clone https://github.com/jonsjava/patchdashboard.git)
-* cd into patchdashboard (cd patchdashboard)
+* cd into patchdashboard (cd /opt/patchdashboard)
 * run install.sh (./install.sh)
 
 It will ask you some questions. Simply provide the answers, or accept the default answers found in the "[]" boxes
@@ -54,6 +54,7 @@ TODO: A LOT!
 * ~~make everything database-driven~~
 * Configure patch suppression
 * configure ability to install patches from the web interface
+* configure ability to patch windows hosts
 * configure logins, allowing for tie-in to LDAP/AD, and possibly a SSO solution like RADIUS
 
 ===============
