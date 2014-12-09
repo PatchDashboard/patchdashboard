@@ -114,7 +114,7 @@ CREATE TABLE users (
   `display_name` varchar(50) DEFAULT NULL,
   `password` char(41) NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE INDEX (`email`)
+  UNIQUE INDEX (`user_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 INSERT INTO users SELECT * from users_old;
 DROP table users_old;
