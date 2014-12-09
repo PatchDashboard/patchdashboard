@@ -80,12 +80,13 @@ INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('6',6,'2020-11
 INSERT INTO distro_version(version_num,distro_id,eol_date) VALUES('7',6,'2024-06-30');
 
 CREATE TABLE IF NOT EXISTS users (
-  `user_id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
+  `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` varchar(40) NOT NULL,
   `email` varchar(80) NOT NULL,
   `admin` tinyint(1) NOT NULL DEFAULT '0',
   `display_name` varchar(50) NOT NULL,
   `password` char(41) NOT NULL,
-  PRIMARY KEY (`user_id`),
+  PRIMARY KEY (`id`),
   UNIQUE INDEX (`email`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
