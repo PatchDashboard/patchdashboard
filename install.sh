@@ -8,7 +8,7 @@
 ##
 ## Date: 11/22/2014
 ##
-## Version: 0.4
+## Version: 0.5
 ##
 ## Changelog: 0.1 - Initial Release
 ##            0.2 - Improved base installer for OS detection
@@ -18,6 +18,8 @@
 ##                - Lots of logic added to read the existing db users
 ##                - Check connections to the provided db info 
 ##                - Added virtualhost file to apache/httpd
+##            0.5 - Fixed relative_path in rewrite check
+##                - Added SQL fixes for existing table data
 ##
 ######################################################################
 
@@ -430,7 +432,7 @@ chown $web_user:$web_user $web_dir -R
 echo "$php_config" > /opt/patch_manager/db_config.php
 echo "$bash_config" > /opt/patch_manager/db.conf
 service $web_service restart
-rewrite_check=`curl -s localhost/patchmgr/rewrite_check|grep 404|wc -l`
+rewrite_check=`curl -s localhost${relative_path}rewrite_check|grep 404|wc -l`
 if [ "$rewrite_check" = "1" ]; then
 	echo -e "\n\e[31mError\e[0m: Apache Mod_rewrite or .htaccess is not working.  Please ensure you have mod_rewrite installed and enabled.  If it is, please make sure you change 'AllowOverride None' to 'AllowOverride All'"
 	echo -e "\e[31mError\e[0m: If you don't, this site won't work.  You've been warned."
