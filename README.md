@@ -27,6 +27,7 @@ If it doesn't have anything in "[]", you must provide an answer.
 
 Finally:
 Automated in installer script
+
 ~~* add /opt/patch_manager/start_get_package_list.sh to your cron (every 2 hours is what I do)~~
 ~~* same for /opt/patch_manager/start_patch_check.sh~~
 
