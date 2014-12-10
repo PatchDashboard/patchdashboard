@@ -60,7 +60,7 @@ fi
 if [ ! -f /root/.ssh/id_rsa ]; then
 	echo -e "\n\e[32mNotice\e[0m: Creating pub/private keys for $user."
 	ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
-	echo "\e[32mNotice\e[0m: Keypair created.\n"
+	echo -e "\e[32mNotice\e[0m: Keypair created.\n"
 fi
 
 # get OS information and run applicable function
