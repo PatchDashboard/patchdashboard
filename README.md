@@ -51,9 +51,9 @@ TODO: A LOT!
 
 DEVELOPERS:
 ===============
-JonsJava (Creator/Project guide/Underpinning Developer) https://github.com/jonsjava
-metalcated (Lead Developer) https://github.com/metalcated
-wilsonma08 (Bash Developer) https://github.com/wilsonma08
-ejbvanc (PHP Developer) https://github.com/ejbvanc
+* jonsjava (Creator/Project guide/Underpinning Developer) https://github.com/jonsjava
+* metalcated (Lead Developer) https://github.com/metalcated
+* wilsonma08 (Bash Developer) https://github.com/wilsonma08
+* ejbvanc (PHP Developer) https://github.com/ejbvanc
 
 A special thanks to Josh Reichardt (http://thepracticalsysadmin.com/) who sat with me for hours helping me get this as stable as it is right now.
