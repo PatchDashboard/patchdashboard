@@ -188,7 +188,7 @@ function OSDetect()
 		web_dir="/var/www/patch_manager/"
 		web_user="apache"
 		web_service="httpd"
-		echo -e "\e[32mNotice\e[0m: Checking mysqld is started\n"
+		echo -e "\e[32mNotice\e[0m: Checking mysqld is started"
                 if [[ -n $(service mysqld status|grep "stopped") ]]; then
                         # enable mysqld
                         echo -e "\e[32mNotice\e[0m: MySQL is being started.\n"
