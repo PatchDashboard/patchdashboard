@@ -243,7 +243,7 @@ function phpverCheck()
 
 	if [[ $(phpversion $phpver) < $(phpversion 5.2.0) ]]; then
                 echo -e "\n\e[31m\e[04mFatal Error\n\n\e[0m"
-		echo -e "\e[0m You are running PHP Version: \e[031m$phpver\e[0m which is incompatible with this application."
+		echo -e "\e[0mYou are running PHP Version: \e[031m$phpver\e[0m which is incompatible with this application."
 		echo -e "If you this installer automatically installed PHP, then you are on a distro which does not support PHP 5.2.0 of greater."
 		echo -e "You can fix this by enabling the remi repo for Red Hat based distos. I would suggest Googleing an article of blog post on how to do this."
 		echo -e "If you are on a Debian based distro and you do not have a a version of PHP 5.2.0 or greater then you are most likely on an unsupported distro version.\n"
