@@ -141,22 +141,16 @@ function OSDetect()
 			echo -e "\n\e[32mApache Module\e[0m: rewrite status = enabled\n"
 		fi
 		echo -e "\e[32mChecking if services are started\n\e[0m"
-                if [[ -n $(service mysqld status|grep "stopped") ]]; then
+                if [[ -n $(service mysql status|grep "stop/waiting") ]]; then
                         # enable mysqld
-                        echo -e "\e[32mService\e[0m: mysqld status = \e[31mstopped\n\e[0m"
-                        service mysqld start
+                        echo -e "\e[32mService\e[0m: mysql status = \e[31mstop/waiting\n\e[0m"
+                        service mysql start
                         echo
                 else
-                        echo -e "\e[32mService\e[0m: mysqld status = started"
+                        echo -e "\e[32mService\e[0m: mysql status = started\n"
                 fi
-                #if [[ -n $(service apache2 status|grep "stopped") ]]; then
-                #        # enable httpd
-                #        echo -e "\e[32mService\e[0m: apache2 status = \e[31mstopped\n\e[0m"
-                #        service httpd start
-                #        echo
-                #else
-                #        echo -e "\e[32mService\e[0m: apache2 status = started\n"
-                #fi
+		# sanity checks
+		phpverCheck
 
 	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
 		httpd_exists=`rpm -qa | grep "httpd"` 
@@ -223,17 +217,30 @@ function OSDetect()
 			service mysqld start
 			echo
                 else
-                        echo -e "\e[32mService\e[0m: mysqld status = started"
+                        echo -e "\e[32mService\e[0m: mysqld status = started\n"
                 fi
-		#if [[ -n $(service httpd status|grep "stopped") ]]; then
-                #        # enable httpd
-                #        echo -e "\e[32mService\e[0m: httpd status = \e[31mstopped\n\e[0m"
-                #        service httpd start
-                #        echo
-                #else
-                #        echo -e "\e[32mService\e[0m: httpd status = started\n"
-                #fi
+		# sanity checks
+		phpverCheck
 		
+	fi
+}
+
+function phpversion()
+{ 
+	echo "$@" | awk -F. '{ printf("%d.%d.%d\n", $1,$2,$3); }';
+}
+
+function phpverCheck()
+{
+	phpver=$(php -version|grep "PHP 5"|awk {'print $2'})
+
+	if [[ $(phpversion $phpver) < $(phpversion 5.2.0) ]]; then
+                echo -e "\e[31m\e[04mFatal Error\n\n\e[0m"
+		echo -e "\e[0m You are running PHP Version: \e[031m$phpver\e[0m which is incompatible with this application."
+		echo -e "If you this installer automatically installed PHP, then you are on a distro which does not support PHP 5.2.0 of greater."
+		echo -e "You can fix this by enabling the remi repo for Red Hat based distos. I would suggest Googleing an article of blog post on how to do this."
+		echo -e "If you are on a Debian based distro and you do not have a a version of PHP 5.2.0 or greater then you are most likely on an unsupported distro version.\n"
+		exit 0
 	fi
 }
 
