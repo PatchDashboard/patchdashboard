@@ -86,8 +86,8 @@ CREATE TABLE `patches` (
   `urgency` varchar(20) DEFAULT NULL,
   `bug_url` varchar(512) DEFAULT NULL,
   `distro` mediumint(8) DEFAULT NULL,
-  `to_upgrade` tinyint(1) NOT NULL DEFAULT '0',
-  `upgraded` tinyint(1) NOT NULL DEFAULT '0',
+  `to_upgrade` tinyint(1) NOT NULL DEFAULT 0,
+  `upgraded` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `server_name` (`server_name`),
   KEY `ix_package_name` (`package_name`)
@@ -97,11 +97,17 @@ CREATE TABLE users (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` varchar(40) NOT NULL,
   `email` varchar(80) NOT NULL,
-  `admin` tinyint(1) NOT NULL DEFAULT '0',
+  `admin` tinyint(1) NOT NULL DEFAULT 0,
   `display_name` varchar(50) DEFAULT NULL,
   `password` char(41) NOT NULL,
+  `active` tinyint(1) NOT NULL DEFAULT 1,
+  `last_seen` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `receive_alerts` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  UNIQUE INDEX (`user_id`)
+  UNIQUE INDEX (`user_id`),
+  KEY `ix_password` (`password`),
+  KEY `ix_user_id` (`user_id`),
+  KEY `ix_receive_alerts` (`receive_alerts`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 CREATE TABLE company (
@@ -111,4 +117,5 @@ CREATE TABLE company (
   `install_key` varchar(50) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE INDEX (`name`)
+  
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
