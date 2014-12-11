@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# generated installation key from install
+auth_key="000DEFAULT000"
+
 if [[ -f /etc/lsb-release ]]; then
 	export os=$(lsb_release -s -d|head -1|awk {'print $1'})
 elif [[ -f /etc/debian_version ]]; then
