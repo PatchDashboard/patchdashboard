@@ -21,7 +21,7 @@
 ##            0.5 - Fixed relative_path in rewrite check
 ##                - Added SQL fixes for existing table data
 ##            0.6 - Added automated Debian flavor apache/php/mysql
-##                - Adding Red Hat flavor next...
+##                - Added automated Red Hat flavor apache/php/mysql
 ##
 ######################################################################
 
