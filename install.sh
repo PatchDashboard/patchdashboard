@@ -32,7 +32,10 @@ function genPasswd()
 {
 	local p=$1
 	[ "$p" == "" ] && p=12
-	tr -dc A-Za-z0-9_ < /dev/urandom | head -c ${p} | xargs
+	salt='W[62~L41|]CU15b'
+	random=$(tr -dc A-Za-z0-9_ < /dev/urandom | head -c ${p} | xargs)
+	pass="${random}{$salt}"
+	echo $pass
 }
 
 function genInstallKey()
