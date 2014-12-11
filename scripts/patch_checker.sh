@@ -3,6 +3,15 @@
 # generated installation key from install
 auth_key="000DEFAULT000"
 
+# generate client key
+host=$(hostname -f)
+random_bits=$(< /dev/urandom tr -dc 'a-zA-Z0-9~!@#$%^&*_-' | head -c${1:-32})
+client_key=$(echo "${host}${random_bits}"|sha256sum|awk {'print $1'})
+
+# echo client key into /opt/patch_manager/.patchrc if not exist
+if [[ ! -f /opt/patch_manager/.patchrc ]]; then
+	echo $client_key > /opt/patch_manager/.patchrc
+fi
 if [[ -f /etc/lsb-release ]]; then
 	export os=$(lsb_release -s -d|head -1|awk {'print $1'})
 elif [[ -f /etc/debian_version ]]; then
