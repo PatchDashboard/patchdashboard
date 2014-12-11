@@ -54,7 +54,7 @@ user=`whoami`
 
 # if user is not root, exit
 if [ "$user" != "root" ]; then
-	echo "You must be root to install this"
+	echo -e "\e[31Error\e[0m: You must be root to install this!"
 	exit 0
 fi
 
@@ -141,19 +141,62 @@ function OSDetect()
 		fi
 
 	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
-		httpd_exists=`which httpd`
-		mysqld_exists=`which mysqld_safe`
+		httpd_exists=`rpm -qa | grep "httpd"` 
+		mysqld_exists=`rpm -qa | grep "mysql"`
 		if [[ "$httpd_exists" = "" ]]; then
-			echo -e "\n\e[31mNotice\e[0m: LAMP does not seem to be installed, sending install commands.\n\n\e[31mNotice\e[0m: Please wait while prerequisites are installed..."
+			echo -e "\e[31mNotice\e[0m: Apache/PHP does not seem to be installed."
+                        unset wait
+                        echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
+                        echo -e "\e[31mNotice\e[0m: Please wait while prerequisites are installed...\n\n\e[31mNotice\e[0m: Installing Apache and PHP5..."
                         while true;
                         do echo -n .;sleep 1;done &
-			yum install -y httpd httpd-devel mysql mysql-server mysql-devel php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli curl > /dev/null 2>&1
-			kill $!; trap 'kill $!' SIGTERM 
-                        echo -e "\e[31mNotice\e[0m: Installation Completed."
+			yum install -y httpd httpd-devel php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli curl > /dev/null 2>&1
+                        kill $!; trap 'kill $!' SIGTERM
+                        echo -e "\n\e[32mNotice\e[0m: Apache/PHP Installation Complete\n"
 		fi
+		if [[ "$mysqld_exists" = "" ]]; then
+                        echo -e "\e[31mNotice\e[0m: MySQL does not seem to be installed."
+                        unset wait
+                        echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
+                        db_user_id="root"
+                        mysqlPasswd
+                        if [[ "$mysql_passwd" != "$mysql_passwd_again" ]]; then
+                                echo -e "\n\n\e[31mNotice\e[0m: Passwords do not match, please try again.\n"
+                                mysqlPasswd
+                        fi
+                        echo -e "\n\n\e[31mNotice\e[0m: Installing MySQL Client and Server..."
+                        while true;
+                        do echo -n .;sleep 1;done &
+                        yum install -y mysql mysql-server mysql-devel > /dev/null 2>&1
+                        kill $!; trap 'kill $!' SIGTERM
+			mysqladmin -uroot password "$mysql_passwd" > /dev/null 2>&1
+                        mysql_install_db > /dev/null 2>&1
+                        echo -e "\nInstalling MySQL system tables...\nOK"
+                        echo -e "Filling help tables...\nOK"
+                        echo -e "\n\e[36mNotice\e[0m: You may run /usr/bin/mysql_secure_installation to secure the MySQL installation once this application setup has been completed."
+                        echo -e "\n\e[32mNotice\e[0m: MySQL Installation Complete\n"
+                        unset db_user_id
+			echo -e "\e[32mNotice\e[0m: Checking mysqld start up config\n"
+                	if [[ -z $(chkconfig --list mysqld|grep "2:on\|3:on\|5:on") ]]; then
+                        	# enable mysqld at startup 235
+                        	echo -e "\e[32mNotice\e[0m: MySQL startup at boot disabled, enabling.\n"
+                        	chkconfig --level 235 mysqld on
+                	else
+                        	echo -e "\e[32mNotice\e[0m: MySQL startup at boot already enabled.\n"
+                	fi
+                fi
 		web_dir="/var/www/patch_manager/"
 		web_user="apache"
 		web_service="httpd"
+		echo -e "\e[32mNotice\e[0m: Checking mysqld is started\n"
+                if [[ -n $(service mysqld status|grep "stopped") ]]; then
+                        # enable mysqld
+                        echo -e "\e[32mNotice\e[0m: MySQL is being started.\n"
+			service mysqld start
+			echo
+                else
+                        echo -e "\e[32mNotice\e[0m: MySQL is already started.\n"
+                fi
 		
 	fi
 }
