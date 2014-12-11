@@ -40,7 +40,7 @@ function genPasswd()
 
 function genInstallKey()
 {
-	export installation_key=`< /dev/urandom tr -dc 'a-zA-Z0-9~!@#$%^&*_-' | head -c${1:-32}|sha256sum`
+	export installation_key=$(< /dev/urandom tr -dc 'a-zA-Z0-9~!@#$%^&*_-' | head -c${1:-32}|sha256sum)
 }
 
 # default admin and users for the admin web interface
@@ -164,7 +164,7 @@ function OSDetect()
 
 	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
 		httpd_exists=`rpm -qa | grep "httpd"` 
-		mysqld_exists=`rpm -qa | grep "mysql"`
+		mysqld_exists=`rpm -qa | grep "mysql-server"`
 		if [[ "$httpd_exists" = "" ]]; then
 			echo -e "\e[31mNotice\e[0m: Apache/PHP does not seem to be installed."
                         unset wait
@@ -246,7 +246,7 @@ function phpverCheck()
 
 	if [[ $(phpversion $phpver) < $(phpversion 5.2.0) ]]; then
                 echo -e "\n\e[31m\e[04mFatal Error\n\n\e[0m"
-		echo -e "\e[0m You are running PHP Version: \e[031m$phpver\e[0m which is incompatible with this application."
+		echo -e "\e[0mYou are running PHP Version: \e[031m$phpver\e[0m which is incompatible with this application."
 		echo -e "If you this installer automatically installed PHP, then you are on a distro which does not support PHP 5.2.0 of greater."
 		echo -e "You can fix this by enabling the remi repo for Red Hat based distos. I would suggest Googleing an article of blog post on how to do this."
 		echo -e "If you are on a Debian based distro and you do not have a a version of PHP 5.2.0 or greater then you are most likely on an unsupported distro version.\n"
