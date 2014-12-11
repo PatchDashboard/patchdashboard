@@ -24,6 +24,8 @@
 ##                - Added automated Red Hat flavor apache/php/mysql
 ##                - Added PHP Version check and cleaned up some output
 ##            0.7 - Added installation key for agent authentication
+##                - Added more logic for mysql root passwords
+##                - Added php install for unsupported versions
 ##
 ######################################################################
 
