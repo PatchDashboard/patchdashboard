@@ -8,7 +8,7 @@
 ##
 ## Date: 11/22/2014
 ##
-## Version: 0.5
+## Version: 0.6
 ##
 ## Changelog: 0.1 - Initial Release
 ##            0.2 - Improved base installer for OS detection
@@ -20,6 +20,8 @@
 ##                - Added virtualhost file to apache/httpd
 ##            0.5 - Fixed relative_path in rewrite check
 ##                - Added SQL fixes for existing table data
+##            0.6 - Added automated Debian flavor apache/php/mysql
+##                - Adding Red Hat flavor next...
 ##
 ######################################################################
 
