@@ -131,14 +131,32 @@ function OSDetect()
 		web_dir="/var/www/patch_manager/"
 		web_user="www-data"
 		web_service="apache2"
-		echo -e "\e[32mNotice\e[0m: Checking apache2 rewrite module.\n"
+		echo -e "\e[32mChecking apache2 rewrite module\n\e[0m"
 		if [[ -z $(apache2ctl -M|grep rewrite) ]]; then
 			# enable rewrite modules
-			echo -e "\n\e[32mNotice\e[0m: Apache2 rewrite module disabled, enabling.\n"
+			echo -e "\n\e[32mApache Module\e[0m: rewrite status = \e[31mdisabled\e[0m"
 			a2enmod rewrite > /dev/null 2>&1
+			echo -e "\n\e[32mApache Module\e[0m: rewrite enabled\n"
 		else
-			echo -e "\n\e[32mNotice\e[0m: Apache2 rewrite module already enabled.\n"
+			echo -e "\n\e[32mApache Module\e[0m: rewrite status = enabled\n"
 		fi
+		echo -e "\e[32mChecking if services are started\n\e[0m"
+                if [[ -n $(service mysqld status|grep "stopped") ]]; then
+                        # enable mysqld
+                        echo -e "\e[32mService\e[0m: mysqld status = \e[31mstopped\n\e[0m"
+                        service mysqld start
+                        echo
+                else
+                        echo -e "\e[32mService\e[0m: mysqld status = started"
+                fi
+                #if [[ -n $(service apache2 status|grep "stopped") ]]; then
+                #        # enable httpd
+                #        echo -e "\e[32mService\e[0m: apache2 status = \e[31mstopped\n\e[0m"
+                #        service httpd start
+                #        echo
+                #else
+                #        echo -e "\e[32mService\e[0m: apache2 status = started\n"
+                #fi
 
 	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
 		httpd_exists=`rpm -qa | grep "httpd"` 
@@ -153,6 +171,15 @@ function OSDetect()
 			yum install -y httpd httpd-devel php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli curl > /dev/null 2>&1
                         kill $!; trap 'kill $!' SIGTERM
                         echo -e "\n\e[32mNotice\e[0m: Apache/PHP Installation Complete\n"
+			echo -e "\e[32mChecking httpd start up config\n\e[0m"
+                        if [[ -z $(chkconfig --list httpd|grep "2:on\|3:on\|5:on") ]]; then
+                                # enable httpd at startup 235
+                                echo -e "\e[32mChkConfig\e[0m: httpd status = \e[31mdisabled\e[0m"
+                                chkconfig --level 235 httpd on
+				echo -e "\e[32mChkConfig\e[0m: httpd enabled\n"
+                        else
+                                echo -e "\e[32mChkConfig\e[0m: httpd status = enabled\n"
+                        fi
 		fi
 		if [[ "$mysqld_exists" = "" ]]; then
                         echo -e "\e[31mNotice\e[0m: MySQL does not seem to be installed."
@@ -169,34 +196,43 @@ function OSDetect()
                         do echo -n .;sleep 1;done &
                         yum install -y mysql mysql-server mysql-devel > /dev/null 2>&1
                         kill $!; trap 'kill $!' SIGTERM
-			mysqladmin -uroot password "$mysql_passwd" > /dev/null 2>&1
+			mysqladmin -u root password "$mysql_passwd" > /dev/null 2>&1
                         mysql_install_db > /dev/null 2>&1
                         echo -e "\nInstalling MySQL system tables...\nOK"
                         echo -e "Filling help tables...\nOK"
                         echo -e "\n\e[36mNotice\e[0m: You may run /usr/bin/mysql_secure_installation to secure the MySQL installation once this application setup has been completed."
                         echo -e "\n\e[32mNotice\e[0m: MySQL Installation Complete\n"
                         unset db_user_id
-			echo -e "\e[32mNotice\e[0m: Checking mysqld start up config"
+			echo -e "\e[32mChecking mysqld start up config\n\e[0m"
                 	if [[ -z $(chkconfig --list mysqld|grep "2:on\|3:on\|5:on") ]]; then
                         	# enable mysqld at startup 235
-                        	echo -e "\e[32mNotice\e[0m: MySQL startup at boot disabled, enabling.\n"
+                        	echo -e "\e[32mChkConfig\e[0m: mysqld status = \e[31mdisabled\e[0m"
                         	chkconfig --level 235 mysqld on
+				echo -e "\e[32mChkConfig\e[0m: mysqld enabled\n"
                 	else
-                        	echo -e "\e[32mNotice\e[0m: MySQL startup at boot already enabled.\n"
+                        	echo -e "\e[32mChkConfig\e[0m: mysqld status = enabled\n"
                 	fi
                 fi
 		web_dir="/var/www/patch_manager/"
 		web_user="apache"
 		web_service="httpd"
-		echo -e "\e[32mNotice\e[0m: Checking mysqld is started"
+		echo -e "\e[32mChecking if services are started\n\e[0m"
                 if [[ -n $(service mysqld status|grep "stopped") ]]; then
                         # enable mysqld
-                        echo -e "\e[32mNotice\e[0m: MySQL is being started.\n"
+                        echo -e "\e[32mService\e[0m: mysqld status = \e[31mstopped\n\e[0m"
 			service mysqld start
 			echo
                 else
-                        echo -e "\e[32mNotice\e[0m: MySQL is already started.\n"
+                        echo -e "\e[32mService\e[0m: mysqld status = started"
                 fi
+		#if [[ -n $(service httpd status|grep "stopped") ]]; then
+                #        # enable httpd
+                #        echo -e "\e[32mService\e[0m: httpd status = \e[31mstopped\n\e[0m"
+                #        service httpd start
+                #        echo
+                #else
+                #        echo -e "\e[32mService\e[0m: httpd status = started\n"
+                #fi
 		
 	fi
 }
