@@ -12,6 +12,11 @@ client_key=$(echo "${host}${random_bits}"|sha256sum|awk {'print $1'})
 if [[ ! -f /opt/patch_manager/.patchrc ]]; then
 	echo $client_key > /opt/patch_manager/.patchrc
 fi
+# remove old file is blank and add new with key
+if [[ -s /opt/patch_manager/.patchrc ]]; then
+	rm -f /opt/patch_manager/.patchrc
+        echo $client_key > /opt/patch_manager/.patchrc
+fi
 if [[ -f /etc/lsb-release ]]; then
 	export os=$(lsb_release -s -d|head -1|awk {'print $1'})
 elif [[ -f /etc/debian_version ]]; then
