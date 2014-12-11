@@ -85,19 +85,69 @@ function OSDetect()
 
 	if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
 		apache_exists=`which apache2`
-		if [ "$apache_exists" = "" ]; then
-			echo "Please install the full LAMP stack before trying to install this"
-			exit 0
+		mysqld_exists=`which mysqld`
+		if [[ "$os" = "Linux" ]] && [[ "$apache_exists" = "" ]]; then
+			echo -e "\n\e[31mNotice\e[0m: Please install the full LAMP stack before trying to install this application.\n\n\e[31mNotice\e[0m: https://community.rackspace.com/products/f/25/t/49\n"
+                        exit 0
 		fi
-		web_dir="/var/www/patch_manager"
+		if [[ "$apache_exists" = "" ]]; then
+			echo -e "\e[31mNotice\e[0m: Apache/PHP does not seem to be installed."
+			unset wait
+			echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
+			echo -e "\e[31mNotice\e[0m: Please wait while prerequisites are installed...\n\n\e[31mNotice\e[0m: Installing Apache and PHP5..."
+			while true;
+			do echo -n .;sleep 1;done &
+			apt-get install -y apache2 apache2-threaded-dev apache2-utils php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc curl > /dev/null 2>&1
+			kill $!; trap 'kill $!' SIGTERM
+			echo "ServerName localhost" >> /etc/apache2/httpd.conf
+			echo -e "\n\e[32mNotice\e[0m: Apache/PHP Installation Complete\n"
+		fi
+		if [[ "$mysqld_exists" = "" ]]; then
+			echo -e "\e[31mNotice\e[0m: MySQL does not seem to be installed."
+                        unset wait
+			echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
+			db_user_id="root"
+			mysqlPasswd
+			if [[ "$mysql_passwd" != "$mysql_passwd_again" ]]; then
+				echo -e "\n\n\e[31mNotice\e[0m: Passwords do not match, please try again.\n"
+				mysqlPasswd
+			fi
+			debconf-set-selections <<< "mysql-server mysql-server/root_password password $mysql_passwd"
+			debconf-set-selections <<< "mysql-server mysql-server/root_password_again password $mysql_passwd_again"
+			echo -e "\n\n\e[31mNotice\e[0m: Installing MySQL Client and Server..."
+			while true;
+                        do echo -n .;sleep 1;done &
+			apt-get install -y mysql-client mysql-server php5-mysql libapache2-mod-auth-mysql libmysqlclient-dev > /dev/null 2>&1
+			kill $!; trap 'kill $!' SIGTERM
+			mysql_install_db > /dev/null 2>&1
+			echo -e "\nInstalling MySQL system tables...\nOK"
+			echo -e "Filling help tables...\nOK"
+			echo -e "\n\e[36mNotice\e[0m: You may run /usr/bin/mysql_secure_installation to secure the MySQL installation once this application setup has been completed."
+			echo -e "\n\e[32mNotice\e[0m: MySQL Installation Complete\n"
+			unset db_user_id
+		fi
+		web_dir="/var/www/patch_manager/"
 		web_user="www-data"
 		web_service="apache2"
+		echo -e "\e[32mNotice\e[0m: Checking apache2 rewrite module.\n"
+		if [[ -z $(apache2ctl -M|grep rewrite) ]]; then
+			# enable rewrite modules
+			echo -e "\n\e[32mNotice\e[0m: Apache2 rewrite module disabled, enabling.\n"
+			a2enmod rewrite > /dev/null 2>&1
+		else
+			echo -e "\n\e[32mNotice\e[0m: Apache2 rewrite module already enabled.\n"
+		fi
 
 	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
 		httpd_exists=`which httpd`
-		if [ "$httpd_exists" = "" ]; then
-			echo "Please install the full LAMP stack before trying to install this"
-			exit 0
+		mysqld_exists=`which mysqld_safe`
+		if [[ "$httpd_exists" = "" ]]; then
+			echo -e "\n\e[31mNotice\e[0m: LAMP does not seem to be installed, sending install commands.\n\n\e[31mNotice\e[0m: Please wait while prerequisites are installed..."
+                        while true;
+                        do echo -n .;sleep 1;done &
+			yum install -y httpd httpd-devel mysql mysql-server mysql-devel php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli curl > /dev/null 2>&1
+			kill $!; trap 'kill $!' SIGTERM 
+                        echo -e "\e[31mNotice\e[0m: Installation Completed."
 		fi
 		web_dir="/var/www/patch_manager/"
 		web_user="apache"
@@ -106,9 +156,28 @@ function OSDetect()
 	fi
 }
 
+function mysqlPasswd()
+{
+	echo -e "\e[32m\e[4mMySQL Database Install and Setup\n\e[0m"
+	echo -e "Create a new password for the root MySQL account\n"
+	unset mysql_passwd
+        read -s -p "Enter MySQL $db_user_id password: " mysql_passwd
+        while [[ "$mysql_passwd" = "" ]]; do
+        	echo -e "\n\e[36mNotice\e[0m: Please provide the MySQL $db_user_id password, please try again.\n"
+                read -p "Enter MySQL $db_user_id password: " mysql_passwd
+        done
+	echo
+        unset mysql_passwd_again
+        read -s -p "Enter MySQL $db_user_id password again: " mysql_passwd_again
+        	while [[ "$mysql_passwd_again" = "" ]]; do
+                echo -e "\n\e[36mNotice\e[0m: Please provide the MySQL $db_user_id password again, please try again.\n"
+                read -p "Enter MySQL $db_user_id password again: " mysql_passwd_again
+	done
+}
+
 function dbAskHost()
 {
-	echo -e "\e[32m\e[4mDatabase Setup\e[0m\n"
+	echo -e "\e[4m\e[32mDatabase Setup\e[0m\n\nThis step will create the user, set the password and create the database.\n"
 	unset db_host
 	read -p "Database Host: " db_host
 	while [[ "$db_host" = "" ]]; do
@@ -125,6 +194,7 @@ function dbAskHost()
 
 function dbAskUser()
 {
+	echo -e "\n\nEnter the database username and password you want to use for the application.\n"
 	unset db_user
 	read -p "Database User: " db_user
 	while [[ "$db_user" = "" ]]; do
@@ -159,7 +229,7 @@ function dbAskName()
 function dbCheck()
 {
 	# check if database exists
-	db_exists=$(mysql --batch -u$db_user -p$db_pass --skip-column-names -e "show databases like '"$db_name"';" | grep "$db_name" > /dev/null; echo "$?")
+	db_exists=$(mysql --batch -uroot -p$db_root_pass --skip-column-names -e "show databases like '"$db_name"';" | grep "$db_name" > /dev/null; echo "$?")
 	if [ $db_exists -eq 0 ];then
 		dbExists=yes
 	else
@@ -170,12 +240,41 @@ function dbCheck()
 function dbConnTest()
 {
         # check connection to db
-        db_connx=$(mysql --batch -u$db_user -p$db_pass -e ";" > /dev/null; echo "$?")
+        db_connx=$(mysql --batch -u $db_user -p"$db_pass" -e ";" > /dev/null; echo "$?")
 	if [ $db_connx -eq 0 ];then
                 dbConnx=yes
         else
                 dbConnx=no
         fi
+}
+
+function dbRootPasswd()
+{
+        unset db_root_pass
+	echo
+        read -s -p "Enter the MySQL root password: " db_root_pass
+        while [[ "$db_root_pass" = "" ]]; do
+                echo -e "\n\e[36mNotice\e[0m: Please provide the root password, please try again.\n"
+                read -s -p "Enter the MySQL root password: " db_root_pass
+        done
+}
+
+function dbUserDBCreate()
+{
+	while read user; do
+	if [[ "$db_user" == "$user" ]]; then
+		echo -e "\n\e[31mNotice\e[0m: $user already exists. Skipping."
+		break
+	fi
+	done < <(mysql --batch --skip-column-names -p"$db_root_pass" -e 'use mysql; SELECT `user` FROM `user`;')
+
+	if [[ "$db_user" != "$user" ]]; then
+		echo -e "\n\e[32mNotice\e[0m: Creating \e[32m$user\e[0m and granting all privileges on \e[36m$db_name\n\e[0m"
+		mysql -u root -h $db_host -p"$db_root_pass" -e "CREATE USER '$db_user'@'$db_host' IDENTIFIED BY '$db_pass';"
+        	mysql -u root -h $db_host -p"$db_root_pass" -e "GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user'@'$db_host';"
+        	mysql -u root -h $db_host -p"$db_root_pass" -e "FLUSH PRIVILEGES;"
+	fi
+	unset user
 }
 
 function dbCreate()
@@ -417,7 +516,6 @@ Alias $patchmgr $targetdir
         AllowOverride All
         Order allow,deny
         Allow from all
-        RewriteEngine On
 </Directory>
 EOA
 
@@ -508,21 +606,25 @@ OSDetect
 # run DB functions
 echo -e "\e[36m# Database Setup information\n\e[0m"
 dbAskHost
+dbRootPasswd
 dbAskUser
 dbAskPass
 dbAskName
 dbConnTest
 dbCheck
+dbUserDBCreate
 
 # check database connection from user provided details
 if [[ "$dbConnx" = "no" ]]; then
         echo -e "\n\e[31mError\e[0m: Unable to connect to: \e[36m$db_host\e[0m, please try again.\n"
 	dbAskHost
+	dbRootPasswd
 	dbAskUser
 	dbAskPass
 	dbAskName
 	dbConnTest
         dbCheck
+	dbUserDBCreate
 fi
 
 if [[ "$dbExists" = "yes" ]]; then
