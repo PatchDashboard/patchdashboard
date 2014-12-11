@@ -22,6 +22,7 @@
 ##                - Added SQL fixes for existing table data
 ##            0.6 - Added automated Debian flavor apache/php/mysql
 ##                - Added automated Red Hat flavor apache/php/mysql
+##                - Added PHP Version check and cleaned up some output
 ##
 ######################################################################
 
@@ -235,7 +236,7 @@ function phpverCheck()
 	phpver=$(php -version|grep "PHP 5"|awk {'print $2'})
 
 	if [[ $(phpversion $phpver) < $(phpversion 5.2.0) ]]; then
-                echo -e "\e[31m\e[04mFatal Error\n\n\e[0m"
+                echo -e "\n\e[31m\e[04mFatal Error\n\n\e[0m"
 		echo -e "\e[0m You are running PHP Version: \e[031m$phpver\e[0m which is incompatible with this application."
 		echo -e "If you this installer automatically installed PHP, then you are on a distro which does not support PHP 5.2.0 of greater."
 		echo -e "You can fix this by enabling the remi repo for Red Hat based distos. I would suggest Googleing an article of blog post on how to do this."
