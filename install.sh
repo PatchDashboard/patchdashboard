@@ -37,7 +37,7 @@ function genPasswd()
 
 function genInstallKey()
 {
-	export installation_key=`< /dev/urandom tr -dc 'a-zA-Z0-9~!@#$%^&*_-' | head -c${1:-32}|sha256sum`
+	export installation_key=$(< /dev/urandom tr -dc 'a-zA-Z0-9~!@#$%^&*_-' | head -c${1:-32}|sha256sum)
 }
 
 # default admin and users for the admin web interface
@@ -161,7 +161,7 @@ function OSDetect()
 
 	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
 		httpd_exists=`rpm -qa | grep "httpd"` 
-		mysqld_exists=`rpm -qa | grep "mysql"`
+		mysqld_exists=`rpm -qa | grep "mysql-server"`
 		if [[ "$httpd_exists" = "" ]]; then
 			echo -e "\e[31mNotice\e[0m: Apache/PHP does not seem to be installed."
                         unset wait
