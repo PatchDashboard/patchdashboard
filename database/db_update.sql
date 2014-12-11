@@ -147,6 +147,7 @@ CREATE TABLE company (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(40) NOT NULL,
   `display_name` varchar(50) NOT NULL,
+  `install_key` varchar(50) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE INDEX (`name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
