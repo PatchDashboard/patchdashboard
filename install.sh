@@ -532,7 +532,7 @@ function dbCompCreate()
 genInstallKey
 
 #trim end hiphen from installation_key for echo statements
-install_key=$(echo $installation_key|awk {'print $1'})
+export install_key=$(echo $installation_key|awk {'print $1'})
 
 # check if company exist
 unset comp_name_check
@@ -648,6 +648,7 @@ target_web_dir=$(echo $new_web_dir|sed 's=/[^/]*$==;s/\.$//')
 ## DO NOT CHANGE PATH ##
 mkdir -p /opt/patch_manager/
 cp scripts/* /opt/patch_manager/ -R
+sed -i 's/000DEFAULT000/'$install_key'/g' /opt/patch_manager/patch_checker.sh
 echo "$rewrite_config" > html/.htaccess
 echo "$php_config" > html/lib/db_config.php
 mkdir -p $web_dir
