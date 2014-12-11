@@ -8,7 +8,7 @@
 ##
 ## Date: 11/22/2014
 ##
-## Version: 0.6
+## Version: 0.7
 ##
 ## Changelog: 0.1 - Initial Release
 ##            0.2 - Improved base installer for OS detection
@@ -23,6 +23,7 @@
 ##            0.6 - Added automated Debian flavor apache/php/mysql
 ##                - Added automated Red Hat flavor apache/php/mysql
 ##                - Added PHP Version check and cleaned up some output
+##            0.7 - Added installation key for agent authentication
 ##
 ######################################################################
 
@@ -32,6 +33,11 @@ function genPasswd()
 	local p=$1
 	[ "$p" == "" ] && p=12
 	tr -dc A-Za-z0-9_ < /dev/urandom | head -c ${p} | xargs
+}
+
+function genInstallKey()
+{
+	export installation_key=`< /dev/urandom tr -dc 'a-zA-Z0-9~!@#$%^&*_-' | head -c${1:-32}|sha256sum`
 }
 
 # default admin and users for the admin web interface
@@ -522,21 +528,31 @@ fi
 function dbCompCreate()
 {
 
+# generate key and store var to installation_key
+genInstallKey
+
+#trim end hiphen from installation_key for echo statements
+install_key=$(echo $installation_key|awk {'print $1'})
+
 # check if company exist
 unset comp_name_check
 comp_name_check=$(mysql -u $db_user -h $db_host -p"$db_pass" -e "SELECT name from $db_name.company where name='$comp_id';")
 unset comp_disp_check
 comp_disp_check=$(mysql -u $db_user -h $db_host -p"$db_pass" -e "SELECT name from $db_name.company where display_name='$your_company';")
+# check if installation key exist
+unset comp_ikey_check
+comp_ikey_check=$(mysql -u $db_user -h $db_host -p"$db_pass" -e "SELECT install_key from $db_name.company where install_key='$installation_key';")
 
-# if not exist, add company
-if [[ "$comp_name_check" = "" ]] && [[ "$comp_disp_check" = "" ]]; then
-# add company
+# if not exist, add company and installation key
+if [[ "$comp_name_check" = "" ]] && [[ "$comp_disp_check" = "" ]] && [[ "$comp_ikey_check" = "" ]]; then
+# add company and installation key
 echo -e "\e[32mNotice\e[0m: Company added to \e[36m$db_name\e[0m: \e[36m$your_company\e[0m/\e[36m$comp_id\n\e[0m"
+echo -e "\e[32mNotice\e[0m: Installation Key added to \e[36m$db_name\e[0m: $install_key\n"
 mysql -u $db_user -h $db_host -p"$db_pass" << EOF
-INSERT INTO $db_name.company (id,name,display_name) VALUES (NULL, '$comp_id', '$your_company');
+INSERT INTO $db_name.company (id,name,display_name,install_key) VALUES (NULL, '$comp_id', '$your_company', '$installation_key');
 EOF
 else
-        echo -e "\e[32mNotice\e[0m: Company Name already exists: \e[36m$your_company\e[0m or \e[36m$comp_id\n\e[0m"
+        echo -e "\e[32mNotice\e[0m: Company Name already exists: \e[36m$your_company\e[0m or \e[36m$comp_id\n\e[0m with installation key: $install_key\n"
 fi
 
 }
