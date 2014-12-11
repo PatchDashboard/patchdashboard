@@ -176,7 +176,7 @@ function OSDetect()
                         echo -e "\n\e[36mNotice\e[0m: You may run /usr/bin/mysql_secure_installation to secure the MySQL installation once this application setup has been completed."
                         echo -e "\n\e[32mNotice\e[0m: MySQL Installation Complete\n"
                         unset db_user_id
-			echo -e "\e[32mNotice\e[0m: Checking mysqld start up config\n"
+			echo -e "\e[32mNotice\e[0m: Checking mysqld start up config"
                 	if [[ -z $(chkconfig --list mysqld|grep "2:on\|3:on\|5:on") ]]; then
                         	# enable mysqld at startup 235
                         	echo -e "\e[32mNotice\e[0m: MySQL startup at boot disabled, enabling.\n"
