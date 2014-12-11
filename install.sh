@@ -158,6 +158,7 @@ function OSDetect()
                 fi
 		# sanity checks
 		phpverCheck
+		checkIPtables
 
 	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
 		httpd_exists=`rpm -qa | grep "httpd"` 
@@ -228,7 +229,8 @@ function OSDetect()
                 fi
 		# sanity checks
 		phpverCheck
-		
+		checkIPtables
+		localhostChk
 	fi
 }
 
@@ -242,12 +244,60 @@ function phpverCheck()
 	phpver=$(php -version|grep "PHP 5"|awk {'print $2'})
 
 	if [[ $(phpversion $phpver) < $(phpversion 5.2.0) ]]; then
-                echo -e "\n\e[31m\e[04mFatal Error\n\n\e[0m"
-		echo -e "\e[0mYou are running PHP Version: \e[031m$phpver\e[0m which is incompatible with this application."
-		echo -e "If you this installer automatically installed PHP, then you are on a distro which does not support PHP 5.2.0 of greater."
-		echo -e "You can fix this by enabling the remi repo for Red Hat based distos. I would suggest Googleing an article of blog post on how to do this."
-		echo -e "If you are on a Debian based distro and you do not have a a version of PHP 5.2.0 or greater then you are most likely on an unsupported distro version.\n"
-		exit 0
+		echo -e "\e[0mYou are running PHP Version: \e[031m$phpver\e[0m which is incompatible with this application.\n"
+		phpExtraInst
+	fi
+}
+
+function phpExtraInst()
+{
+	echo -e "\e[32mPHP Install\e[0m: Installing PHP 5.3/5.4 depending on your distro\n"
+	echo -e "\e[32mPHP Install\e[0m: Adding EPEL and WebTatic Repos"
+	rpm -Uvh "http://dl.fedoraproject.org/pub/epel/5/x86_64/epel-release-5-4.noarch.rpm" > /dev/null 2>&1
+	rpm -Uvh "http://repo.webtatic.com/yum/centos/5/latest.rpm" > /dev/null 2>&1
+	sed -i 's/enabled=0/enabled=1/g' /etc/yum.repos.d/webtatic.repo
+	unset wait
+	echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
+	echo -e "\e[32mPHP Install\e[0m: Installing PHP5.3 or greater..."
+	while true;
+	do echo -n .;sleep 1;done &
+	yum install -y php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli > /dev/null 2>&1
+	kill $!; trap 'kill $!' SIGTERM
+	echo -e "\n\e[32mPHP Install\e[0m: PHP Installation Complete\n"
+	echo -e "Running OS Check and Dependacies check again, please wait...\n"
+	sleep 3
+	$0
+	exit 0
+}
+
+function checkIPtables()
+{
+	if [[ -z $(iptables -L|grep "dpt:http\|dpt:https") ]]; then
+		echo -e "\n\e[32mIptables\e[0m: Enabling port 80 and 443 on iptables\n"
+		iptables -I INPUT -p tcp -m tcp --dport 80 -j ACCEPT
+		iptables -I INPUT -p tcp -m tcp --dport 443 -j ACCEPT
+		service iptables save
+	fi
+}
+
+function localhostChk()
+{
+	servername=$(grep "ServerName" /etc/httpd/conf/httpd.conf|grep -v "#"|awk {'print $2'})
+	if [[ "$servername" != "localhost" ]]; then
+		unset yn
+		echo -e "\e[32mServerName\e[0m: Current Apache ServerName = $servername\n"
+                read -p "Is the ServerName correct? [Enter 'yes' to skip and 'no' to enter localhost as ServerName] (y/n): " yn
+                while [[ "$yn" != "yes" && "$yn" != "no" && "$yn" != "y" && "$yn" != "n" ]]; do
+			read -p "Is this ServerName correct? [Enter 'yes' to skip and 'no' to enter localhost as ServerName] (y/n): " yn
+                        echo
+                done
+                if [[ "$yn" = "yes" ]] || [[ "$yn" = "y" ]]; then
+                        echo -e "\n\e[32mServerName\e[0m: Skipping"
+                else
+			echo
+			#echo "ServerName localhost" >> /etc/httpd/conf/httpd.conf
+			sed -i 's/'$servername'/localhost/g' /etc/httpd/conf/httpd.conf
+                fi	
 	fi
 }
 
@@ -324,7 +374,7 @@ function dbAskName()
 function dbCheck()
 {
 	# check if database exists
-	db_exists=$(mysql --batch -uroot -p$db_root_pass --skip-column-names -e "show databases like '"$db_name"';" | grep "$db_name" > /dev/null; echo "$?")
+	db_exists=$(mysql --batch -u root -p$db_root_pass --skip-column-names -e "show databases like '"$db_name"';" | grep "$db_name" > /dev/null; echo "$?")
 	if [ $db_exists -eq 0 ];then
 		dbExists=yes
 	else
@@ -351,6 +401,27 @@ function dbRootPasswd()
         while [[ "$db_root_pass" = "" ]]; do
                 echo -e "\n\e[36mNotice\e[0m: Please provide the root password, please try again.\n"
                 read -s -p "Enter the MySQL root password: " db_root_pass
+		echo
+        done
+	db_root_connx=$(mysql --batch -u root -p"$db_root_pass" -e ";" > /dev/null; echo "$?"; echo)
+        while [[ "$db_root_connx" -eq 1 ]]; do
+                echo -e "\n\e[31mNotice\e[0m: Unable to connect to mysql, please try again." 
+		echo -e "\n\e[36mNotice\e[0m: You may run /usr/bin/mysql_secure_installation to secure the MySQL installation and set the root password.\n"
+		unset yn
+		read -p "Do you want to exit the script or try again? [yes to exit, no to try again] (y/n): " yn
+		while [[ "$yn" != "yes" && "$yn" != "no" && "$yn" != "y" && "$yn" != "n" ]]; do
+			read -p "Do you want to exit the script or try again? [yes to exit, no to try again] (y/n): " yn
+			echo
+		done
+		if [[ "$yn" = "yes" ]] || [[ "$yn" = "y" ]]; then
+			echo -e "\n\e[32mExiting Installation as per your response.\n\e[0m"
+			sleep 2
+			exit 0
+		else
+			echo
+			read -s -p "Enter the MySQL root password: " db_root_pass
+			db_root_connx=$(mysql --batch -u root -p"$db_root_pass" -e ";" > /dev/null; echo "$?"; echo)
+		fi
         done
 }
 
@@ -364,7 +435,7 @@ function dbUserDBCreate()
 	done < <(mysql --batch --skip-column-names -p"$db_root_pass" -e 'use mysql; SELECT `user` FROM `user`;')
 
 	if [[ "$db_user" != "$user" ]]; then
-		echo -e "\n\e[32mNotice\e[0m: Creating \e[32m$user\e[0m and granting all privileges on \e[36m$db_name\n\e[0m"
+		echo -e "\n\e[32mNotice\e[0m: Creating \e[32m$db_user\e[0m and granting all privileges on \e[36m$db_name\e[0m"
 		mysql -u root -h $db_host -p"$db_root_pass" -e "CREATE USER '$db_user'@'$db_host' IDENTIFIED BY '$db_pass';"
         	mysql -u root -h $db_host -p"$db_root_pass" -e "GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user'@'$db_host';"
         	mysql -u root -h $db_host -p"$db_root_pass" -e "FLUSH PRIVILEGES;"
@@ -552,7 +623,9 @@ mysql -u $db_user -h $db_host -p"$db_pass" << EOF
 INSERT INTO $db_name.company (id,name,display_name,install_key) VALUES (NULL, '$comp_id', '$your_company', '$installation_key');
 EOF
 else
-        echo -e "\e[32mNotice\e[0m: Company Name already exists: \e[36m$your_company\e[0m or \e[36m$comp_id\n\e[0m with installation key: $install_key\n"
+	unset comp_ikey
+	comp_ikey=$(mysql --skip-column-names -u $db_user -h $db_host -p"$db_pass" -e "SELECT install_key from $db_name.company;")
+        echo -e "\e[32mNotice\e[0m: Company Name already exists: \e[36m$your_company\e[0m or \e[36m$comp_id\e[0m with installation key: $comp_ikey\n"
 fi
 
 }
@@ -716,9 +789,9 @@ dbRootPasswd
 dbAskUser
 dbAskPass
 dbAskName
+dbUserDBCreate
 dbConnTest
 dbCheck
-dbUserDBCreate
 
 # check database connection from user provided details
 if [[ "$dbConnx" = "no" ]]; then
@@ -728,9 +801,9 @@ if [[ "$dbConnx" = "no" ]]; then
 	dbAskUser
 	dbAskPass
 	dbAskName
+	dbUserDBCreate
 	dbConnTest
         dbCheck
-	dbUserDBCreate
 fi
 
 if [[ "$dbExists" = "yes" ]]; then
