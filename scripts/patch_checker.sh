@@ -3,20 +3,24 @@
 # generated installation key from install
 auth_key="000DEFAULT000"
 
-# generate client key
-host=$(hostname -f)
-random_bits=$(< /dev/urandom tr -dc 'a-zA-Z0-9~!@#$%^&*_-' | head -c${1:-32})
-client_key=$(echo "${host}${random_bits}"|sha256sum|awk {'print $1'})
-
-# echo client key into /opt/patch_manager/.patchrc if not exist
-if [[ ! -f /opt/patch_manager/.patchrc ]]; then
-	echo $client_key > /opt/patch_manager/.patchrc
-fi
-# remove old file is blank and add new with key
+# remove old file is blank
 if [[ -s /opt/patch_manager/.patchrc ]]; then
-	rm -f /opt/patch_manager/.patchrc
-        echo $client_key > /opt/patch_manager/.patchrc
+        rm -rf /opt/patch_manager/.patchrc
 fi
+
+# generate client key
+if [[ ! -f "/opt/patch_manager/.pachrc" ]]; then
+	host=$(hostname -f)
+	random_bits=$(< /dev/urandom tr -dc 'a-zA-Z0-9~!@#$%^&*_-' | head -c${1:-32})
+	client_key=$(echo "${host}${random_bits}"|sha256sum|cut -d ' ' -f 1)
+	if [[ ! -d /opt/patch_manager ]]; then
+		mkdir -p /opt/patch_manager
+	fi
+	echo "client_key=\"$client_key\"" > /opt/patch_manager/.patchrc
+fi
+# load the file
+. /opt/patch_manager/.patchrc
+
 if [[ -f /etc/lsb-release ]]; then
 	export os=$(lsb_release -s -d|head -1|awk {'print $1'})
 elif [[ -f /etc/debian_version ]]; then
