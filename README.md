@@ -42,11 +42,18 @@ TODO: A LOT!
 * ~~Complete installer script~~
 * Add more distros
 * ~~make everything database-driven~~
-* Configure patch suppression
-* configure ability to install patches from the web interface
+* Configure patch suppression **In the works. Complete soon**
+* configure ability to install patches from the web interface **In the works. Complete soon**
 * configure ability to patch windows hosts
-* configure logins, allowing for tie-in to LDAP/AD, and possibly a SSO solution like RADIUS
+* configure logins, allowing for tie-in to LDAP/AD, and possibly a SSO solution like RADIUS **In the works. Complete soon**
 
 ===============
+
+DEVELOPERS:
+===============
+JonsJava (Creator/Project guide/Underpinning Developer) https://github.com/jonsjava
+metalcated (Lead Developer) https://github.com/metalcated
+wilsonma08 (Bash Developer) https://github.com/wilsonma08
+ejbvanc (PHP Developer) https://github.com/ejbvanc
 
 A special thanks to Josh Reichardt (http://thepracticalsysadmin.com/) who sat with me for hours helping me get this as stable as it is right now.
