@@ -208,7 +208,7 @@ function OSDetect()
                         echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
                         db_user_id="root"
                         mysqlPasswd
-			echo -e "\e[32m\e[4mMySQL Database Install and Setup\n\e[0m"
+			echo -e "\n\n\e[32m\e[4mMySQL Database Install and Setup\n\e[0m"
                         if [[ "$mysql_passwd" != "$mysql_passwd_again" ]]; then
                                 echo -e "\n\n\e[31mNotice\e[0m: Passwords do not match, please try again.\n"
                                 mysqlPasswd
