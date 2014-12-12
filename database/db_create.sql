@@ -135,6 +135,7 @@ CREATE TABLE `plugins` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 INSERT IGNORE INTO `plugins`(`id`,`name`,`disabled`,`installed`,`is_admin`) VALUES(1,'main',0,1,0);
 INSERT IGNORE INTO `plugins`(`id`,`name`,`disabled`,`installed`,`is_admin`) VALUES(2,'admin',0,1,1);
+
 CREATE TABLE `page_maps` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
   `page_name` varchar(40) NOT NULL,

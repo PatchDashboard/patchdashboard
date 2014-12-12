@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS patch_allpackages_old;
 CREATE TABLE patch_allpackages_old LIKE patch_allpackages;
 INSERT INTO patch_allpackages_old SELECT * FROM patch_allpackages;
 DROP TABLE patch_allpackages;
@@ -10,9 +11,10 @@ CREATE TABLE `patch_allpackages` (
   KEY `ix_server_name` (`server_name`),
   KEY `ix_package_name` (`package_name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-INSERT INTO patch_allpackages SELECT * from patch_allpackages_old;
+INSERT IGNORE INTO patch_allpackages SELECT * from patch_allpackages_old;
 DROP table patch_allpackages_old;
 
+DROP TABLE IF EXISTS servers_old;
 CREATE TABLE servers_old LIKE servers;
 INSERT INTO servers_old SELECT * FROM servers;
 DROP TABLE servers;
@@ -26,9 +28,10 @@ CREATE TABLE `servers` (
   KEY `ix_server_name` (`server_name`),
   KEY `ix_server_ip` (`server_ip`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-INSERT INTO servers SELECT * from servers_old;
+INSERT IGNORE INTO servers SELECT * from servers_old;
 DROP table servers_old;
 
+DROP TABLE IF EXISTS supressed_old;
 CREATE TABLE supressed_old LIKE supressed;
 INSERT INTO supressed_old SELECT * FROM supressed;
 DROP TABLE supressed;
@@ -40,9 +43,10 @@ CREATE TABLE IF NOT EXISTS `supressed` (
   KEY `ix_package_name` (`package_name`),
   KEY `ix_server_name` (`server_name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-INSERT INTO supressed SELECT * from supressed_old;
+INSERT IGNORE INTO supressed SELECT * from supressed_old;
 DROP table supressed_old;
 
+DROP TABLE IF EXISTS distro_old;
 CREATE TABLE distro_old LIKE distro;
 INSERT INTO distro_old SELECT * FROM distro;
 DROP TABLE distro;
@@ -55,7 +59,7 @@ CREATE TABLE `distro` (
   KEY `ix_distro_name` (`distro_name`),
   KEY `ix_icon_path` (`icon_path`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-INSERT INTO distro SELECT * from distro_old;
+INSERT IGNORE INTO distro SELECT * from distro_old;
 INSERT IGNORE INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(1,'Ubuntu','img/icon/ubuntu.png','apt-get -y install');
 INSERT IGNORE INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(2,'Debian','img/icon/debian.png','apt-get -y install');
 INSERT IGNORE INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(3,'Fedora','img/icon/fedora.png','yum -y install');
@@ -64,6 +68,7 @@ INSERT IGNORE INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(5,'RH
 INSERT IGNORE INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(6,'Oracle','img/icon/oracle.png','yum -y install');
 DROP table distro_old;
 
+DROP TABLE IF EXISTS distro_version_old;
 CREATE TABLE distro_version_old LIKE distro_version;
 INSERT INTO distro_version_old SELECT * FROM distro_version;
 DROP TABLE distro_version;
@@ -78,7 +83,7 @@ CREATE TABLE `distro_version` (
   KEY `ix_distro_id` (`distro_id`),
   KEY `ix_eol_date` (`eol_date`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-INSERT INTO distro_version SELECT * from distro_version_old;
+INSERT IGNORE INTO distro_version SELECT * from distro_version_old;
 INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('10.04_Desktop',1,'2013-05-31');
 INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('10.04_Server',1,'2015-04-30');
 INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('12.04_Desktop',1,'2017-04-30');
@@ -103,6 +108,7 @@ INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('6',6,'
 INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('7',6,'2024-06-30');
 DROP table distro_version_old;
 
+DROP TABLE IF EXISTS patches_old;
 CREATE TABLE patches_old LIKE patches;
 INSERT INTO patches_old SELECT * FROM patches;
 DROP TABLE patches;
@@ -121,9 +127,10 @@ CREATE TABLE `patches` (
   KEY `server_name` (`server_name`),
   KEY `ix_package_name` (`package_name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1450 DEFAULT CHARSET=utf8;
-INSERT INTO patches SELECT * from patches_old;
+INSERT IGNORE INTO `patches` SELECT * from patches_old;
 DROP table patches_old;
 
+DROP TABLE IF EXISTS users_old;
 CREATE TABLE users_old LIKE users;
 INSERT INTO users_old SELECT * FROM users;
 DROP TABLE users;
@@ -143,9 +150,10 @@ CREATE TABLE users (
   KEY `ix_user_id` (`user_id`),
   KEY `ix_receive_alerts` (`receive_alerts`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-INSERT INTO users SELECT * from users_old;
+INSERT IGNORE INTO `users` SELECT * from users_old;
 DROP table users_old;
 
+DROP TABLE IF EXISTS company_old;
 CREATE TABLE company_old LIKE company;
 INSERT INTO company_old SELECT * FROM company;
 DROP TABLE company;
@@ -157,9 +165,10 @@ CREATE TABLE company (
   PRIMARY KEY (`id`),
   UNIQUE INDEX (`name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-INSERT INTO company SELECT * from company_old;
+INSERT IGNORE INTO `company` SELECT * from company_old;
 DROP table company_old;
 
+DROP TABLE IF EXISTS plugins_old;
 CREATE TABLE plugins_old LIKE plugins;
 INSERT INTO plugins_old SELECT * FROM plugins;
 DROP TABLE plugins;
@@ -176,6 +185,13 @@ CREATE TABLE `plugins` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 INSERT IGNORE INTO `plugins`(`id`,`name`,`disabled`,`installed`,`is_admin`) VALUES(1,'main',0,1,0);
 INSERT IGNORE INTO `plugins`(`id`,`name`,`disabled`,`installed`,`is_admin`) VALUES(2,'admin',0,1,1);
+INSERT IGNORE INTO `plugins` SELECT * from plugins_old;
+DROP table plugins_old;
+
+DROP TABLE IF EXISTS page_maps_old;
+CREATE TABLE page_maps_old LIKE page_maps;
+INSERT INTO page_maps_old SELECT * FROM page_maps;
+DROP TABLE page_maps;
 CREATE TABLE `page_maps` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
   `page_name` varchar(40) NOT NULL,
@@ -185,7 +201,7 @@ CREATE TABLE `page_maps` (
   UNIQUE INDEX (`page_name`),
   KEY `ix_page_name` (`page_name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-INSERT INTO plugins SELECT * from plugins_old;
+INSERT IGNORE INTO `page_maps` SELECT * from page_maps_old;
 INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('patches','patches.inc.php',1);
 INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('patch_list','patch_list.inc.php',1);
 INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('packages','packages.inc.php',1);
@@ -199,5 +215,4 @@ INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('
 INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('list_users','list_users.inc.php',2);
 INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('list_servers','list_servers.inc.php',2);
 INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('add_user','add_user.inc.php',2);
-DROP table plugins_old;
-
+DROP table page_maps_old;
