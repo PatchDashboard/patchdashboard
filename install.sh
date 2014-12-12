@@ -27,6 +27,7 @@
 ##                - Added more logic for mysql root passwords
 ##                - Added php install for unsupported versions
 ##                - Fixed issue with mysql root password being setup on el5
+##                - Fixed some more issues with install apache/mysql/php on el5
 ##
 #################################################################################
 
@@ -113,7 +114,7 @@ function OSDetect()
 			while true;
 			do echo -n .;sleep 1;done &
 			apt-get install -y apache2 apache2-threaded-dev apache2-utils php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc curl > /dev/null 2>&1
-			kill $!; trap 'kill $!' SIGTERM
+			kill $!; trap 'kill $!' SIGTERM;
 			echo "ServerName localhost" >> /etc/apache2/httpd.conf
 			echo -e "\n\e[32mNotice\e[0m: Apache/PHP Installation Complete\n"
 		fi
@@ -133,7 +134,7 @@ function OSDetect()
 			while true;
                         do echo -n .;sleep 1;done &
 			apt-get install -y mysql-client mysql-server php5-mysql libapache2-mod-auth-mysql libmysqlclient-dev > /dev/null 2>&1
-			kill $!; trap 'kill $!' SIGTERM
+			kill $!; trap 'kill $!' SIGTERM;
 			mysql_install_db > /dev/null 2>&1
 			echo -e "\nInstalling MySQL system tables...\nOK"
 			echo -e "Filling help tables...\nOK"
@@ -167,18 +168,19 @@ function OSDetect()
 		checkIPtables
 
 	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
-		httpd_exists=`rpm -qa | grep "httpd"` 
-		mysqld_exists=`rpm -qa | grep "mysql-server"`
+		httpd_exists=$(rpm -qa | grep "httpd")
+		php_exists=$(rpm -qa | grep "php")
+		mysqld_exists=$(rpm -qa | grep "mysql-server")
 		if [[ "$httpd_exists" = "" ]]; then
-			echo -e "\e[31mNotice\e[0m: Apache/PHP does not seem to be installed."
+			echo -e "\e[31mNotice\e[0m: Apache does not seem to be installed."
                         unset wait
                         echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
-                        echo -e "\e[31mNotice\e[0m: Please wait while prerequisites are installed...\n\n\e[31mNotice\e[0m: Installing Apache and PHP5..."
+                        echo -e "\e[31mNotice\e[0m: Please wait while prerequisites are installed...\n\n\e[31mNotice\e[0m: Installing Apache..."
                         while true;
                         do echo -n .;sleep 1;done &
-			yum install -y httpd httpd-devel php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli curl > /dev/null 2>&1
-                        kill $!; trap 'kill $!' SIGTERM
-                        echo -e "\n\e[32mNotice\e[0m: Apache/PHP Installation Complete\n"
+			yum install --disablerepo=webtatic -y httpd httpd-devel curl > /dev/null 2>&1
+                        kill $!; trap 'kill $!' SIGTERM;
+                        echo -e "\n\e[32mNotice\e[0m: Apache Installation Complete\n"
 			echo -e "\e[32mChecking httpd start up config\n\e[0m"
                         if [[ -z $(chkconfig --list httpd|grep "2:on\|3:on\|5:on") ]]; then
                                 # enable httpd at startup 235
@@ -189,6 +191,17 @@ function OSDetect()
                                 echo -e "\e[32mChkConfig\e[0m: httpd status = enabled\n"
                         fi
 		fi
+		if [[ "$php_exists" = "" ]]; then
+                        echo -e "\e[31mNotice\e[0m: PHP does not seem to be installed."
+                        unset wait
+                        echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
+                        echo -e "\e[31mNotice\e[0m: Installing PHP5..."
+                        while true;
+                        do echo -n .;sleep 1;done &
+                        yum install -y php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli > /dev/null 2>&1
+                        kill $!; trap 'kill $!' SIGTERM;
+                        echo -e "\n\n\e[32mNotice\e[0m: PHP Installation Complete\n"
+                fi
 		if [[ "$mysqld_exists" = "" ]]; then
                         echo -e "\e[31mNotice\e[0m: MySQL does not seem to be installed."
                         unset wait
@@ -203,7 +216,8 @@ function OSDetect()
                         while true;
                         do echo -n .;sleep 1;done &
                         yum install -y mysql mysql-server mysql-devel > /dev/null 2>&1
-                        kill $!; trap 'kill $!' SIGTERM
+                        kill $!; trap 'kill $!' SIGTERM;
+			service mysqld restart > /dev/null 2>&1
                         mysql_install_db > /dev/null 2>&1
                         echo -e "\nInstalling MySQL system tables...\nOK"
                         echo -e "Filling help tables...\nOK"
