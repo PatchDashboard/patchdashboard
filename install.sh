@@ -198,7 +198,7 @@ function OSDetect()
                         echo -e "\e[31mNotice\e[0m: Installing PHP5..."
                         while true;
                         do echo -n .;sleep 1;done &
-                        yum install -y php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli > /dev/null 2>&1
+                        yum install -y php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli php-pdo php-php-gettext php-tidy > /dev/null 2>&1
                         kill $!; trap 'kill $!' SIGTERM;
                         echo -e "\n\n\e[32mNotice\e[0m: PHP Installation Complete\n"
                 fi
