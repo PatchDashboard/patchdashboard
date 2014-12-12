@@ -153,3 +153,46 @@ CREATE TABLE company (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 INSERT INTO company SELECT * from company_old;
 DROP table company_old;
+
+CREATE TABLE plugins_old LIKE plugins;
+INSERT INTO plugins_old SELECT * FROM plugins;
+DROP TABLE plugins;
+CREATE TABLE `plugins` (
+  `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(40) NOT NULL,
+  `disabled` tinyint(1) NOT NULL DEFAULT 1,
+  `installed` tinyint(1) NOT NULL DEFAULT 0,
+  `is_admin` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE INEX (`name`),
+  KEY `ix_plugin_name` (`plugin_name`),
+  KEY `ix_is_active` (`is_active`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+INSERT IGNORE INTO `plugins`(`id`,`name`,`disabled`,`installed`,`is_admin`) VALUES(1,'main',0,1,0);
+INSERT IGNORE INTO `plugins`(`id`,`name`,`disabled`,`installed`,`is_admin`) VALUES(2,'admin',0,1,1);
+CREATE TABLE `page_maps` (
+  `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
+  `page_name` varchar(40) NOT NULL,
+  `real_file` varchar(40) NOT NULL,
+  `plugin_parent` tinyint(4) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX (`page_name`),
+  KEY `ix_plugin_name` (`plugin_name`),
+  KEY `ix_is_active` (`is_active`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+INSERT INTO plugins SELECT * from plugins_old;
+INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('patches','patches.inc.php',1);
+INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('patch_list','patch_list.inc.php',1);
+INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('packages','packages.inc.php',1);
+INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('search','search.inc.php',1);
+INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('deactivate_server','deactivate_server.inc.php',2);
+INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('deactivate_user','deactivate_user.inc.php',2);
+INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('delete_server','delete_server.inc.php',2);
+INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('delete_user','delete_user.inc.php',2);
+INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('edit_server','edit_server.inc.php',2);
+INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('edit_user','edit_user.inc.php',2);
+INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('list_users','list_users.inc.php',2);
+INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('list_servers','list_servers.inc.php',2);
+INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('add_user','add_user.inc.php',2);
+DROP table plugins_old;
+

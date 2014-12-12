@@ -1,5 +1,5 @@
 #!/bin/bash
-#####################################################################
+################################################################################
 ##
 ## Title: Patch Management Dashboard Installer
 ##
@@ -26,8 +26,9 @@
 ##            0.7 - Added installation key for agent authentication
 ##                - Added more logic for mysql root passwords
 ##                - Added php install for unsupported versions
+##                - Fixed issue with mysql root password being setup on el5
 ##
-######################################################################
+#################################################################################
 
 # generate random passwords
 function genPasswd()
@@ -203,7 +204,6 @@ function OSDetect()
                         do echo -n .;sleep 1;done &
                         yum install -y mysql mysql-server mysql-devel > /dev/null 2>&1
                         kill $!; trap 'kill $!' SIGTERM
-			mysqladmin -u root password "$mysql_passwd" > /dev/null 2>&1
                         mysql_install_db > /dev/null 2>&1
                         echo -e "\nInstalling MySQL system tables...\nOK"
                         echo -e "Filling help tables...\nOK"
@@ -227,11 +227,13 @@ function OSDetect()
                 if [[ -n $(service mysqld status|grep "stopped") ]]; then
                         # enable mysqld
                         echo -e "\e[32mService\e[0m: mysqld status = \e[31mstopped\n\e[0m"
-			service mysqld start
+			service mysqld restart
 			echo
                 else
                         echo -e "\e[32mService\e[0m: mysqld status = started\n"
                 fi
+		# set initial mysql root password
+                mysqladmin password "$mysql_passwd"
 		# sanity checks
 		phpverCheck
 		checkIPtables
@@ -289,20 +291,23 @@ function localhostChk()
 {
 	servername=$(grep "ServerName" /etc/httpd/conf/httpd.conf|grep -v "#"|awk {'print $2'})
 	if [[ "$servername" != "localhost" ]]; then
-		unset yn
-		echo -e "\e[32mServerName\e[0m: Current Apache ServerName = $servername\n"
-                read -p "Is the ServerName correct? [Enter 'yes' to skip and 'no' to enter localhost as ServerName] (y/n): " yn
-                while [[ "$yn" != "yes" && "$yn" != "no" && "$yn" != "y" && "$yn" != "n" ]]; do
-			read -p "Is this ServerName correct? [Enter 'yes' to skip and 'no' to enter localhost as ServerName] (y/n): " yn
-                        echo
-                done
-                if [[ "$yn" = "yes" ]] || [[ "$yn" = "y" ]]; then
-                        echo -e "\n\e[32mServerName\e[0m: Skipping"
-                else
-			echo
-			#echo "ServerName localhost" >> /etc/httpd/conf/httpd.conf
-			sed -i 's/'$servername'/localhost/g' /etc/httpd/conf/httpd.conf
-                fi	
+		if [[ "$servername" = "" ]]; then
+                        echo "ServerName localhost" >> /etc/httpd/conf/httpd.conf
+		else
+			unset yn
+			echo -e "\e[32mServerName\e[0m: Current Apache ServerName = $servername\n"
+                	read -p "Is the ServerName correct? [Enter 'yes' to skip and 'no' to enter localhost as ServerName] (y/n): " yn
+                	while [[ "$yn" != "yes" && "$yn" != "no" && "$yn" != "y" && "$yn" != "n" ]]; do
+				read -p "Is this ServerName correct? [Enter 'yes' to skip and 'no' to enter localhost as ServerName] (y/n): " yn
+                        	echo
+                	done
+                	if [[ "$yn" = "yes" ]] || [[ "$yn" = "y" ]]; then
+                        	echo -e "\n\e[32mServerName\e[0m: Skipping"
+                	else
+				echo
+				sed -i 's/'$servername'/localhost/g' /etc/httpd/conf/httpd.conf
+                	fi
+		fi
 	fi
 }
 
