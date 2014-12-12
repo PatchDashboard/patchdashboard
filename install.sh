@@ -247,7 +247,7 @@ function OSDetect()
                         echo -e "\e[32mService\e[0m: mysqld status = started\n"
                 fi
 		# set initial mysql root password
-                mysqladmin password "$mysql_passwd"
+		mysqlRootPwd
 		# sanity checks
 		phpverCheck
 		checkIPtables
@@ -298,6 +298,7 @@ function checkIPtables()
 		iptables -I INPUT -p tcp -m tcp --dport 80 -j ACCEPT
 		iptables -I INPUT -p tcp -m tcp --dport 443 -j ACCEPT
 		service iptables save
+		echo
 	fi
 }
 
@@ -341,7 +342,18 @@ function mysqlPasswd()
         	while [[ "$mysql_passwd_again" = "" ]]; do
                 echo -e "\n\e[36mNotice\e[0m: Please provide the MySQL $db_user_id password again, please try again.\n"
                 read -p "Enter MySQL $db_user_id password again: " mysql_passwd_again
+		export mysql_passwd_again
 	done
+}
+
+function mysqlRootPwd()
+{
+	if [[ $(mysqladmin -s status) != "" ]]; then
+		# output is not blank, we are good
+		mysqladmin password "$mysql_passwd_again"
+	else
+		echo -e "\e[32mMySQL\e[0m: Root password already setup, skipping.\n" 
+	fi
 }
 
 function dbAskHost()
