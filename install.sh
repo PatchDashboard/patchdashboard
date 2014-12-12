@@ -208,6 +208,7 @@ function OSDetect()
                         echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
                         db_user_id="root"
                         mysqlPasswd
+			echo -e "\e[32m\e[4mMySQL Database Install and Setup\n\e[0m"
                         if [[ "$mysql_passwd" != "$mysql_passwd_again" ]]; then
                                 echo -e "\n\n\e[31mNotice\e[0m: Passwords do not match, please try again.\n"
                                 mysqlPasswd
@@ -328,7 +329,6 @@ function localhostChk()
 
 function mysqlPasswd()
 {
-	echo -e "\e[32m\e[4mMySQL Database Install and Setup\n\e[0m"
 	echo -e "Create a new password for the root MySQL account\n"
 	unset mysql_passwd
         read -s -p "Enter MySQL $db_user_id password: " mysql_passwd
@@ -350,7 +350,7 @@ function mysqlRootPwd()
 {
 	if [[ $(mysqladmin -s status) != "" ]]; then
 		if [[ "$mysql_passwd_again" = "" ]] && [[ "$mysqld_exists" != "" ]]; then
-			echo -e "\e[32mMySQL\e[0m: Your root password is blank, this will cause an issue during setup."
+			echo -e "\e[32mMySQL\e[0m: Your root password is blank, this will cause an issue during setup.\n"
 			mysqlPasswd
 		else
 			mysqladmins password "$mysql_passwd_again"
