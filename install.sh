@@ -39,7 +39,7 @@ function genPasswd()
 	salt='W[62~L41|]CU15b'
 	random=$(tr -dc A-Za-z0-9_ < /dev/urandom | head -c ${p} | xargs)
 	pass="${random}{$salt}"
-	echo $pass
+	echo $random $pass
 }
 
 function genInstallKey()
@@ -50,11 +50,13 @@ function genInstallKey()
 # default admin and users for the admin web interface
 # admin info
 web_admin="pmdadmin"
-web_admin_passwd=`genPasswd`
+web_admin_passwd=$(genPasswd|awk {'print $2'})
+web_admin_passwd_echo=$(genPasswd|awk {'print $1'})
 web_admin_email="no_admin@email.com"
 # user info
 web_duser="pmduser"
-web_duser_passwd=`genPasswd`
+web_duser_passwd=$(genPasswd|awk {'print $2'})
+web_duser_passwd_echo=$(genPasswd|awk {'print $1'})
 web_duser_email="no_user@email.com"
 # export to global
 export web_admin web_admin_email web_admin_passwd 
@@ -294,8 +296,8 @@ function phpExtraInst()
 
 function checkIPtables()
 {
-	if [[ -z $(iptables -L|grep "dpt:http\|dpt:https") ]]; then
-		echo -e "\n\e[32mIptables\e[0m: Enabling port 80 and 443 on iptables\n"
+	if [[ $(iptables -L|grep "dpt:http\|dpt:https") = "" ]]; then
+		echo -e "\e[32mIptables\e[0m: Enabling port 80 and 443 on iptables\n"
 		iptables -I INPUT -p tcp -m tcp --dport 80 -j ACCEPT
 		iptables -I INPUT -p tcp -m tcp --dport 443 -j ACCEPT
 		service iptables save
@@ -566,9 +568,9 @@ function WebUIInfo()
 
         # Web-UI admin password
 	unset new_web_admin_passwd
-        read -p "Web Admin Password [Default: $web_admin_passwd]: " new_web_admin_passwd
+        read -p "Web Admin Password [Default: $web_admin_passwd_echo]: " new_web_admin_passwd
         while [[ "$new_web_admin_passwd" = "" ]]; do
-                echo -e "\e[32mNotice\e[0m: Default Password used: $web_admin_passwd"
+                echo -e "\e[32mNotice\e[0m: Default Password used: $web_admin_passwd_echo"
                 new_web_admin_passwd=$web_admin_passwd
         done
 	echo
@@ -593,9 +595,9 @@ function WebUIInfo()
 
         # Web-UI standard password
 	unset new_web_duser_passwd
-        read -p "Please enter location for web interface [Default: $web_duser_passwd]: " new_web_duser_passwd
+        read -p "Please enter location for web interface [Default: $web_duser_passwd_echo]: " new_web_duser_passwd
         while [[ "$new_web_duser_passwd" = "" ]]; do
-                echo -e "\e[32mNotice\e[0m: Default Web User Password used: $web_duser_passwd"
+                echo -e "\e[32mNotice\e[0m: Default Web User Password used: $web_duser_passwd_echo"
                 new_web_duser_passwd=$web_duser_passwd
         done
 	echo
@@ -729,7 +731,7 @@ if [[ -f /etc/apache2/conf.d/patch_manager.conf ]]; then
 	rm -f /etc/apache2/conf.d/patch_manager.conf
 fi
 # setup virtualhost
-cat <<EOA>> /etc/apache2/conf.d/patch_manager.conf
+cat <<EOA > /etc/apache2/conf.d/patch_manager.conf
 Alias $patchmgr $targetdir
 
 <Directory $targetdir>
@@ -746,7 +748,7 @@ if [[ -f /etc/httpd/conf.d/patch_manager.conf ]]; then
         rm -f /etc/httpd/conf.d/patch_manager.conf
 fi
 # setup virtualhost
-cat <<EOA>> /etc/httpd/conf.d/patch_manager.conf
+cat <<EOA > /etc/httpd/conf.d/patch_manager.conf
 Alias $patchmgr $targetdir
         
 <Directory $targetdir>
@@ -767,8 +769,24 @@ cp scripts/* /opt/patch_manager/ -R
 sed -i 's/000DEFAULT000/'$install_key'/g' /opt/patch_manager/patch_checker.sh
 echo "$rewrite_config" > html/.htaccess
 echo "$php_config" > html/lib/db_config.php
-mkdir -p $web_dir
-cp html/* $web_dir -R
+if [[ -d $web_dir ]]; then
+	echo -e "\e[32mNotice\e[0m: $target_web_dir already exists.\n"
+	read -p "Do you want to overwrite the existing contents? (y/n) " yn
+	echo
+	while [[ "$yn" = "" ]]; do
+		read -p "Do you want to overwrite the existing contents? (y/n) " yn
+		echo
+	done
+	if [[ "$yn" = "yes" ]] || [[ "$yn" = "y" ]]; then
+		\cp -f -R html/* $web_dir
+	else
+		mkdir -p $web_dir
+		cp -i -R html/* $web_dir
+	fi
+else
+	mkdir -p $web_dir
+	\cp -R html/* $web_dir
+fi
 find $web_dir -type d -print0|xargs -0 chmod 755
 find $web_dir -type f -print0|xargs -0 chmod 644
 echo "$rewrite_config" > ${web_dir}.htaccess
