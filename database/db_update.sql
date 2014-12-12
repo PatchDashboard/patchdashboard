@@ -131,11 +131,17 @@ CREATE TABLE users (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` varchar(40) NOT NULL,
   `email` varchar(80) NOT NULL,
-  `admin` tinyint(1) NOT NULL DEFAULT '0',
+  `admin` tinyint(1) NOT NULL DEFAULT 0,
   `display_name` varchar(50) DEFAULT NULL,
-  `password` char(41) NOT NULL,
+  `password` varchar(512) NOT NULL,
+  `active` tinyint(1) NOT NULL DEFAULT 1,
+  `last_seen` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `receive_alerts` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  UNIQUE INDEX (`user_id`)
+  UNIQUE INDEX (`user_id`),
+  KEY `ix_password` (`password`),
+  KEY `ix_user_id` (`user_id`),
+  KEY `ix_receive_alerts` (`receive_alerts`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 INSERT INTO users SELECT * from users_old;
 DROP table users_old;
@@ -165,8 +171,8 @@ CREATE TABLE `plugins` (
   `is_admin` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE INEX (`name`),
-  KEY `ix_plugin_name` (`plugin_name`),
-  KEY `ix_is_active` (`is_active`)
+  KEY `ix_name` (`name`),
+  KEY `ix_disabled` (`disabled`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 INSERT IGNORE INTO `plugins`(`id`,`name`,`disabled`,`installed`,`is_admin`) VALUES(1,'main',0,1,0);
 INSERT IGNORE INTO `plugins`(`id`,`name`,`disabled`,`installed`,`is_admin`) VALUES(2,'admin',0,1,1);
@@ -177,8 +183,7 @@ CREATE TABLE `page_maps` (
   `plugin_parent` tinyint(4) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE INDEX (`page_name`),
-  KEY `ix_plugin_name` (`plugin_name`),
-  KEY `ix_is_active` (`is_active`)
+  KEY `ix_page_name` (`page_name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 INSERT INTO plugins SELECT * from plugins_old;
 INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('patches','patches.inc.php',1);
