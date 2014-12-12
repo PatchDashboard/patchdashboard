@@ -210,10 +210,10 @@ function OSDetect()
                         mysqlPasswd
 			echo -e "\n\n\e[32m\e[4mMySQL Database Install and Setup\n\e[0m"
                         if [[ "$mysql_passwd" != "$mysql_passwd_again" ]]; then
-                                echo -e "\n\n\e[31mNotice\e[0m: Passwords do not match, please try again.\n"
+                                echo -e "\e[31mNotice\e[0m: Passwords do not match, please try again.\n"
                                 mysqlPasswd
                         fi
-                        echo -e "\n\n\e[31mNotice\e[0m: Installing MySQL Client and Server..."
+                        echo -e "\e[31mNotice\e[0m: Installing MySQL Client and Server..."
                         while true;
                         do echo -n .;sleep 1;done &
                         yum install -y mysql mysql-server mysql-devel > /dev/null 2>&1
