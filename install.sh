@@ -354,9 +354,9 @@ function mysqlRootPwd()
 			echo -e "\e[32mMySQL\e[0m: Your root password is blank, this will cause an issue during setup.\n"
 			export db_user_id="root"
 			mysqlPasswd
-			mysqladmins password "$mysql_passwd_again"
+			mysqladmin password "$mysql_passwd_again"
 		else
-			mysqladmins password "$mysql_passwd_again"
+			mysqladmin password "$mysql_passwd_again"
 		fi
 	else
 		echo -e "\e[32mMySQL\e[0m: Root password already setup, skipping.\n" 
