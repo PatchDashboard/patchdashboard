@@ -349,8 +349,12 @@ function mysqlPasswd()
 function mysqlRootPwd()
 {
 	if [[ $(mysqladmin -s status) != "" ]]; then
-		# output is not blank, we are good
-		mysqladmin password "$mysql_passwd_again"
+		if [[ "$mysql_passwd_again" = "" ]] && [[ "$mysqld_exists" != "" ]]; ; then
+			echo -e "\e[32mMySQL\e[0m: Your root password is blank, this will cause an issue during setup."
+			mysqlPasswd
+		else
+			mysqladmins password "$mysql_passwd_again"
+		fi
 	else
 		echo -e "\e[32mMySQL\e[0m: Root password already setup, skipping.\n" 
 	fi
