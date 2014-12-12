@@ -1,4 +1,10 @@
 <?php
+/*
+ * Fail-safe check. Ensures that they go through the main page (and are authenticated to use this page
+ */
+if (!isset($index_check) || $index_check != "active"){
+    exit();
+}
  include 'inc/supressed_patches.inc.php';
  $supressed = array("nadda");
  $supressed_list = "";
@@ -37,6 +43,7 @@
                 </tr>
 ";
  }
+ mysql_close($link);
 $percent_needing_upgrade = round((($nsupressed_total / $server_count)*100));
 $percent_good_to_go = 100 - $percent_needing_upgrade;
 ?>
