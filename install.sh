@@ -354,7 +354,7 @@ function mysqlRootPwd()
 			export db_user_id="root"
 			mysqlPasswd
 			mysqladmin password "$mysql_passwd_again"
-			echo
+			echo -e "\n"
 		else
 			mysqladmin password "$mysql_passwd_again"
 		fi
