@@ -178,7 +178,7 @@ function OSDetect()
                         echo -e "\e[31mNotice\e[0m: Please wait while prerequisites are installed...\n\n\e[31mNotice\e[0m: Installing Apache..."
                         while true;
                         do echo -n .;sleep 1;done &
-			yum install --disablerepo=webtatic -y httpd httpd-devel curl > /dev/null 2>&1
+			yum install --disablerepo=webtatic -y httpd httpd-devel httpd-tools curl > /dev/null 2>&1
                         kill $!; trap 'kill $!' SIGTERM;
                         echo -e "\n\e[32mNotice\e[0m: Apache Installation Complete\n"
 			echo -e "\e[32mChecking httpd start up config\n\e[0m"
