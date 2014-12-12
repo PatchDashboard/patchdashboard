@@ -343,7 +343,6 @@ function mysqlPasswd()
                 echo -e "\n\e[36mNotice\e[0m: Please provide the MySQL $db_user_id password again, please try again.\n"
                 read -p "Enter MySQL $db_user_id password again: " mysql_passwd_again
 		export mysql_passwd_again
-		echo
 	done
 }
 
@@ -355,6 +354,7 @@ function mysqlRootPwd()
 			export db_user_id="root"
 			mysqlPasswd
 			mysqladmin password "$mysql_passwd_again"
+			echo
 		else
 			mysqladmin password "$mysql_passwd_again"
 		fi
