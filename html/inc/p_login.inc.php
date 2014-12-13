@@ -13,6 +13,7 @@ if (isset($_POST) && !empty($_POST['username']) && !empty($_POST['pass'])){
             $_SESSION['user_id'] = $row['user_id'];
             $_SESSION['is_admin'] = $row['admin'];
             $_SESSION['display_name'] = $row['display_name'];
+	    $_SESSION['logged_in'] = true;
         }
     }
     else{

@@ -6,24 +6,25 @@ if (!isset($index_check) || $index_check != "active"){
     exit();
 }
 ?>
-&copy; 2014 <?php echo YOUR_COMPANY;?>
-</div>
-<div id="footer"></div>
+      </div>
+      <div id="footer" align="center">&copy; 2014 <?php echo YOUR_COMPANY;?> || Powered by <a href="http://patchdashboard.com" target="_blank">PatchDashboard</a> || Fork on <a href="https://github.com/jonsjava/patchdashboard" target="_blank">GitHub</a></div>
     </div>
-
-    <!-- Bootstrap core JavaScript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
     <script src="<?php echo BASE_PATH; ?>js/jquery.min.js"></script>
     <script src="<?php echo BASE_PATH; ?>js/bootstrap.min.js"></script>
     <script src="<?php echo BASE_PATH; ?>js/docs.min.js"></script>
     <script src="<?php echo BASE_PATH; ?>js/jquery.easy-pie-chart.js"></script>
     <script src="<?php echo BASE_PATH; ?>js/excanvas.js"></script>
+    <script src="<?php echo BASE_PATH; ?>js/jquery.tablesorter.js"></script>
+    <script src="<?php echo BASE_PATH; ?>js/jquery.metadata.js"></script>
+
             <script type="text/javascript">
-		function NewURL(val){
-			base = '<?php echo BASE_PATH; ?>search/'
-			window.location.assign(base + val);
-		}
+		$(function() {
+            		$("table#server_list").tablesorter({ sortList: [[1,1]] });
+        	});
+                function NewURL(val){
+                        base = '<?php echo BASE_PATH;?>search/';
+                        window.location.assign(base + val);
+                }
             var initPieChart = function() {
                 $('.percentage').easyPieChart({
                     animate: 1000
@@ -49,6 +50,8 @@ if (!isset($index_check) || $index_check != "active"){
                   });
                 });
             };
+
+
         </script>
   </body>
 </html>

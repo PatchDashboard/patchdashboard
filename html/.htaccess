@@ -1,24 +1,24 @@
 RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule patches/server/(.*)$ /patch_list?server=$1 [QSA,NC,L]
+RewriteRule patches/server/(.*)$ /patchman2/index.php?page=patch_list&server=$1 [QSA,NC,L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule packages/server/(.*)$ /packages?server=$1 [QSA,NC,L]
+RewriteRule packages/server/(.*)$ /patchman2/index.php?page=packages&server=$1 [QSA,NC,L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule search/exact/(.*)$ /search?package=$1&exact=true [QSA,NC,L]
+RewriteRule search/exact/(.*)$ /patchman2/index.php?page=search&package=$1&exact=true [QSA,NC,L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule search/(.*)$ /search?package=$1 [QSA,NC,L]
+RewriteRule search/(.*)$ /patchman2/index.php?page=search&package=$1 [QSA,NC,L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^([^/]*)$ /index.php?page=$1 [QSA,L]
+RewriteRule rewrite_check/(.*)$ /patchman2/rewrite_check.php [QSA,NC,L]
 
-#HTTP TO HTTPS
-#RewriteCond %{HTTPS} !=on
-#RewriteRule ^/?(.*) https://%{SERVER_NAME}/$1 [QSA,L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([^/]*)$ /patchman2/index.php?page=$1 [QSA,L]

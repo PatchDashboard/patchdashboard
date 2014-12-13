@@ -1,5 +1,4 @@
 <?php
-session_start();
 if(isset($_SESSION['error'])){
     $error = $_SESSION['error'];
     $error_html="<div class='bs-example'>

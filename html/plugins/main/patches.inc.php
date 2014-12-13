@@ -47,14 +47,13 @@ if (!isset($index_check) || $index_check != "active"){
 $percent_needing_upgrade = round((($nsupressed_total / $server_count)*100));
 $percent_good_to_go = 100 - $percent_needing_upgrade;
 ?>
-        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-
+        <div class="col-sm-9 col-md-9">
           <h1 class="page-header">Patch List</h1>
-        <div class="container">
-            <div class="chart">
+	    <div class="chart">
                 <div class="percentage" data-percent="<?php echo $percent_good_to_go;?>"><span><?php echo $percent_good_to_go;?></span>%</div>
                 <div class="label" style="color:#0000FF">Percent of servers not needing upgrades/patches</div>
             </div>
+
           <div class="table-responsive">
             <table class="table table-striped">
               <thead>
@@ -64,7 +63,7 @@ $percent_good_to_go = 100 - $percent_needing_upgrade;
                 </tr>
               </thead>
               <tbody>
-<?php echo $table;?>
+                <?php echo $table;?>
               </tbody>
             </table>
           </div>

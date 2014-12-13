@@ -13,6 +13,7 @@ $table = "";
 while ($row = mysql_fetch_assoc($res)){
     $id = $row['id'];
     $username = $row['user_id'];
+    $active = $row['active'];
     $email = $row['email'];
     if ($row['admin'] == 1){
         $group = "Admin";
@@ -30,13 +31,19 @@ while ($row = mysql_fetch_assoc($res)){
     else{
         $alerts = "No";
     }
+	if ($active == 1){
+		$active_action = "<a href='".BASE_PATH."plugins/admin/deactivate_user.inc.php?id=$id'>Deactivate</a>";
+	}
+	else{
+		$active_action = "<a href='".BASE_PATH."plugins/admin/activate_user.inc.php?id=$id'>Reactivate</a>";
+	}
     $table .="				<tr>
 					<td>$username</td>
 					<td>$email</td>
 					<td>$group</td>
 					<td>$last_seen</td>
 					<td>$alerts</td>
-					<td><a href='".BASE_PATH."edit_user'>Edit</a> | <a href='".BASE_PATH."deactivate_user'>Deactivate</a> | < a href='".BASE_PATH."delete'>Delete</a></td>
+					<td><a href='".BASE_PATH."edit_user?id=$id'>Edit</a> | $active_action | <a href='".BASE_PATH."plugins/admin/delete_user.inc.php?id=$id'>Delete</a></td>
 				</tr>
 ";
 }

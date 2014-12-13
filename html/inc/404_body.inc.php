@@ -1,8 +1,6 @@
-          <h1 class="page-header">4 (D)OH 4</h1>
-        <div class="container">
-              <div class="row">
-        <div class="col-md-12">
-            <div class="error-template">
+        <div class="col-sm-9 col-md-9">
+          <div class="error-template">
+                <img src='<?php echo BASE_PATH;?>img/404.png' title="4 oh 4" alt="You messed up. Try again"/>
                 <h1>
                     Oops!</h1>
                 <h2>
@@ -14,6 +12,4 @@
                     <a href="<?php echo BASE_PATH;?>" class="btn btn-primary btn-lg"><span class="glyphicon glyphicon-home"></span>Take Me Home </a>
                 </div>
             </div>
-        </div>
-    </div>
         </div>
