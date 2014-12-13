@@ -14,8 +14,9 @@ CREATE TABLE `servers` (
   `distro_id` mediumint(8) NOT NULL,
   `server_ip` varchar(60) NOT NULL,
   `distro_version` mediumint(8) NOT NULL,
-  `client_key` char(41),
+  `client_key` varchar(255),
   PRIMARY KEY (`id`),
+  UNIQUE INDEX (`client_key`),
   KEY `ix_server_name` (`server_name`),
   KEY `ix_server_ip` (`server_ip`),
   KEY `ix_client_key` (`client_key`)
