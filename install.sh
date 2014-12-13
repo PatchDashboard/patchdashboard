@@ -8,7 +8,7 @@
 ##
 ## Date: 11/22/2014
 ##
-## Version: 0.8
+## Version: 0.9
 ##
 ## Changelog: 0.1 - Initial Release
 ##            0.2 - Improved base installer for OS detection
@@ -29,6 +29,7 @@
 ##                - Fixed issue with mysql root password being setup on el5
 ##                - Fixed some more issues with install apache/mysql/php on el5
 ##            0.8 - Added more logic for handling CentOS version installs
+##            0.9 - Added a staged path and fixed how its copied to the web_dir
 ##
 #################################################################################
 
@@ -788,13 +789,16 @@ if [[ -d $web_dir ]]; then
 		echo
 	done
 	if [[ "$yn" = "yes" ]] || [[ "$yn" = "y" ]]; then
+		\cp -f -R html/* $web_dir
 		\cp -f -R /opt/patch_manager/staged/html/* $web_dir
 	else
 		mkdir -p $web_dir
+		cp -i -R html/* $web_dir
 		cp -i -R /opt/patch_manager/staged/html/* $web_dir
 	fi
 else
 	mkdir -p $web_dir
+	\cp -R html/* $web_dir
 	\cp -R /opt/patch_manager/staged/html/* $web_dir
 fi
 find $web_dir -type d -print0|xargs -0 chmod 755
