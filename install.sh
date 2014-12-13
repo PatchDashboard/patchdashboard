@@ -8,7 +8,7 @@
 ##
 ## Date: 11/22/2014
 ##
-## Version: 0.7
+## Version: 0.8
 ##
 ## Changelog: 0.1 - Initial Release
 ##            0.2 - Improved base installer for OS detection
@@ -27,6 +27,8 @@
 ##                - Added more logic for mysql root passwords
 ##                - Added php install for unsupported versions
 ##                - Fixed issue with mysql root password being setup on el5
+##                - Fixed some more issues with install apache/mysql/php on el5
+##            0.8 - Added more logic for handling CentOS version installs
 ##
 #################################################################################
 
@@ -38,7 +40,7 @@ function genPasswd()
 	salt='W[62~L41|]CU15b'
 	random=$(tr -dc A-Za-z0-9_ < /dev/urandom | head -c ${p} | xargs)
 	pass="${random}{$salt}"
-	echo $pass
+	echo $random $pass
 }
 
 function genInstallKey()
@@ -49,11 +51,13 @@ function genInstallKey()
 # default admin and users for the admin web interface
 # admin info
 web_admin="pmdadmin"
-web_admin_passwd=`genPasswd`
+web_admin_passwd=$(genPasswd|awk {'print $2'})
+web_admin_passwd_echo=$(genPasswd|awk {'print $1'})
 web_admin_email="no_admin@email.com"
 # user info
 web_duser="pmduser"
-web_duser_passwd=`genPasswd`
+web_duser_passwd=$(genPasswd|awk {'print $2'})
+web_duser_passwd_echo=$(genPasswd|awk {'print $1'})
 web_duser_email="no_user@email.com"
 # export to global
 export web_admin web_admin_email web_admin_passwd 
@@ -113,7 +117,7 @@ function OSDetect()
 			while true;
 			do echo -n .;sleep 1;done &
 			apt-get install -y apache2 apache2-threaded-dev apache2-utils php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc curl > /dev/null 2>&1
-			kill $!; trap 'kill $!' SIGTERM
+			kill $!; trap 'kill $!' SIGTERM;
 			echo "ServerName localhost" >> /etc/apache2/httpd.conf
 			echo -e "\n\e[32mNotice\e[0m: Apache/PHP Installation Complete\n"
 		fi
@@ -133,7 +137,7 @@ function OSDetect()
 			while true;
                         do echo -n .;sleep 1;done &
 			apt-get install -y mysql-client mysql-server php5-mysql libapache2-mod-auth-mysql libmysqlclient-dev > /dev/null 2>&1
-			kill $!; trap 'kill $!' SIGTERM
+			kill $!; trap 'kill $!' SIGTERM;
 			mysql_install_db > /dev/null 2>&1
 			echo -e "\nInstalling MySQL system tables...\nOK"
 			echo -e "Filling help tables...\nOK"
@@ -167,18 +171,26 @@ function OSDetect()
 		checkIPtables
 
 	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
-		httpd_exists=`rpm -qa | grep "httpd"` 
-		mysqld_exists=`rpm -qa | grep "mysql-server"`
+		httpd_exists=$(rpm -qa | grep "httpd")
+		php_exists=$(rpm -qa | grep "php")
+		mysqld_exists=$(rpm -qa | grep "mysql-server")
 		if [[ "$httpd_exists" = "" ]]; then
-			echo -e "\e[31mNotice\e[0m: Apache/PHP does not seem to be installed."
+			echo -e "\e[31mNotice\e[0m: Apache does not seem to be installed."
                         unset wait
                         echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
-                        echo -e "\e[31mNotice\e[0m: Please wait while prerequisites are installed...\n\n\e[31mNotice\e[0m: Installing Apache and PHP5..."
-                        while true;
-                        do echo -n .;sleep 1;done &
-			yum install -y httpd httpd-devel php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli curl > /dev/null 2>&1
-                        kill $!; trap 'kill $!' SIGTERM
-                        echo -e "\n\e[32mNotice\e[0m: Apache/PHP Installation Complete\n"
+                        echo -e "\e[31mNotice\e[0m: Please wait while prerequisites are installed...\n\n\e[31mNotice\e[0m: Installing Apache..."
+			if [[ "$CentOSVer" = "5" ]]; then
+				while true;
+                        	do echo -n .;sleep 1;done &
+				yum install --disablerepo=webtatic -y httpd httpd-devel httpd-tools curl > /dev/null 2>&1
+                        	kill $!; trap 'kill $!' SIGTERM;
+			else
+				while true;
+                                do echo -n .;sleep 1;done &
+                                yum install -y httpd httpd-devel httpd-tools curl > /dev/null 2>&1
+                                kill $!; trap 'kill $!' SIGTERM;
+			fi
+                        echo -e "\n\e[32mNotice\e[0m: Apache Installation Complete\n"
 			echo -e "\e[32mChecking httpd start up config\n\e[0m"
                         if [[ -z $(chkconfig --list httpd|grep "2:on\|3:on\|5:on") ]]; then
                                 # enable httpd at startup 235
@@ -189,21 +201,34 @@ function OSDetect()
                                 echo -e "\e[32mChkConfig\e[0m: httpd status = enabled\n"
                         fi
 		fi
+		if [[ "$php_exists" = "" ]]; then
+                        echo -e "\e[31mNotice\e[0m: PHP does not seem to be installed."
+                        unset wait
+                        echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
+                        echo -e "\e[31mNotice\e[0m: Installing PHP5..."
+                        while true;
+                        do echo -n .;sleep 1;done &
+                        yum install -y php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli php-pdo php-php-gettext php-tidy > /dev/null 2>&1
+                        kill $!; trap 'kill $!' SIGTERM;
+                        echo -e "\n\n\e[32mNotice\e[0m: PHP Installation Complete\n"
+                fi
 		if [[ "$mysqld_exists" = "" ]]; then
                         echo -e "\e[31mNotice\e[0m: MySQL does not seem to be installed."
                         unset wait
                         echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
                         db_user_id="root"
                         mysqlPasswd
+			echo -e "\n\n\e[32m\e[4mMySQL Database Install and Setup\n\e[0m"
                         if [[ "$mysql_passwd" != "$mysql_passwd_again" ]]; then
-                                echo -e "\n\n\e[31mNotice\e[0m: Passwords do not match, please try again.\n"
+                                echo -e "\e[31mNotice\e[0m: Passwords do not match, please try again.\n"
                                 mysqlPasswd
                         fi
-                        echo -e "\n\n\e[31mNotice\e[0m: Installing MySQL Client and Server..."
+                        echo -e "\e[31mNotice\e[0m: Installing MySQL Client and Server..."
                         while true;
                         do echo -n .;sleep 1;done &
                         yum install -y mysql mysql-server mysql-devel > /dev/null 2>&1
-                        kill $!; trap 'kill $!' SIGTERM
+                        kill $!; trap 'kill $!' SIGTERM;
+			service mysqld restart > /dev/null 2>&1
                         mysql_install_db > /dev/null 2>&1
                         echo -e "\nInstalling MySQL system tables...\nOK"
                         echo -e "Filling help tables...\nOK"
@@ -233,7 +258,7 @@ function OSDetect()
                         echo -e "\e[32mService\e[0m: mysqld status = started\n"
                 fi
 		# set initial mysql root password
-                mysqladmin password "$mysql_passwd"
+		mysqlRootPwd
 		# sanity checks
 		phpverCheck
 		checkIPtables
@@ -258,6 +283,7 @@ function phpverCheck()
 
 function phpExtraInst()
 {
+	export CentOSVer="5"
 	echo -e "\e[32mPHP Install\e[0m: Installing PHP 5.3/5.4 depending on your distro\n"
 	echo -e "\e[32mPHP Install\e[0m: Adding EPEL and WebTatic Repos"
 	rpm -Uvh "http://dl.fedoraproject.org/pub/epel/5/x86_64/epel-release-5-4.noarch.rpm" > /dev/null 2>&1
@@ -268,7 +294,7 @@ function phpExtraInst()
 	echo -e "\e[32mPHP Install\e[0m: Installing PHP5.3 or greater..."
 	while true;
 	do echo -n .;sleep 1;done &
-	yum install -y php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli > /dev/null 2>&1
+	yum install -y php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli php-pdo php-php-gettext php-tidy > /dev/null 2>&1
 	kill $!; trap 'kill $!' SIGTERM
 	echo -e "\n\e[32mPHP Install\e[0m: PHP Installation Complete\n"
 	echo -e "Running OS Check and Dependacies check again, please wait...\n"
@@ -279,11 +305,12 @@ function phpExtraInst()
 
 function checkIPtables()
 {
-	if [[ -z $(iptables -L|grep "dpt:http\|dpt:https") ]]; then
-		echo -e "\n\e[32mIptables\e[0m: Enabling port 80 and 443 on iptables\n"
+	if [[ $(iptables -L|grep "dpt:http\|dpt:https") = "" ]]; then
+		echo -e "\e[32mIptables\e[0m: Enabling port 80 and 443 on iptables\n"
 		iptables -I INPUT -p tcp -m tcp --dport 80 -j ACCEPT
 		iptables -I INPUT -p tcp -m tcp --dport 443 -j ACCEPT
 		service iptables save
+		echo
 	fi
 }
 
@@ -313,7 +340,6 @@ function localhostChk()
 
 function mysqlPasswd()
 {
-	echo -e "\e[32m\e[4mMySQL Database Install and Setup\n\e[0m"
 	echo -e "Create a new password for the root MySQL account\n"
 	unset mysql_passwd
         read -s -p "Enter MySQL $db_user_id password: " mysql_passwd
@@ -327,7 +353,25 @@ function mysqlPasswd()
         	while [[ "$mysql_passwd_again" = "" ]]; do
                 echo -e "\n\e[36mNotice\e[0m: Please provide the MySQL $db_user_id password again, please try again.\n"
                 read -p "Enter MySQL $db_user_id password again: " mysql_passwd_again
+		export mysql_passwd_again
 	done
+}
+
+function mysqlRootPwd()
+{
+	if [[ $(mysqladmin -s status) != "" ]]; then
+		if [[ "$mysql_passwd_again" = "" ]] && [[ "$mysqld_exists" != "" ]]; then
+			echo -e "\e[32mMySQL\e[0m: Your root password is blank, this will cause an issue during setup.\n"
+			export db_user_id="root"
+			mysqlPasswd
+			mysqladmin password "$mysql_passwd_again"
+			echo -e "\n"
+		else
+			mysqladmin password "$mysql_passwd_again"
+		fi
+	else
+		echo -e "\e[32mMySQL\e[0m: Root password already setup, skipping.\n" 
+	fi
 }
 
 function dbAskHost()
@@ -533,9 +577,9 @@ function WebUIInfo()
 
         # Web-UI admin password
 	unset new_web_admin_passwd
-        read -p "Web Admin Password [Default: $web_admin_passwd]: " new_web_admin_passwd
+        read -p "Web Admin Password [Default: $web_admin_passwd_echo]: " new_web_admin_passwd
         while [[ "$new_web_admin_passwd" = "" ]]; do
-                echo -e "\e[32mNotice\e[0m: Default Password used: $web_admin_passwd"
+                echo -e "\e[32mNotice\e[0m: Default Password used: $web_admin_passwd_echo"
                 new_web_admin_passwd=$web_admin_passwd
         done
 	echo
@@ -560,9 +604,9 @@ function WebUIInfo()
 
         # Web-UI standard password
 	unset new_web_duser_passwd
-        read -p "Please enter location for web interface [Default: $web_duser_passwd]: " new_web_duser_passwd
+        read -p "Please enter location for web interface [Default: $web_duser_passwd_echo]: " new_web_duser_passwd
         while [[ "$new_web_duser_passwd" = "" ]]; do
-                echo -e "\e[32mNotice\e[0m: Default Web User Password used: $web_duser_passwd"
+                echo -e "\e[32mNotice\e[0m: Default Web User Password used: $web_duser_passwd_echo"
                 new_web_duser_passwd=$web_duser_passwd
         done
 	echo
@@ -696,7 +740,7 @@ if [[ -f /etc/apache2/conf.d/patch_manager.conf ]]; then
 	rm -f /etc/apache2/conf.d/patch_manager.conf
 fi
 # setup virtualhost
-cat <<EOA>> /etc/apache2/conf.d/patch_manager.conf
+cat <<EOA > /etc/apache2/conf.d/patch_manager.conf
 Alias $patchmgr $targetdir
 
 <Directory $targetdir>
@@ -713,7 +757,7 @@ if [[ -f /etc/httpd/conf.d/patch_manager.conf ]]; then
         rm -f /etc/httpd/conf.d/patch_manager.conf
 fi
 # setup virtualhost
-cat <<EOA>> /etc/httpd/conf.d/patch_manager.conf
+cat <<EOA > /etc/httpd/conf.d/patch_manager.conf
 Alias $patchmgr $targetdir
         
 <Directory $targetdir>
@@ -721,7 +765,6 @@ Alias $patchmgr $targetdir
         AllowOverride All
         Order allow,deny
         Allow from all
-        RewriteEngine On
 </Directory>
 EOA
 fi
@@ -734,8 +777,24 @@ cp scripts/* /opt/patch_manager/ -R
 sed -i 's/000DEFAULT000/'$install_key'/g' /opt/patch_manager/patch_checker.sh
 echo "$rewrite_config" > html/.htaccess
 echo "$php_config" > html/lib/db_config.php
-mkdir -p $web_dir
-cp html/* $web_dir -R
+if [[ -d $web_dir ]]; then
+	echo -e "\e[32mNotice\e[0m: $target_web_dir already exists.\n"
+	read -p "Do you want to overwrite the existing contents? (y/n) " yn
+	echo
+	while [[ "$yn" = "" ]]; do
+		read -p "Do you want to overwrite the existing contents? (y/n) " yn
+		echo
+	done
+	if [[ "$yn" = "yes" ]] || [[ "$yn" = "y" ]]; then
+		\cp -f -R html/* $web_dir
+	else
+		mkdir -p $web_dir
+		cp -i -R html/* $web_dir
+	fi
+else
+	mkdir -p $web_dir
+	\cp -R html/* $web_dir
+fi
 find $web_dir -type d -print0|xargs -0 chmod 755
 find $web_dir -type f -print0|xargs -0 chmod 644
 echo "$rewrite_config" > ${web_dir}.htaccess

@@ -135,8 +135,14 @@ CREATE TABLE `plugins` (
   KEY `ix_glyph` (`glyph`),
   KEY `ix_disabled` (`disabled`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+<<<<<<< HEAD
 INSERT IGNORE INTO `plugins`(`id`,`name`,`disabled`,`installed`,`is_admin`,`glyph`) VALUES(1,'main',0,1,0,'glyphicon-home');
 INSERT IGNORE INTO `plugins`(`id`,`name`,`disabled`,`installed`,`is_admin`,`glyph`) VALUES(2,'admin',0,1,1,'glyphicon-wrench');
+=======
+INSERT IGNORE INTO `plugins`(`id`,`name`,`disabled`,`installed`,`is_admin`) VALUES(1,'main',0,1,0);
+INSERT IGNORE INTO `plugins`(`id`,`name`,`disabled`,`installed`,`is_admin`) VALUES(2,'admin',0,1,1);
+
+>>>>>>> db3fd69e806f096a98f2360f16062a633835efe8
 CREATE TABLE `page_maps` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
   `page_name` varchar(40) NOT NULL,
@@ -158,6 +164,12 @@ INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('
 INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('delete_user','delete_user.inc.php',2);
 INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('edit_server','edit_server.inc.php',2);
 INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('edit_user','edit_user.inc.php',2);
+<<<<<<< HEAD
 INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`,`on_navbar`) VALUES('list_users','list_users.inc.php',2,1);
 INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`,`on_navbar`) VALUES('list_servers','list_servers.inc.php',2,1);
 INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`,`on_navbar`) VALUES('add_user','add_user.inc.php',2,1);
+=======
+INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('list_users','list_users.inc.php',2);
+INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('list_servers','list_servers.inc.php',2);
+INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`) VALUES('add_user','add_user.inc.php',2);
+>>>>>>> db3fd69e806f096a98f2360f16062a633835efe8
