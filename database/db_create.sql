@@ -15,6 +15,8 @@ CREATE TABLE `servers` (
   `server_ip` varchar(60) NOT NULL,
   `distro_version` mediumint(8) NOT NULL,
   `client_key` varchar(255),
+  `trusted` tinyint(1) NOT NULL DEFAULT 0,
+  `last_seen` datetime NOT NULL DEFAULT NOW(),
   PRIMARY KEY (`id`),
   UNIQUE INDEX (`client_key`),
   KEY `ix_server_name` (`server_name`),
@@ -57,6 +59,7 @@ CREATE TABLE `distro_version` (
   KEY `ix_distro_id` (`distro_id`),
   KEY `ix_eol_date` (`eol_date`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
 INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('10.04_Desktop',1,'2013-05-31');
 INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('10.04_Server',1,'2015-04-30');
 INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('12.04_Desktop',1,'2017-04-30');
