@@ -49,7 +49,7 @@ else{
             <h3 class="text-center login-title">Edit User (<?php echo $username;?>)</h1>
             <div class="account-wall">
                 <form id ="editUser" method="POST" action="<?php echo BASE_PATH;?>plugins/admin/p_edit_user.inc.php"><input type="hidden" name="id" value="<?php print $id;?>" />
-                    <div class="form-group"><label class="col-sm-5 control-label">Last Seen</label><div class="col-sm-5"><input type="text" value="<?php echo $last_seen;?>" class="form-control" readonly /></div></div>
+                    <div class="form-group"><label class="col-sm-5 control-label">Last Login</label><div class="col-sm-5"><input type="text" value="<?php echo $last_seen;?>" class="form-control" readonly /></div></div>
                     <div class="form-group"><label class="col-sm-5 control-label">Username</label><div class="col-sm-5"><input type="text" name="username" value="<?php echo $username;?>" class="form-control" readonly /></div></div>
                     <div class="form-group"><label class="col-sm-5 control-label">Display Name</label><div class="col-sm-5"><input value="<?php echo $display_name;?>" type="text" name="display_name" class="form-control" placeholder="Nickname/Real Name" required autofocus ></div></div>
                     <div class="form-group"><label class="col-sm-5 control-label">Password (Leave blank for no change)</label><div class="col-sm-5"><input type="password" name="password" class="form-control" placeholder="Password" /></div></div>

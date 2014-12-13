@@ -31,20 +31,20 @@ while ($row = mysql_fetch_assoc($res)){
     else{
         $alerts = "No";
     }
-	if ($active == 1){
-		$active_action = "<a href='".BASE_PATH."plugins/admin/deactivate_user.inc.php?id=$id'>Deactivate</a>";
-	}
-	else{
-		$active_action = "<a href='".BASE_PATH."plugins/admin/activate_user.inc.php?id=$id'>Reactivate</a>";
-	}
-    $table .="				<tr>
-					<td>$username</td>
-					<td>$email</td>
-					<td>$group</td>
-					<td>$last_seen</td>
-					<td>$alerts</td>
-					<td><a href='".BASE_PATH."edit_user?id=$id'>Edit</a> | $active_action | <a href='".BASE_PATH."plugins/admin/delete_user.inc.php?id=$id'>Delete</a></td>
-				</tr>
+        if ($active == 1){
+                $active_action = "<a href='".BASE_PATH."plugins/admin/deactivate_user.inc.php?id=$id'>Deactivate</a>";
+        }
+        else{
+                $active_action = "<a href='".BASE_PATH."plugins/admin/activate_user.inc.php?id=$id'>Reactivate</a>";
+        }
+    $table .="                          <tr>
+                                        <td>$username</td>
+                                        <td>$email</td>
+                                        <td>$group</td>
+                                        <td>$last_seen</td>
+                                        <td>$alerts</td>
+                                        <td><a href='".BASE_PATH."edit_user?id=$id'>Edit</a> | $active_action | <a href='".BASE_PATH."plugins/admin/delete_user.inc.php?id=$id'>Delete</a></td>
+                                </tr>
 ";
 }
 ?>
@@ -57,7 +57,7 @@ while ($row = mysql_fetch_assoc($res)){
                   <th>Username</th>
                   <th>E-mail</th>
                   <th>Group</th>
-                  <th>Last Seen</th>
+                  <th>Last Login</th>
                   <th>Alerts?</th>
                   <th>Actions</th>
                 </tr>
