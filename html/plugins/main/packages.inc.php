@@ -23,13 +23,12 @@ include 'inc/supressed_patches.inc.php';
 ";
 }
 ?>
-        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-
           <h1 class="page-header">Full Package List</h1>
-          <h2 class="sub-header"><?php echo $server_name;?></h2>
+          <h3 class="sub-header"><?php echo $server_name;?></h3>
+        <div class="container">
           <div class="table-responsive">
             <table class="table table-striped">
-              <thead>
+             <thead>
                 <tr>
                   <th>Package Name</th>
                   <th>Package Version</th>
@@ -40,3 +39,4 @@ include 'inc/supressed_patches.inc.php';
               </tbody>
             </table>
           </div>
+        </div>

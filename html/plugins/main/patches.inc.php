@@ -18,7 +18,7 @@ if (!isset($index_check) || $index_check != "active"){
  $nsupressed_res = mysql_query($nsupressed_sql);
  $nsupressed_row = mysql_fetch_array($nsupressed_res);
  $nsupressed_total = $nsupressed_row['total'];
- $sql1 = "select * from servers;";
+ $sql1 = "select * from servers where trusted = 1;";
  $res1 = mysql_query($sql1);
  $table = "";
  $total_count = 0;

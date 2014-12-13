@@ -32,10 +32,10 @@ while ($row = mysql_fetch_assoc($res)){
         $alerts = "No";
     }
         if ($active == 1){
-                $active_action = "<a href='".BASE_PATH."plugins/admin/deactivate_user.inc.php?id=$id'>Deactivate</a>";
+                $active_action = "<a href='".BASE_PATH."plugins/admin/deactivate_user.inc.php?id=$id' style='color:red;'>Deactivate</a>";
         }
         else{
-                $active_action = "<a href='".BASE_PATH."plugins/admin/activate_user.inc.php?id=$id'>Reactivate</a>";
+                $active_action = "<a href='".BASE_PATH."plugins/admin/activate_user.inc.php?id=$id' style='color:green;'>Reactivate</a>";
         }
     $table .="                          <tr>
                                         <td>$username</td>

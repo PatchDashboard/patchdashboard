@@ -25,60 +25,59 @@ if (!isset($index_check) || $index_check != "active"){
      $package_name = $row1['package_name'];
      $package_name_orig = $package_name;
      if (in_array($package_name,$supressed)){
-	$package_name .= " <strong>(SUPRESSED)</strong>";
+        $package_name .= " <strong>(SUPRESSED)</strong>";
      }
      else{
-	$apt_cmd .= " $package_name";
-	$package_count++;
+        $apt_cmd .= " $package_name";
+        $package_count++;
      }
      $current = $row1['current'];
      $new = $row1['new'];
      $urgency = $row1['urgency'];
      $bug_url = $row1['bug_url'];
-	if ($bug_url != ''){
-		if (stristr($bug_url,'debian')){
-			$url_array = explode("/",$bug_url);
-			$cve = end($url_array);
-			$url = "<td><a href='$bug_url' style='color:black'>Debian $cve</a></td>";
-		}
-		else{
-			$url_array = explode("/",$bug_url);
-			$bug = end($url_array);
-			$url = "<td><a href='$bug_url' style='color:black'>Launchpad Bug #$bug</a></td>";
-		}
-	}
+        if ($bug_url != ''){
+                if (stristr($bug_url,'debian')){
+                        $url_array = explode("/",$bug_url);
+                        $cve = end($url_array);
+                        $url = "<td><a href='$bug_url' style='color:black'>Debian $cve</a></td>";
+                }
+                else{
+                        $url_array = explode("/",$bug_url);
+                        $bug = end($url_array);
+                        $url = "<td><a href='$bug_url' style='color:black'>Launchpad Bug #$bug</a></td>";
+                }
+        }
      if (in_array($urgency,array('high','emergency'))){
-		$urgency = "<td style='color:red'><a href='http://www.ubuntuupdates.org/package/core/precise/main/updates/$package_name_orig' style='color:red' target='_blank'>$urgency</a></td>";
+                $urgency = "<td style='color:red'><a href='http://www.ubuntuupdates.org/package/core/precise/main/updates/$package_name_orig' style='color:red' target='_blank'>$urgency</a></td>";
      }
      elseif ($urgency == "medium"){
-		$urgency = "<td style='color:#FF8C00'><a href='http://www.ubuntuupdates.org/package/core/precise/main/updates/$package_name_orig' style='color:#FF8C00' target='_blank'>medium</a></td>";
+                $urgency = "<td style='color:#FF8C00'><a href='http://www.ubuntuupdates.org/package/core/precise/main/updates/$package_name_orig' style='color:#FF8C00' target='_blank'>medium</a></td>";
      }
      elseif ($urgency == "low") {
-		$urgency = "<td><a href='http://www.ubuntuupdates.org/package/core/precise/main/updates/$package_name_orig' style='color:black' target='_blank'>$urgency</a></td>";
+                $urgency = "<td><a href='http://www.ubuntuupdates.org/package/core/precise/main/updates/$package_name_orig' style='color:black' target='_blank'>$urgency</a></td>";
      }
      else{
-		$urgency = "<td>$urgency</td>";
+                $urgency = "<td>$urgency</td>";
      }
      $table .= "                <tr>
                   <td><a href='${base_path}search/exact/$package_name_orig' style='color:green'>$package_name</a></td>
-		  <td>$current</td>
+                  <td>$current</td>
                   <td>$new</td>
-		  $urgency
-		  $url
+                  $urgency
+                  $url
                 </tr>
 ";
  }
 if ($package_count == 0){
-	$apt_cmd = "";
+        $apt_cmd = "";
 }
 else{
-	$apt_cmd = "<code>$apt_cmd</code>";
+        $apt_cmd = "<code>$apt_cmd</code>";
 }
 ?>
-        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-
-          <h1 class="page-header">Patch List</h1>
-          <h2 class="sub-header"><?php echo $server_name;?>(<a href="<?php echo $base_path;?>packages/server/<?php echo $server_name;?>">List all installed packages</a>)</h2>
+          <h1 class="page-header">List Packages to Install</h1>
+          <h2 class="sub-header"><?php echo $server_name;?>(<a href="<?php echo BASE_PATH;?>packages/server/<?php echo $server_name;?>">List all installed packages</a>)</h2>
+        <div class="container">
           <div class="table-responsive">
             <table class="table table-striped">
               <thead>
@@ -87,7 +86,7 @@ else{
                   <th>Current Version</th>
                   <th>New Version</th>
                   <th>Urgency Level</th>
-		  <th>Bug Report Name/Page</th>
+                  <th>Bug Report Name/Page</th>
                 </tr>
               </thead>
               <tbody>
@@ -96,3 +95,4 @@ else{
             </table>
 <?php echo $apt_cmd;?>
           </div>
+        </div>

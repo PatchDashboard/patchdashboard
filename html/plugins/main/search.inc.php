@@ -31,13 +31,12 @@ if (!isset($index_check) || $index_check != "active"){
 ";
 }
 ?>
-        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-
           <h1 class="page-header">Search</h1>
-          <h2 class="sub-header">Results for search "<?php echo $package;?>" (<?php echo $count;?> found)</h2>
+          <h3 class="sub-header">Results for search "<?php echo $package;?>" (<?php echo $count;?> found)</h3>
+        <div class="container">
           <div class="table-responsive">
             <table class="table table-striped">
-              <thead>
+             <thead>
                 <tr>
                   <th>Server Name</th>
                   <th>Package Name</th>
@@ -49,3 +48,4 @@ if (!isset($index_check) || $index_check != "active"){
               </tbody>
             </table>
           </div>
+        </div>

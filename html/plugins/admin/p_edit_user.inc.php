@@ -15,7 +15,7 @@ if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == true) {
         if (isset($username) && !empty($username) && isset($id) && !empty($id)){
             if (isset($password) && !empty($password) && $password == $confirmPassword){
                 $encrypted_pass =  hash("sha256", $password.PW_SALT);
-                $sql_array['key'][] = "`password`='$encrypted_pass'";
+                $sql_array[] = "`password`='$encrypted_pass'";
             }
             if (isset($is_admin) && !empty($is_admin)){
                 $sql_array[] = "`admin`=1";
@@ -42,7 +42,7 @@ if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == true) {
             mysql_query($sql);
             mysql_close($link);
             $_SESSION['good_notice'] = "$username modified! That wasn't so bad, now was it?";
-	    sleep(1);
+            sleep(1);
             header('location:'.BASE_PATH."edit_user?id=$id");
         }
         else{
@@ -60,4 +60,3 @@ else{
     exit();
 }
 ?>
-

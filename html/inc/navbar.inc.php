@@ -5,7 +5,13 @@
 if (!isset($index_check) || $index_check != "active"){
     exit();
 }
-
+$patch_list_sql = "SELECT count(*) as total_found FROM `patches` p LEFT JOIN servers s on s.server_name = p.server_name WHERE s.trusted = 1 and p.upgraded=0;";
+$patch_list_link = mysql_connect(DB_HOST,DB_USER,DB_PASS);
+mysql_select_db(DB_NAME,$patch_list_link);
+$patch_list_res = mysql_query($patch_list_sql);
+$patch_list_row = mysql_fetch_array($patch_list_res);
+$patches_to_apply_count = $patch_list_row['total_found'];
+mysql_close($patch_list_link);
 $data = "";
 foreach ($navbar_array as $key=>$val){
     $plugin2 = $key;
@@ -36,9 +42,15 @@ foreach ($navbar_array as $key=>$val){
          * <span class=\"badge\">42</span>
          * TODO: work the badge code in dynamically with patche count
          */
+        if ($page_string == "patches"){
+            $badge_code = "&nbsp;&nbsp;<span class=\"badge\">$patches_to_apply_count</span>";
+        }
+        else{
+            $badge_code = "";
+        }
         $data .= "                                <tr>
                                     <td>
-                                        $page_glyph<a href=\"$page_string\">$page_words</a>
+                                        $page_glyph<a href=\"$page_string\">$page_words</a>$badge_code
                                     </td>
                                 </tr>";
     }
