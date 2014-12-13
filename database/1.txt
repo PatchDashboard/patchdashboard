@@ -1,4 +1,0 @@
-31 09   * * *  /opt/backupgoo-cli-5.0.8/backupgoo-allusers.sh
-35 09   * * *  /opt/backupgoo-cli-5.0.8/backupgoo-backup.sh
-00 09   * * *  /usr/bin/sftp -b /opt/scripts/googlebackupsftpbatch BackupGoo@10.0.0.92
-00 11   * * *  /bin/mv /opt/tmp/googlebackup.tar.gz /opt/tmp/googlebackup.tar.gz.0
