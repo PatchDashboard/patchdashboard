@@ -773,7 +773,9 @@ fi
 target_web_dir=$(echo $new_web_dir|sed 's=/[^/]*$==;s/\.$//')
 ## DO NOT CHANGE PATH ##
 mkdir -p /opt/patch_manager/staged/
-cp scripts/* /opt/patch_manager/ -R
+\cp -f scripts/* /opt/patch_manager/ -R
+\cp -f html/.htaccess /opt/patch_manager/staged/html/.htaccess
+\cp -f html/lib/db_config.php /opt/patch_manager/staged/html/lib/db_config.php
 sed -i 's/000DEFAULT000/'$install_key'/g' /opt/patch_manager/patch_checker.sh
 echo "$rewrite_config" > /opt/patch_manager/staged/html/.htaccess
 echo "$php_config" > /opt/patch_manager/staged/html/lib/db_config.php
