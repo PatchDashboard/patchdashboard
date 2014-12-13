@@ -107,6 +107,7 @@ CREATE TABLE users (
   `receive_alerts` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE INDEX (`user_id`),
+  UNIQUE INDEX (`email`),
   KEY `ix_password` (`password`),
   KEY `ix_user_id` (`user_id`),
   KEY `ix_receive_alerts` (`receive_alerts`)
@@ -119,7 +120,6 @@ CREATE TABLE company (
   `install_key` varchar(50) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE INDEX (`name`)
-
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 CREATE TABLE `plugins` (
@@ -130,7 +130,7 @@ CREATE TABLE `plugins` (
   `is_admin` tinyint(1) NOT NULL DEFAULT 1,
   `glyph` char(30) DEFAULT '',
   PRIMARY KEY (`id`),
-  UNIQUE INEX (`name`),
+  UNIQUE INDEX (`name`),
   KEY `ix_name` (`name`),
   KEY `ix_glyph` (`glyph`),
   KEY `ix_disabled` (`disabled`)
