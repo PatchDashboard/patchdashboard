@@ -772,11 +772,11 @@ fi
 # main application install
 target_web_dir=$(echo $new_web_dir|sed 's=/[^/]*$==;s/\.$//')
 ## DO NOT CHANGE PATH ##
-mkdir -p /opt/patch_manager/
+mkdir -p /opt/patch_manager/staged/
 cp scripts/* /opt/patch_manager/ -R
 sed -i 's/000DEFAULT000/'$install_key'/g' /opt/patch_manager/patch_checker.sh
-echo "$rewrite_config" > html/.htaccess
-echo "$php_config" > html/lib/db_config.php
+echo "$rewrite_config" > /opt/patch_manager/staged/html/.htaccess
+echo "$php_config" > /opt/patch_manager/staged/html/lib/db_config.php
 if [[ -d $web_dir ]]; then
 	echo -e "\e[32mNotice\e[0m: $target_web_dir already exists.\n"
 	read -p "Do you want to overwrite the existing contents? (y/n) " yn
@@ -786,14 +786,14 @@ if [[ -d $web_dir ]]; then
 		echo
 	done
 	if [[ "$yn" = "yes" ]] || [[ "$yn" = "y" ]]; then
-		\cp -f -R html/* $web_dir
+		\cp -f -R /opt/patch_manager/staged/html/* $web_dir
 	else
 		mkdir -p $web_dir
-		cp -i -R html/* $web_dir
+		cp -i -R /opt/patch_manager/staged/html/* $web_dir
 	fi
 else
 	mkdir -p $web_dir
-	\cp -R html/* $web_dir
+	\cp -R /opt/patch_manager/staged/html/* $web_dir
 fi
 find $web_dir -type d -print0|xargs -0 chmod 755
 find $web_dir -type f -print0|xargs -0 chmod 644
