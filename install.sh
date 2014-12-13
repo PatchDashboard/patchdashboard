@@ -178,10 +178,17 @@ function OSDetect()
                         unset wait
                         echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
                         echo -e "\e[31mNotice\e[0m: Please wait while prerequisites are installed...\n\n\e[31mNotice\e[0m: Installing Apache..."
-                        while true;
-                        do echo -n .;sleep 1;done &
-			yum install --disablerepo=webtatic -y httpd httpd-devel httpd-tools curl > /dev/null 2>&1
-                        kill $!; trap 'kill $!' SIGTERM;
+			if [[ "$CentOSVer" = "5" ]]; then
+				while true;
+                        	do echo -n .;sleep 1;done &
+				yum install --disablerepo=webtatic -y httpd httpd-devel httpd-tools curl > /dev/null 2>&1
+                        	kill $!; trap 'kill $!' SIGTERM;
+			else
+				while true;
+                                do echo -n .;sleep 1;done &
+                                yum install -y httpd httpd-devel httpd-tools curl > /dev/null 2>&1
+                                kill $!; trap 'kill $!' SIGTERM;
+			fi
                         echo -e "\n\e[32mNotice\e[0m: Apache Installation Complete\n"
 			echo -e "\e[32mChecking httpd start up config\n\e[0m"
                         if [[ -z $(chkconfig --list httpd|grep "2:on\|3:on\|5:on") ]]; then
@@ -275,6 +282,7 @@ function phpverCheck()
 
 function phpExtraInst()
 {
+	export CentOSVer="5"
 	echo -e "\e[32mPHP Install\e[0m: Installing PHP 5.3/5.4 depending on your distro\n"
 	echo -e "\e[32mPHP Install\e[0m: Adding EPEL and WebTatic Repos"
 	rpm -Uvh "http://dl.fedoraproject.org/pub/epel/5/x86_64/epel-release-5-4.noarch.rpm" > /dev/null 2>&1
@@ -285,7 +293,7 @@ function phpExtraInst()
 	echo -e "\e[32mPHP Install\e[0m: Installing PHP5.3 or greater..."
 	while true;
 	do echo -n .;sleep 1;done &
-	yum install -y php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli > /dev/null 2>&1
+	yum install -y php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli php-pdo php-php-gettext php-tidy > /dev/null 2>&1
 	kill $!; trap 'kill $!' SIGTERM
 	echo -e "\n\e[32mPHP Install\e[0m: PHP Installation Complete\n"
 	echo -e "Running OS Check and Dependacies check again, please wait...\n"
@@ -756,7 +764,6 @@ Alias $patchmgr $targetdir
         AllowOverride All
         Order allow,deny
         Allow from all
-        RewriteEngine On
 </Directory>
 EOA
 fi
