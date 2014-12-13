@@ -8,7 +8,7 @@
 ##
 ## Date: 11/22/2014
 ##
-## Version: 0.7
+## Version: 0.8
 ##
 ## Changelog: 0.1 - Initial Release
 ##            0.2 - Improved base installer for OS detection
@@ -28,6 +28,7 @@
 ##                - Added php install for unsupported versions
 ##                - Fixed issue with mysql root password being setup on el5
 ##                - Fixed some more issues with install apache/mysql/php on el5
+##            0.8 - Added more logic for handling CentOS version installs
 ##
 #################################################################################
 
