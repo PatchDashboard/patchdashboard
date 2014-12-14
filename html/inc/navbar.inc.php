@@ -50,7 +50,7 @@ foreach ($navbar_array as $key=>$val){
         }
         $data .= "                                <tr>
                                     <td>
-                                        $page_glyph<a href=\"$page_string\">$page_words</a>$badge_code
+                                        $page_glyph<a href=\"".BASE_PATH."$page_string\">$page_words</a>$badge_code
                                     </td>
                                 </tr>";
     }
