@@ -59,7 +59,6 @@ CREATE TABLE `distro_version` (
   KEY `ix_distro_id` (`distro_id`),
   KEY `ix_eol_date` (`eol_date`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-
 INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('10.04_Desktop',1,'2013-05-31');
 INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('10.04_Server',1,'2015-04-30');
 INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('12.04_Desktop',1,'2017-04-30');
@@ -141,6 +140,7 @@ CREATE TABLE `plugins` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 INSERT IGNORE INTO `plugins`(`id`,`name`,`disabled`,`installed`,`is_admin`,`glyph`) VALUES(1,'main',0,1,0,'glyphicon-home');
 INSERT IGNORE INTO `plugins`(`id`,`name`,`disabled`,`installed`,`is_admin`,`glyph`) VALUES(2,'admin',0,1,1,'glyphicon-wrench');
+
 CREATE TABLE `page_maps` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
   `page_name` varchar(40) NOT NULL,
