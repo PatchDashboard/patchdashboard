@@ -51,10 +51,8 @@ TODO: A LOT!
 
 DEVELOPERS:
 ===============
-* jonsjava (Creator/Project guide/Underpinning Developer) https://github.com/jonsjava
-* metalcated (Lead Developer) https://github.com/metalcated
-* wilsonma08 (Bash Developer) https://github.com/wilsonma08
-* ejbvanc (PHP Developer) https://github.com/ejbvanc
+* jonsjava (Creator/Project guide/Underpinning Developer/PHP & BASH Developer/DBA) https://github.com/jonsjava
+* metalcated (BASH Developer) https://github.com/metalcated
 
 >If you like what we're doing, we could always use some donations to help with hosting costs.
 >
