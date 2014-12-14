@@ -56,9 +56,9 @@ DEVELOPERS:
 * wilsonma08 (Bash Developer) https://github.com/wilsonma08
 * ejbvanc (PHP Developer) https://github.com/ejbvanc
 
-If you like what we're doing, we could always use some donations to help with hosting costs.
-
-> <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=KFELDM6WDEHLA&lc=US&item_name=PatchDashboard&item_number=GitHub%20PMDB&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted"><img src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif" alt="[paypal]"
+>If you like what we're doing, we could always use some donations to help with hosting costs.
+>
+> <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=KFELDM6WDEHLA&lc=US&item_name=PatchDashboard&item_number=GitHub%20PMDB&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted"><img src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif" alt="[paypal]" /> </a>
 
 
 A special thanks to Josh Reichardt (http://thepracticalsysadmin.com/) who helped a ton with my early release. You rock!
