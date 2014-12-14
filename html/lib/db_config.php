@@ -1,9 +1,9 @@
 <?php
 define('DB_HOST',"localhost");
-define('DB_USER',"root");
-define('DB_PASS',"ginny2");
-define('DB_NAME',"report6");
-define('BASE_PATH',"/patchman2/");
+define('DB_USER',"DB_USER");
+define('DB_PASS',"DB_PASS");
+define('DB_NAME',"DB_NAME");
+define('BASE_PATH',"/");
 define('YOUR_COMPANY',"Test, INC");
 define('PW_SALT','W[62~L41|]CU15b');
 /*
