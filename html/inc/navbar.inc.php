@@ -64,10 +64,10 @@ if (!isset($_SESSION['error_notice'])){
 }
 else{
     $error_message = $_SESSION['error_notice'];
-    $error_html = "<div class='alert alert-error'>
+    $error_html = "<div class='bs-example'><div class='alert alert-error'>
         <a href='#' class='close' data-dismiss='alert'>&times;</a>
         <strong>Error! </strong> $error_message
-    </div>";
+    </div></div>";
     unset($_SESSION['error_notice']);
     unset($error_message);
 }
@@ -77,10 +77,10 @@ if (!isset($_SESSION['good_notice'])){
 }
 else{
     $good_message = $_SESSION['good_notice'];
-    $good_html = "<div class='alert alert-success'>
+    $good_html = "<div class='container'><div class='row'><div class='span4'><div class='alert alert-success'>
         <a href='#' class='close' data-dismiss='alert'>&times;</a>
         <strong>Notice: </strong> $good_message
-    </div>";
+    </div></div></div></div>";
     unset($_SESSION['good_notice']);
     unset($good_message);
 }
@@ -90,22 +90,20 @@ if (!isset($_SESSION['warning_notice'])){
 }
 else{
     $warning_message = $_SESSION['warning_notice'];
-    $warning_html = "<div class='alert alert-warning'>
+    $warning_html = "<div class='bs-example'><div class='alert alert-warning'>
         <a href='#' class='close' data-dismiss='alert'>&times;</a>
         <strong>Warning: </strong> $warning_message
-    </div>";
+    </div></div>";
     unset($_SESSION['warning_notice']);
     unset($warning_message);
 }
 $all_messages_to_send = "${warning_html}${good_html}${error_html}";
 ?>
     <div class="container-fluid">
-        <?php echo $all_messages_to_send;unset($all_messages_to_send);?>
+<?php echo $all_messages_to_send;unset($all_messages_to_send);?>
       <div class="row">
         <div class="col-sm-3 col-md-3">
             <div class="panel-group" id="accordion">
                 <?php echo $data;?>
             </div>
         </div>
-
-
