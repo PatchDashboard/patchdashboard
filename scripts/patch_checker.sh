@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # generated installation key and server URI from install
-auth_key="000DEFAULT000"
+auth_key="__SERVER_AUTHKEY_SET_ME__"
 server_uri="__SERVER_URI_SET_ME__"
 submit_patch_uri="${server_uri}client/send_patches.php"
 # remove old file is blank
