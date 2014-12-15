@@ -34,7 +34,13 @@
 #################################################################################
 
 # generate random passwords
+MY_PATH="`dirname \"$0\"`"
+hash_pass_script="$MY_PATH/hash_pass.php"
 password_salt=$(dd if=/dev/urandom bs=1 count=32 2>/dev/null | base64 -w 0 | rev | cut -b 2- | rev)
+function hash_password(){
+	password="$1"
+	$hash_pass_script "$password" "$password_salt"
+}
 function genPasswd()
 {
 	local p=$1
@@ -624,11 +630,10 @@ adm_check=$(mysql -u $db_user -h $db_host -p"$db_pass" -e "SELECT user_id from $
 # if not exist, add admin user
 if [[ "$adm_check" = "" ]]; then
 # add passwd hash
-adm_passwd=$(echo -n '${new_web_admin_passwd}'${password_salt} | sha256sum | awk {'print $1'})
+adm_passwd=$(hash_password "$new_web_admin_passwd" "password_salt")
+#adm_passwd=$(echo -n '${new_web_admin_passwd}'${password_salt} | sha256sum | awk {'print $1'})
 # add admin user
-mysql -u $db_user -h $db_host -p"$db_pass" << EOF
-INSERT INTO $db_name.users (id,user_id,email,admin,display_name,password,active) VALUES (NULL, '$new_web_admin', '$new_web_admin_email', '1', NULL, '$adm_passwd', '1');
-EOF
+mysql -u $db_user -h $db_host -p"$db_pass" -e "INSERT INTO $db_name.users (id,user_id,email,admin,display_name,password,active) VALUES (NULL, '$new_web_admin', '$new_web_admin_email', '1', NULL, '$adm_passwd', '1');"
 else
 	echo -e "\e[32mNotice\e[0m: Web Admin User exists: \e[36m$new_web_admin\n\e[0m"
 fi
@@ -640,11 +645,10 @@ usr_check=$(mysql -u $db_user -h $db_host -p"$db_pass" -e "SELECT user_id from $
 # if not exist, add basic user
 if [[ "$usr_check" = "" ]]; then
 # add passwd hash
-usr_passwd=$(echo -n '${new_web_duser_passwd}${password_salt}' | sha256sum | awk {'print $1'})
+usr_passwd=$(hash_password "$new_web_duser_passwd" "password_salt")
+#usr_passwd=$(echo -n '${new_web_duser_passwd}${password_salt}' | sha256sum | awk {'print $1'})
 # add basic user
-mysql -u $db_user -h $db_host -p"$db_pass" << EOF
-INSERT INTO $db_name.users (id,user_id,email,admin,display_name,password,active) VALUES (NULL, '$new_web_duser', '$new_web_duser_email', '0', NULL, '$usr_passwd', '1');
-EOF
+mysql -u $db_user -h $db_host -p"$db_pass" -e "INSERT INTO $db_name.users (id,user_id,email,admin,display_name,password,active) VALUES (NULL, '$new_web_duser', '$new_web_duser_email', '0', NULL, '$usr_passwd', '1');"
 else
         echo -e "\e[32mNotice\e[0m: Web Basic User exists: \e[36m$new_web_duser\n\e[0m"
 fi
