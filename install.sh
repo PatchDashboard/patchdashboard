@@ -552,6 +552,7 @@ function WebUIInfo()
 	while [[ "$new_relative_path" = "" ]]; do
         	echo -e "\e[32mNotice\e[0m: Default Location Used: $relative_path"
         	new_relative_path=$relative_path
+			relpath=$(echo $new_relative_path|cut -d '/' -f 2)
 	done
 	echo
 	if [ "$new_relative_path" != "$relative_path" ] && [ "$new_relative_path" != "" ]; then
@@ -808,7 +809,7 @@ mkdir -p /opt/patch_manager/staged/html/lib/
 \cp -f html/.htaccess /opt/patch_manager/staged/html/.htaccess
 \cp -f html/lib/db_config.php /opt/patch_manager/staged/html/lib/db_config.php
 sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' /opt/patch_manager/patch_checker.sh
-sed -i "s|__SERVER_URI_SET_ME__|${SERVER_IP}${relative_path}|g" /opt/patch_manager/patch_checker.sh
+sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" /opt/patch_manager/patch_checker.sh
 echo "$rewrite_config" > /opt/patch_manager/staged/html/.htaccess
 echo "$php_config" > /opt/patch_manager/staged/html/lib/db_config.php
 if [[ -d $web_dir ]]; then
