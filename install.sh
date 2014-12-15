@@ -671,7 +671,7 @@ if [[ "$usr_check" = "" ]]; then
 usr_passwd=$(hash_password "$new_web_duser_passwd" "password_salt")
 #usr_passwd=$(echo -n '${new_web_duser_passwd}${password_salt}' | sha256sum | awk {'print $1'})
 # add basic user
-mysql -u $db_user -h $db_host -p"$db_pass" -e -D $db_name "INSERT INTO users (user_id,email,admin,display_name,password,active) VALUES ('$new_web_duser', '$new_web_duser_email', '0', NULL, '$usr_passwd', '1');"
+mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name -e "INSERT INTO users (user_id,email,admin,display_name,password,active) VALUES ('$new_web_duser', '$new_web_duser_email', '0', NULL, '$usr_passwd', '1');"
 else
         echo -e "\e[32mNotice\e[0m: Web Basic User exists: \e[36m$new_web_duser\n\e[0m"
 fi
@@ -807,7 +807,7 @@ mkdir -p /opt/patch_manager/staged/html/lib/
 \cp -f scripts/* /opt/patch_manager/ -R
 \cp -f html/.htaccess /opt/patch_manager/staged/html/.htaccess
 \cp -f html/lib/db_config.php /opt/patch_manager/staged/html/lib/db_config.php
-sed -i 's/000DEFAULT000/'$install_key'/g' /opt/patch_manager/patch_checker.sh
+sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' /opt/patch_manager/patch_checker.sh
 sed -i "s/__SERVER_URI_SET_ME__/http:\/\/$_SERVER_IP\/$relative_path/g" /opt/patch_manager/patch_checker.sh
 echo "$rewrite_config" > /opt/patch_manager/staged/html/.htaccess
 echo "$php_config" > /opt/patch_manager/staged/html/lib/db_config.php
