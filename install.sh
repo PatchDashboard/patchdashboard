@@ -34,6 +34,7 @@
 #################################################################################
 
 # generate random passwords
+SERVER_IP=$(ip addr|grep inet|grep eth0|awk '{print $2}'|cut -d'/' -f1)
 MY_PATH="`dirname \"$0\"`"
 hash_pass_script="$MY_PATH/hash_pass.php"
 password_salt=$(dd if=/dev/urandom bs=1 count=32 2>/dev/null | base64 -w 0 | rev | cut -b 2- | rev)
@@ -543,6 +544,7 @@ function WebUIInfo()
 	while [[ "$new_web_dir" = "" ]]; do
         	echo -e "\e[32mNotice\e[0m: Default Location Used: $web_dir."
         	new_web_dir=$web_dir
+			EXTERNAL_WEB_URI="http://${SERVER_IP}${new_web_dir)"
 	done
 	echo
 	unset new_relative_path
@@ -699,9 +701,7 @@ if [[ "$comp_name_check" = "" ]] && [[ "$comp_disp_check" = "" ]] && [[ "$comp_i
 # add company and installation key
 echo -e "\e[32mNotice\e[0m: Company added to \e[36m$db_name\e[0m: \e[36m$your_company\e[0m/\e[36m$comp_id\n\e[0m"
 echo -e "\e[32mNotice\e[0m: Installation Key added to \e[36m$db_name\e[0m: $install_key\n"
-mysql -u $db_user -h $db_host -p"$db_pass" << EOF
-INSERT INTO $db_name.company (id,name,display_name,install_key) VALUES (NULL, '$comp_id', '$your_company', '$installation_key');
-EOF
+mysql -u $db_user -h $db_host -p"$db_pass" -e "INSERT INTO $db_name.company (id,name,display_name,install_key) VALUES (NULL, '$comp_id', '$your_company', '$installation_key');"
 else
 	unset comp_ikey
 	comp_ikey=$(mysql --skip-column-names -u $db_user -h $db_host -p"$db_pass" -e "SELECT install_key from $db_name.company;")
@@ -808,6 +808,7 @@ mkdir -p /opt/patch_manager/staged/html/lib/
 \cp -f html/.htaccess /opt/patch_manager/staged/html/.htaccess
 \cp -f html/lib/db_config.php /opt/patch_manager/staged/html/lib/db_config.php
 sed -i 's/000DEFAULT000/'$install_key'/g' /opt/patch_manager/patch_checker.sh
+sed -i "s/__SERVER_URI_SET_ME__/http:\/\/$_SERVER_IP\/$relative_path/g" /opt/patch_manager/patch_checker.sh
 echo "$rewrite_config" > /opt/patch_manager/staged/html/.htaccess
 echo "$php_config" > /opt/patch_manager/staged/html/lib/db_config.php
 if [[ -d $web_dir ]]; then
