@@ -635,7 +635,7 @@ if [[ "$adm_check" = "" ]]; then
 adm_passwd=$(hash_password "$new_web_admin_passwd" "password_salt")
 #adm_passwd=$(echo -n '${new_web_admin_passwd}'${password_salt} | sha256sum | awk {'print $1'})
 # add admin user
-mysql -u $db_user -h $db_host -p"$db_pass" -e "INSERT INTO $db_name.users (id,user_id,email,admin,display_name,password,active) VALUES (NULL, '$new_web_admin', '$new_web_admin_email', '1', NULL, '$adm_passwd', '1');"
+mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name -e "INSERT INTO users (user_id,email,admin,display_name,password,active) VALUES ('$new_web_admin', '$new_web_admin_email', '1', NULL, '$adm_passwd', '1');"
 else
 	echo -e "\e[32mNotice\e[0m: Web Admin User exists: \e[36m$new_web_admin\n\e[0m"
 fi
@@ -650,7 +650,7 @@ if [[ "$usr_check" = "" ]]; then
 usr_passwd=$(hash_password "$new_web_duser_passwd" "password_salt")
 #usr_passwd=$(echo -n '${new_web_duser_passwd}${password_salt}' | sha256sum | awk {'print $1'})
 # add basic user
-mysql -u $db_user -h $db_host -p"$db_pass" -e "INSERT INTO $db_name.users (id,user_id,email,admin,display_name,password,active) VALUES (NULL, '$new_web_duser', '$new_web_duser_email', '0', NULL, '$usr_passwd', '1');"
+mysql -u $db_user -h $db_host -p"$db_pass" -e -D $db_name "INSERT INTO users (user_id,email,admin,display_name,password,active) VALUES ('$new_web_duser', '$new_web_duser_email', '0', NULL, '$usr_passwd', '1');"
 else
         echo -e "\e[32mNotice\e[0m: Web Basic User exists: \e[36m$new_web_duser\n\e[0m"
 fi
@@ -680,7 +680,7 @@ if [[ "$comp_name_check" = "" ]] && [[ "$comp_disp_check" = "" ]] && [[ "$comp_i
 # add company and installation key
 echo -e "\e[32mNotice\e[0m: Company added to \e[36m$db_name\e[0m: \e[36m$your_company\e[0m/\e[36m$comp_id\n\e[0m"
 echo -e "\e[32mNotice\e[0m: Installation Key added to \e[36m$db_name\e[0m: $install_key\n"
-mysql -u $db_user -h $db_host -p"$db_pass" -e "INSERT INTO $db_name.company (id,name,display_name,install_key) VALUES (NULL, '$comp_id', '$your_company', '$installation_key');"
+mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name -e "INSERT INTO company (name,display_name,install_key) VALUES ('$comp_id', '$your_company', '$installation_key');"
 else
 	unset comp_ikey
 	comp_ikey=$(mysql --skip-column-names -u $db_user -h $db_host -p"$db_pass" -e "SELECT install_key from $db_name.company;")
