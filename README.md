@@ -37,6 +37,7 @@ On each node:
 
 ===============
 ##Links
+
 To discuss this product, or help direct the future of this project, join our [forums](http://community.patchdashboard.com)
 To keep up-to-date on the direction of this project, you are free to stop by the [blog](http://patchdashboard.com) (still in progress)
 

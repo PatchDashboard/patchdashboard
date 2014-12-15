@@ -34,13 +34,13 @@
 #################################################################################
 
 # generate random passwords
+password_salt=$(dd if=/dev/urandom bs=1 count=32 2>/dev/null | base64 -w 0 | rev | cut -b 2- | rev)
 function genPasswd()
 {
 	local p=$1
 	[ "$p" == "" ] && p=12
-	salt='W[62~L41|]CU15b'
 	random=$(tr -dc A-Za-z0-9_ < /dev/urandom | head -c ${p} | xargs)
-	pass="${random}{$salt}"
+	pass="${random}${password_salt}"
 	echo $random $pass
 }
 
@@ -722,6 +722,11 @@ define('DB_PASS','$db_pass');
 define('DB_NAME','$db_name');
 define('BASE_PATH','$relative_path');
 define('YOUR_COMPANY','$your_company');
+define('PW_SALT','$password_salt');
+/*
+ * SET OFFLINE to TRUE if you want to disable the site.  All functionality will cease until you re-enable the site by setting OFFLINE back to FALSE
+ */
+define('OFFLINE','FALSE');
 ?>"
 
 # write shell script config
