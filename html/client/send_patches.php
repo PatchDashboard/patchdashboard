@@ -8,6 +8,7 @@ $client_check_res = mysql_query($client_check_sql);
 if (mysql_num_rows($client_check_res) == 1) {
     $row = mysql_fetch_array($client_check_res);
     $server_name = $row['server_name'];
+    $data = file_get_contents("php://input");
     $package_array = explode("\n", $data);
     $supression_array = explode(" ", $supression_list);
     foreach ($package_array as $val) {
