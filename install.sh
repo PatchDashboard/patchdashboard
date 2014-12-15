@@ -624,7 +624,7 @@ adm_check=$(mysql -u $db_user -h $db_host -p"$db_pass" -e "SELECT user_id from $
 # if not exist, add admin user
 if [[ "$adm_check" = "" ]]; then
 # add passwd hash
-adm_passwd=$(echo $new_web_admin_passwd | sha256sum | awk {'print $1'})
+adm_passwd=$(echo -n '${new_web_admin_passwd}'${password_salt} | sha256sum | awk {'print $1'})
 # add admin user
 mysql -u $db_user -h $db_host -p"$db_pass" << EOF
 INSERT INTO $db_name.users (id,user_id,email,admin,display_name,password,active) VALUES (NULL, '$new_web_admin', '$new_web_admin_email', '1', NULL, '$adm_passwd', '1');
@@ -640,7 +640,7 @@ usr_check=$(mysql -u $db_user -h $db_host -p"$db_pass" -e "SELECT user_id from $
 # if not exist, add basic user
 if [[ "$usr_check" = "" ]]; then
 # add passwd hash
-usr_passwd=$(echo $new_web_duser_passwd | sha256sum | awk {'print $1'})
+usr_passwd=$(echo -n '${new_web_duser_passwd}${password_salt}' | sha256sum | awk {'print $1'})
 # add basic user
 mysql -u $db_user -h $db_host -p"$db_pass" << EOF
 INSERT INTO $db_name.users (id,user_id,email,admin,display_name,password,active) VALUES (NULL, '$new_web_duser', '$new_web_duser_email', '0', NULL, '$usr_passwd', '1');
