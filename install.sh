@@ -544,7 +544,7 @@ function WebUIInfo()
 	while [[ "$new_web_dir" = "" ]]; do
         	echo -e "\e[32mNotice\e[0m: Default Location Used: $web_dir."
         	new_web_dir=$web_dir
-			EXTERNAL_WEB_URI="http://${SERVER_IP}${new_web_dir)"
+			EXTERNAL_WEB_URI="http://${SERVER_IP}${new_web_dir}"
 	done
 	echo
 	unset new_relative_path
