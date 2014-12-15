@@ -37,10 +37,13 @@
 MY_PATH="`dirname \"$0\"`"
 hash_pass_script="$MY_PATH/hash_pass.php"
 password_salt=$(dd if=/dev/urandom bs=1 count=32 2>/dev/null | base64 -w 0 | rev | cut -b 2- | rev)
-function hash_password(){
-	password="$1"
+
+function hash_password()
+{
+	export password="$1"
 	$hash_pass_script "$password" "$password_salt"
 }
+
 function genPasswd()
 {
 	local p=$1
@@ -54,6 +57,7 @@ function genInstallKey()
 {
 	export installation_key=$(< /dev/urandom tr -dc 'a-zA-Z0-9~!@#$%^&*_-' | head -c${1:-32}|sha256sum)
 }
+
 
 # default admin and users for the admin web interface
 # admin info
@@ -314,10 +318,27 @@ function checkIPtables()
 {
 	if [[ $(iptables -L|grep "dpt:http\|dpt:https") = "" ]]; then
 		echo -e "\e[32mIptables\e[0m: Enabling port 80 and 443 on iptables\n"
-		iptables -I INPUT -p tcp -m tcp --dport 80 -j ACCEPT
-		iptables -I INPUT -p tcp -m tcp --dport 443 -j ACCEPT
-		service iptables save
-		echo
+		# detect which OS
+		if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
+			if [[ $(dpkg -s iptables-persistent|grep "Status:"|cut -d " " -f2-4) != "install ok installed" ]]; then
+				# install iptables-persistent
+	                        echo -e "\e[32mIptables\e[0m: $os detected, installing iptables-persistent\n"
+	                        debconf-set-selections <<< "iptables-persistent iptables-persistent/autosave_v4 boolean true"
+	                        debconf-set-selections <<< "iptables-persistent iptables-persistent/autosave_v6 boolean true"
+                        	apt-get install -y iptables-persistent > /dev/null 2>&1
+                	fi
+			# add rules and save
+			iptables -I INPUT -p tcp -m tcp --dport 80 -j ACCEPT
+			iptables -I INPUT -p tcp -m tcp --dport 443 -j ACCEPT
+			service iptables-persistent save
+			echo
+		elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
+			# add rules and save
+			iptables -I INPUT -p tcp -m tcp --dport 80 -j ACCEPT
+			iptables -I INPUT -p tcp -m tcp --dport 443 -j ACCEPT
+			service iptables save
+			echo
+		fi
 	fi
 }
 
