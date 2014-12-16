@@ -857,7 +857,9 @@ if [[ "$ModeType" = "Install" ]]; then
 	\cp -f html/.htaccess /opt/patch_manager/staged/html/.htaccess
 	\cp -f html/lib/db_config.php /opt/patch_manager/staged/html/lib/db_config.php
 	sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' /opt/patch_manager/patch_checker.sh
-        sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" /opt/patch_manager/patch_checker.sh
+    sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" /opt/patch_manager/patch_checker.sh
+	sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${web_dir}client/*.sh
+    sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${web_dir}client/*.sh
         echo "$rewrite_config" > /opt/patch_manager/staged/html/.htaccess
         echo "$php_config" > /opt/patch_manager/staged/html/lib/db_config.php
 	echo "$rewrite_config" > ${web_dir}.htaccess

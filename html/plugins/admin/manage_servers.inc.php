@@ -40,18 +40,18 @@ while ($row = mysql_fetch_assoc($res)){
 ";
 }
 ?>
-          <h1 class="page-header">List Users</h1>
+          <h1 class="page-header">All Servers</h1>
         <div class="container">
           <div class="table-responsive">
             <table class="table table-striped">
               <thead>
                 <tr>
-                  <th>Username</th>
-                  <th>E-mail</th>
-                  <th>Group</th>
-                  <th>Last Login</th>
-                  <th>Alerts?</th>
-                  <th>Actions</th>
+                  <th>Sever Name</th>
+                  <th>Distro</th>
+                  <th>Version</th>
+                  <th>Server IP</th>
+                  <th>Trusted?</th>
+                  <th>Last Check-in</th>
                 </tr>
               </thead>
               <tbody>

@@ -14,7 +14,6 @@ if (isset($client_key) && !empty($client_key)) {
             $sql2 = "INSERT INTO `servers`(`server_name`,`distro_id`,`distro_version`,`server_ip`,`client_key`) VALUES('UNKNOWN SERVER',0,0,'$server_ip',$client_key');";
             mysql_query($sql2);
         }
-        echo "FALSE";
     } else {
         $row1 = mysql_fetch_array($res);
         $server_name = $row['server_name'];
@@ -37,8 +36,16 @@ if (isset($client_key) && !empty($client_key)) {
             $package_string = implode(" ", $package_array);
         }
         //CMD GOES HERE
+        $company = YOUR_COMPANY;
+        $company_sql = "SELECT * FROM `company` WHERE `name`='$company' LIMIT 1;";
+        $company_res = mysql_query($company_sql);
+        $company_row = mysql_fetch_array($company_res);
+        $key_to_check=$row['install_key'];
+        $cmd_sql = "SELECT d.upgrade_command as cmd from servers s left join distro d on s.distro_id=d.id where s.server_name='$server_name' LIMIT 1;";
+        $cmd_res = mysql_query($cmd_sql);
+        $cmd_row = mysql_fetch_array($cmd_res);
+        $cmd = $cmd_row['cmd'];
+        echo "$key_to_check\n$cmd $package_string";
     }
-} else {
-    echo "FALSE";
 }
 mysql_close($link);

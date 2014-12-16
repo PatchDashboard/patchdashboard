@@ -17,6 +17,7 @@ CREATE TABLE `servers` (
   `client_key` varchar(255),
   `trusted` tinyint(1) NOT NULL DEFAULT 0,
   `last_seen` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `last_checked` datetime NOT NULL DEFAULT '2001-01-01 00:00:00',
   PRIMARY KEY (`id`),
   UNIQUE INDEX (`client_key`),
   KEY `ix_server_name` (`server_name`),
