@@ -8,7 +8,7 @@
 ##
 ## Date: 11/22/2014
 ##
-## Version: 0.9
+## Version: 1.0
 ##
 ## Changelog: 0.1 - Initial Release
 ##            0.2 - Improved base installer for OS detection
@@ -31,6 +31,9 @@
 ##            0.8 - Added more logic for handling CentOS version installs
 ##            0.9 - Added a staged path and fixed how its copied to the web_dir
 ##
+##            1.0 - Fixed password generation issues, default passwords now work
+##                - This is a release ready version :)
+##
 #################################################################################
 
 # generate random passwords
@@ -49,9 +52,8 @@ function genPasswd()
 {
 	local p=$1
 	[ "$p" == "" ] && p=12
-	random=$(tr -dc A-Za-z0-9_ < /dev/urandom | head -c ${p} | xargs)
-	pass="${random}${password_salt}"
-	echo $random $pass
+	export randomPass=$(tr -dc A-Za-z0-9_ < /dev/urandom | head -c ${p} | xargs)
+	echo $randomPass
 }
 
 function genInstallKey()
@@ -63,14 +65,11 @@ function genInstallKey()
 # default admin and users for the admin web interface
 # admin info
 web_admin="pmdadmin"
-web_admin_passwd_echo=$(genPasswd|awk {'print $1'})
-web_admin_passwd="$web_admin_passwd_echo"
+web_admin_passwd=$(genPasswd)
 web_admin_email="no_admin@email.com"
 # user info
 web_duser="pmduser"
-web_duser_passwd_echo=$(genPasswd|awk {'print $1'})
-web_duser_passwd="$web_dusr_passwd"
-
+web_duser_passwd=$(genPasswd)
 web_duser_email="no_user@email.com"
 # export to global
 export web_admin web_admin_email web_admin_passwd 
@@ -609,9 +608,9 @@ function WebUIInfo()
 
         # Web-UI admin password
 	unset new_web_admin_passwd
-        read -p "Web Admin Password [Default: $web_admin_passwd_echo]: " new_web_admin_passwd
+        read -p "Web Admin Password [Default: $web_admin_passwd]: " new_web_admin_passwd
         while [[ "$new_web_admin_passwd" = "" ]]; do
-                echo -e "\e[32mNotice\e[0m: Default Password used: $web_admin_passwd_echo"
+                echo -e "\e[32mNotice\e[0m: Default Password used: $web_admin_passwd"
                 new_web_admin_passwd=$web_admin_passwd
         done
 	echo
@@ -636,9 +635,9 @@ function WebUIInfo()
 
         # Web-UI standard password
 	unset new_web_duser_passwd
-        read -p "Please enter location for web interface [Default: $web_duser_passwd_echo]: " new_web_duser_passwd
+        read -p "Web User Password [Default: $web_duser_passwd]: " new_web_duser_passwd
         while [[ "$new_web_duser_passwd" = "" ]]; do
-                echo -e "\e[32mNotice\e[0m: Default Web User Password used: $web_duser_passwd_echo"
+                echo -e "\e[32mNotice\e[0m: Default Web User Password used: $web_duser_passwd"
                 new_web_duser_passwd=$web_duser_passwd
         done
 	echo
@@ -656,7 +655,6 @@ adm_check=$(mysql -u $db_user -h $db_host -p"$db_pass" -e "SELECT user_id from $
 if [[ "$adm_check" = "" ]]; then
 	# add passwd hash
 	adm_passwd=$(hash_password "$new_web_admin_passwd" "password_salt")
-	#adm_passwd=$(echo -n '${new_web_admin_passwd}'${password_salt} | sha256sum | awk {'print $1'})
 	# add admin user
 	mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name -e "INSERT INTO users (user_id,email,admin,display_name,password,active) VALUES ('$new_web_admin', '$new_web_admin_email', '1', NULL, '$adm_passwd', '1');"
 else
@@ -671,7 +669,6 @@ usr_check=$(mysql -u $db_user -h $db_host -p"$db_pass" -e "SELECT user_id from $
 if [[ "$usr_check" = "" ]]; then
 	# add passwd hash
 	usr_passwd=$(hash_password "$new_web_duser_passwd" "password_salt")
-	#usr_passwd=$(echo -n '${new_web_duser_passwd}${password_salt}' | sha256sum | awk {'print $1'})
 	# add basic user
 	mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name -e "INSERT INTO users (user_id,email,admin,display_name,password,active) VALUES ('$new_web_duser', '$new_web_duser_email', '0', NULL, '$usr_passwd', '1');"
 else
