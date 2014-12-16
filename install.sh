@@ -713,7 +713,8 @@ function InstallApp()
 {
 
 # rewrite config for .htaccess
-rewrite_config="RewriteEngine On
+rewrite_config="ErrorDocument 404 ${relative_path}index.php?page=\$1 [QSA,NC,L]
+RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule patches/server/(.*)$ ${relative_path}index.php?page=patch_list&server=\$1 [QSA,NC,L]
