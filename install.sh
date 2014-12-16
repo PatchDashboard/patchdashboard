@@ -711,6 +711,7 @@ fi
 
 function InstallApp()
 {
+host_node=${hostname}
 
 # rewrite config for .htaccess
 rewrite_config="ErrorDocument 404 ${relative_path}index.php?page=\$1 [QSA,NC,L]
@@ -766,6 +767,10 @@ targetdir=$(echo $new_web_dir|sed 's=/[^/]*$==;s/\.$//')
 
 # install virtualhost file to default conf.d dir apache/httpd
 if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
+# create log dir and set perms
+mkdir -p /var/log/httpd/patch_manager/
+chown $web_user:$web_user /var/log/httpd/patch_manager/ -R
+
 # remove old conf
 if [[ -f /etc/apache2/conf.d/patch_manager.conf ]]; then
 	rm -f /etc/apache2/conf.d/patch_manager.conf
@@ -773,6 +778,8 @@ fi
 # setup virtualhost
 cat <<EOA > /etc/apache2/conf.d/patch_manager.conf
 Alias $patchmgr $targetdir
+CustomLog /var/log/apache2/patch_manager/${host_node}_access.log common
+ErrorLog /var/log/apache2/patch_manager/${host_node}_error.log
 
 <Directory $targetdir>
         Options FollowSymLinks
@@ -783,6 +790,10 @@ Alias $patchmgr $targetdir
 EOA
 
 elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
+# create log dir and set perms
+mkdir -p /var/log/apache2/patch_manager/
+chown $web_user:$web_user /var/log/apache2/patch_manager/ -R
+
 # remove old conf
 if [[ -f /etc/httpd/conf.d/patch_manager.conf ]]; then
         rm -f /etc/httpd/conf.d/patch_manager.conf
@@ -790,6 +801,8 @@ fi
 # setup virtualhost
 cat <<EOA > /etc/httpd/conf.d/patch_manager.conf
 Alias $patchmgr $targetdir
+CustomLog /var/log/httpd/patch_manager/${host_node}_access.log common
+ErrorLog /var/log/httpd/patch_manager/${host_node}_error.log
         
 <Directory $targetdir>
         Options FollowSymLinks
@@ -844,7 +857,7 @@ if [ "$rewrite_check" = "1" ]; then
 	echo -e "\n\e[31mError\e[0m: Apache Mod_rewrite or .htaccess is not working.  Please ensure you have mod_rewrite installed and enabled.  If it is, please make sure you change 'AllowOverride None' to 'AllowOverride All'"
 	echo -e "\e[31mError\e[0m: If you don't, this site won't work.  You've been warned."
 fi
-echo -e "\n\e[32mNotice\e[0m: Install is now complete. You can now go to  http://`hostname`$relative_path and begin working with this tool.  To add servers, use the following command:
+echo -e "\n\e[32mNotice\e[0m: Install is now complete. You can now go to  http://${host_node}${relative_path} and begin working with this tool.  To add servers, use the following command:
 	/opt/patch_manager/add_server.sh -s server_name -ip ip_address
 	It will ask you some questions regarding the user, password, and some other things.  Just follow the prompts.
 	
