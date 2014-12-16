@@ -542,7 +542,7 @@ function WebUIInfo()
 	unset new_web_dir
 	read -p "Please enter location for web interface [Default: $web_dir]: " new_web_dir
 	while [[ "$new_web_dir" = "" ]]; do
-        	echo -e "\e[32mNotice\e[0m: Default Location Used: $web_dir."
+        	echo -e "\e[32mNotice\e[0m: Default Location Used: $web_dir"
         	new_web_dir=$web_dir
 			EXTERNAL_WEB_URI="http://${SERVER_IP}${new_web_dir}"
 	done
@@ -644,6 +644,40 @@ function WebUIInfo()
 
 }
 
+function WebUIInfoUpdate()
+{
+        echo -e "\e[32m\e[4mWebpage Location Setup\e[0m\n"
+        unset new_web_dir
+        read -p "Please enter location for web interface [Default: $web_dir]: " new_web_dir
+        while [[ "$new_web_dir" = "" ]]; do
+                echo -e "\e[32mNotice\e[0m: Default Location Used: $web_dir"
+                new_web_dir=$web_dir
+                        EXTERNAL_WEB_URI="http://${SERVER_IP}${new_web_dir}"
+        done
+        echo
+        unset new_relative_path
+        read -p "Please enter the relative path [Default: $relative_path]: " new_relative_path
+        while [[ "$new_relative_path" = "" ]]; do
+                echo -e "\e[32mNotice\e[0m: Default Location Used: $relative_path"
+                new_relative_path=$relative_path
+                        relpath=$(echo $new_relative_path|cut -d '/' -f 2)
+        done
+        echo
+        if [ "$new_relative_path" != "$relative_path" ] && [ "$new_relative_path" != "" ]; then
+                relative_path="$new_relative_path"
+        fi
+        if [ "${new_relative_path:LEN}" != "/" ]; then
+                new_relative_path=$new_relative_path"/"
+        fi
+        if [ "$new_web_dir" != "$web_dir" ] && [ "$new_web_dir" != "" ]; then
+                web_dir="$new_web_dir"
+        fi
+        if [ "${web_dir:LEN}" != "/" ]; then
+                web_dir=$web_dir"/"
+        fi
+
+}
+
 function dbUserCreate()
 {
 
@@ -711,7 +745,7 @@ fi
 
 function InstallApp()
 {
-host_node=${hostname}
+host_node=`hostname`
 
 # rewrite config for .htaccess
 rewrite_config="RewriteEngine On
@@ -767,8 +801,8 @@ targetdir=$(echo $new_web_dir|sed 's=/[^/]*$==;s/\.$//')
 # install virtualhost file to default conf.d dir apache/httpd
 if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
 # create log dir and set perms
-mkdir -p /var/log/httpd/patch_manager/
-chown $web_user:$web_user /var/log/httpd/patch_manager/ -R
+mkdir -p /var/log/apache2/patch_manager/
+chown $web_user:$web_user /var/log/apache2/patch_manager/ -R
 
 # remove old conf
 if [[ -f /etc/apache2/conf.d/patch_manager.conf ]]; then
@@ -790,8 +824,8 @@ EOA
 
 elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
 # create log dir and set perms
-mkdir -p /var/log/apache2/patch_manager/
-chown $web_user:$web_user /var/log/apache2/patch_manager/ -R
+mkdir -p /var/log/httpd/patch_manager/
+chown $web_user:$web_user /var/log/httpd/patch_manager/ -R
 
 # remove old conf
 if [[ -f /etc/httpd/conf.d/patch_manager.conf ]]; then
@@ -814,15 +848,25 @@ fi
 
 # main application install
 target_web_dir=$(echo $new_web_dir|sed 's=/[^/]*$==;s/\.$//')
-## DO NOT CHANGE PATH ##
-mkdir -p /opt/patch_manager/staged/html/lib/
-\cp -f scripts/* /opt/patch_manager/ -R
-\cp -f html/.htaccess /opt/patch_manager/staged/html/.htaccess
-\cp -f html/lib/db_config.php /opt/patch_manager/staged/html/lib/db_config.php
-sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' /opt/patch_manager/patch_checker.sh
-sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" /opt/patch_manager/patch_checker.sh
-echo "$rewrite_config" > /opt/patch_manager/staged/html/.htaccess
-echo "$php_config" > /opt/patch_manager/staged/html/lib/db_config.php
+# check install mode
+if [[ "$ModeType" = "Install" ]]; then
+
+	mkdir -p /opt/patch_manager/staged/html/lib/
+	rsync -aq scripts/ /opt/patch_manager/
+	\cp -f html/.htaccess /opt/patch_manager/staged/html/.htaccess
+	\cp -f html/lib/db_config.php /opt/patch_manager/staged/html/lib/db_config.php
+	sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' /opt/patch_manager/patch_checker.sh
+        sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" /opt/patch_manager/patch_checker.sh
+        echo "$rewrite_config" > /opt/patch_manager/staged/html/.htaccess
+        echo "$php_config" > /opt/patch_manager/staged/html/lib/db_config.php
+	echo "$rewrite_config" > ${web_dir}.htaccess
+	echo "$php_config" > /opt/patch_manager/db_config.php
+	echo "$bash_config" > /opt/patch_manager/db.conf
+
+elif [[ "$ModeType" = "Update" ]]; then
+	rsync -aq --exclude='db.conf' --exclude='db_config.php' scripts/ /opt/patch_manager/
+fi
+# check if web_dir exists
 if [[ -d $web_dir ]]; then
 	echo -e "\e[32mNotice\e[0m: $target_web_dir already exists.\n"
 	read -p "Do you want to overwrite the existing contents? (y/n) " yn
@@ -844,12 +888,11 @@ else
 	\cp -R html/* $web_dir
 	\cp -R /opt/patch_manager/staged/html/* $web_dir
 fi
+# change perms 
 find $web_dir -type d -print0|xargs -0 chmod 755
 find $web_dir -type f -print0|xargs -0 chmod 644
-echo "$rewrite_config" > ${web_dir}.htaccess
 chown $web_user:$web_user $web_dir -R
-echo "$php_config" > /opt/patch_manager/db_config.php
-echo "$bash_config" > /opt/patch_manager/db.conf
+# restart web service
 service $web_service restart
 rewrite_check=`curl -s localhost${relative_path}rewrite_check|grep 404|wc -l`
 if [ "$rewrite_check" = "1" ]; then
@@ -881,6 +924,121 @@ function AddCrontab()
 	fi
 }
 
+function NewInstall()
+{
+	# run new install
+	echo -e "\n\e[32mMode\e[0m: Running new install\n"
+
+	# run DB functions
+	echo -e "\e[36m# Database Setup information\n\e[0m"
+	dbAskHost
+	dbRootPasswd
+	dbAskUser
+	dbAskPass
+	dbAskName
+	dbUserDBCreate
+	dbConnTest
+	dbCheck
+
+	# check database connection from user provided details
+	if [[ "$dbConnx" = "no" ]]; then
+        	echo -e "\n\e[31mError\e[0m: Unable to connect to: \e[36m$db_host\e[0m, please try again.\n"
+		dbAskHost
+		dbRootPasswd
+		dbAskUser
+		dbAskPass
+		dbAskName
+		dbUserDBCreate
+		dbConnTest
+	        dbCheck
+	fi
+
+	if [[ "$dbExists" = "yes" ]]; then
+		echo -e "\n\e[32mNotice\e[0m: \e[36m$db_name\e[0m already exists, updating tables."
+	        dbUpdate
+	else
+		echo -e "\n\e[32mNotice\e[0m: \e[36m$db_name\e[0m does not exist, creating as new."
+		dbCreate
+	fi
+
+	# Ask web information
+	echo -e "\n\e[36m# Webpage Location, User and Admin information.\e[0m\n"
+	WebUIInfo
+	# create users in database
+	echo -e "\e[32mNotice\e[0m: Adding web admin and web user to \e[36m$db_name\e[0m\n"
+	dbUserCreate
+	# Create Company entries in database
+	dbCompCreate
+	# Add crontab entry for every 2 hours
+	AddCrontab
+	# Finalize the install
+	echo -e "\e[36m# Installing Apache related configurations\e[0m\n"
+	ModeType="Install"
+	InstallApp
+	# end install
+        exit 0
+}
+
+function UpdateUpgrade()
+{
+
+	# run update/upgrade
+	echo -e "\e[32mMode\e[0m: Running Update/Upgrade\n"
+	# check if script install dir exists, if not go back to menu
+	if [[ ! -d /opt/patch_manager/ ]]; then
+                echo -e "\e[31mNotice\e[0m: Detected the base directory is missing. Please run the installer in new install mode.\n"
+		sleep 3
+		mainMenu
+        fi
+	# Ask web information
+        echo -e "\e[36m# Webpage Location, User and Admin information.\e[0m\n"
+	WebUIInfoUpdate
+	# check if db_config.php and db.conf exist
+        if [[ ! -f /opt/patch_manager/db_config.php ]] || [[ ! -f /opt/patch_manager/db.conf ]]; then
+		if [[ -f "${new_web_dir}lib/db_config.php" ]]; then
+			echo -e "\e[31mMissing\e[0m: /opt/patch_manager/db_config.php"
+			echo -e "\e[32mRestore\e[0m: making a copy of /opt/patch_manager/db_config.php to ${new_web_dir}lib/db_config.php\n"
+			\cp -f ${new_web_dir}lib/db_config.php /opt/patch_manager/db_config.php
+		else
+			echo -e "\e[31mNotice\e[0m: Detected the database configuration files are missing. Please run the installer in new install mode.\n"
+			sleep 3
+			mainMenu
+		fi
+	fi
+	# get database infomation
+	export db_host=$(grep DB_HOST /opt/patch_manager/db_config.php|awk -F"'" {'print $4'})
+	export db_user=$(grep DB_USER /opt/patch_manager/db_config.php|awk -F"'" {'print $4'})
+	export db_pass=$(grep DB_PASS /opt/patch_manager/db_config.php|awk -F"'" {'print $4'})
+	export db_name=$(grep DB_NAME /opt/patch_manager/db_config.php|awk -F"'" {'print $4'})
+	# database upgrade
+        echo -e "\e[36m# Database Setup information\e[0m"
+        dbRootPasswd
+        dbConnTest
+        dbCheck
+        # check database connection from user provided details
+        if [[ "$dbConnx" = "no" ]]; then
+                echo -e "\n\e[31mError\e[0m: Unable to connect to: \e[36m$db_host\e[0m, please try again.\n"
+                dbRootPasswd
+                dbConnTest
+                dbCheck
+        fi
+	if [[ "$dbExists" = "yes" ]]; then
+                echo -e "\n\n\e[32mNotice\e[0m: \e[36m$db_name\e[0m updating database tables\n"
+                dbUpdate
+        fi
+        # Add crontab entry for every 2 hours
+        AddCrontab
+        # Finalize the install
+        echo -e "\e[36m# Installing Apache related configurations\e[0m\n"
+        InstallApp
+	ModeType="Update"
+	# end update
+	exit 0
+}
+
+function mainMenu()
+{
+
 # show script header
 clear
 echo -e "\n###########################################################################"
@@ -896,52 +1054,50 @@ echo -e " custom built admin interface. This includes both Linux and Windows hos
 echo -e " Stay tuned... :)\n"
 echo -e "###########################################################################\n"
 
-# run OS function
+# run OS Detection and package installer
 echo -e "\e[36m# Detecting Operating System Version\n\e[0m"
 OSDetect
 
-# run DB functions
-echo -e "\e[36m# Database Setup information\n\e[0m"
-dbAskHost
-dbRootPasswd
-dbAskUser
-dbAskPass
-dbAskName
-dbUserDBCreate
-dbConnTest
-dbCheck
+echo -e "\e[32mPlease choose an option below\n\e[0m"
+cat <<EOF
+1) Install
+2) Upgrade
+q) Quit
+EOF
 
-# check database connection from user provided details
-if [[ "$dbConnx" = "no" ]]; then
-        echo -e "\n\e[31mError\e[0m: Unable to connect to: \e[36m$db_host\e[0m, please try again.\n"
-	dbAskHost
-	dbRootPasswd
-	dbAskUser
-	dbAskPass
-	dbAskName
-	dbUserDBCreate
-	dbConnTest
-        dbCheck
-fi
+        echo -e "\e[32m";read -p "Choose mode: " opt;echo -e "\e[0m"
 
-if [[ "$dbExists" = "yes" ]]; then
-	echo -e "\n\e[32mNotice\e[0m: \e[36m$db_name\e[0m already exists, updating tables."
-        dbUpdate
-else
-	echo -e "\n\e[32mNotice\e[0m: \e[36m$db_name\e[0m does not exist, creating as new."
-	dbCreate
-fi
+        # get token from user input
+        case "$opt" in
+                1|Install)
+                NewInstall
+                ;;
+                2|Upgrade)
+                UpdateUpgrade
+                ;;
+                q|Quit)
+                exit 0
+                ;;
+                *)
+                echo -e "\e[31mNOTICE\e[0m: Invalid Option"
+                $0
+                ;;
+        esac
 
-# Ask web information
-echo -e "\n\e[36m# Webpage Location, User and Admin information.\e[0m\n"
-WebUIInfo
-# create users in database
-echo -e "\e[32mNotice\e[0m: Adding web admin and web user to \e[36m$db_name\e[0m\n"
-dbUserCreate
-# Create Company entries in database
-dbCompCreate
-# Add crontab entry for every 2 hours
-AddCrontab
-# Finalize the install
-echo -e "\e[36m# Installing Apache related configurations\e[0m\n"
-InstallApp
+        # show menu if not arguments
+        if [[ -z $@ ]]; then
+                echo -e "\n\e[31mError\e[0m: Invalid Option, try again.\n"
+                sleep 2
+                $0
+                exit 1
+        fi
+        if [[ ! -z ${OPTARG} ]]; then
+                echo -e "\n\e[31mError\e[0m: Invalid Option, try again.\n"
+                sleep 2
+                $0
+                exit 1
+        fi
+}
+
+# run ask menu for update or install
+mainMenu
