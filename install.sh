@@ -739,7 +739,7 @@ RewriteRule rewrite_check/(.*)$ ${relative_path}rewrite_check.php [QSA,NC,L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^([^/]*)$ ${relative_path}index.php?page= [QSA,L]"
+RewriteRule ^([^/]*)$ ${relative_path}index.php?page=\$1 [QSA,L]"
 
 # write php config for application
 php_config="<?php
