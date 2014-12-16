@@ -46,12 +46,13 @@ TODO: A LOT!
 ===============
 
 * ~~Complete installer script~~
-* Add more distros
+* Add more distros (This one will be a continual one)
 * ~~make everything database-driven~~
-* Configure patch suppression **In the works. Complete soon**
-* configure ability to install patches from the web interface **In the works. Complete soon**
-* configure ability to patch windows hosts
-* configure logins, allowing for tie-in to LDAP/AD, and possibly a SSO solution like RADIUS **In the works. Complete soon**
+* ~~Configure patch suppression~~
+* Configure Patch Suppression via the web UI. Back-end and DB are fully capable now. **In Progress**
+* configure ability to install patches from the web interface **In Testing Phase**
+* configure ability to patch windows hosts **On roadmap for v1.5**
+* ~~configure logins~~
 
 ===============
 
