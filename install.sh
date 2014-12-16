@@ -63,13 +63,14 @@ function genInstallKey()
 # default admin and users for the admin web interface
 # admin info
 web_admin="pmdadmin"
-web_admin_passwd=$(genPasswd|awk {'print $2'})
 web_admin_passwd_echo=$(genPasswd|awk {'print $1'})
+web_admin_passwd="$web_admin_passwd_echo"
 web_admin_email="no_admin@email.com"
 # user info
 web_duser="pmduser"
-web_duser_passwd=$(genPasswd|awk {'print $2'})
 web_duser_passwd_echo=$(genPasswd|awk {'print $1'})
+web_duser_passwd="$web_dusr_passwd"
+
 web_duser_email="no_user@email.com"
 # export to global
 export web_admin web_admin_email web_admin_passwd 
