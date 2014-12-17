@@ -858,12 +858,8 @@ if [[ "$ModeType" = "Install" ]]; then
 	\cp -f html/lib/db_config.php /opt/patch_manager/staged/html/lib/db_config.php
 	sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' /opt/patch_manager/patch_checker.sh
         sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" /opt/patch_manager/patch_checker.sh
-	sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${new_web_dir}client/*.sh
-	sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${new_web_dir}client/*.sh
         echo "$rewrite_config" > /opt/patch_manager/staged/html/.htaccess
         echo "$php_config" > /opt/patch_manager/staged/html/lib/db_config.php
-	echo "$rewrite_config" > ${web_dir}.htaccess
-	echo "$php_config" > /opt/patch_manager/db_config.php
 	echo "$bash_config" > /opt/patch_manager/db.conf
 
 elif [[ "$ModeType" = "Update" ]]; then
@@ -885,8 +881,8 @@ elif [[ "$ModeType" = "Update" ]]; then
 	fi
 
 fi
-# check if web_dir exists
-if [[ -d $web_dir ]]; then
+# check if new_web_dir exists
+if [[ -d $new_web_dir ]]; then
 	echo -e "\e[32mNotice\e[0m: $target_web_dir already exists.\n"
 	unset yn
 	read -p "Do you want to overwrite the existing contents? (y/n) " yn
@@ -896,14 +892,15 @@ if [[ -d $web_dir ]]; then
 		echo
 	done
 	if [[ "$yn" = "yes" ]] || [[ "$yn" = "y" ]]; then
-		\cp -f -R html/* $web_dir
-		rsync -aqP --exclude='patch_checker.sh' --exclude='run_commands.sh' html/ /opt/patch_manager/
-		\cp -f -R /opt/patch_manager/staged/html/* $web_dir
+		rsync -aq --exclude='patch_checker.sh' --exclude='run_commands.sh' html/ $new_web_dir
+		\cp -f -R /opt/patch_manager/staged/html/.htaccess $new_web_dir
+		\cp -f -R /opt/patch_manager/staged/html/* $new_web_dir
 	else
 		echo -e "\nAnwer yes to overwrite and no to skip"
-		mkdir -p $web_dir
-		cp -i -R html/* $web_dir
-		cp -i -R /opt/patch_manager/staged/html/* $web_dir
+		mkdir -p $new_web_dir
+		cp -i -R html/* $new_web_dir
+		cp -i -R /opt/patch_manager/staged/html/.htaccess $new_web_dir
+		cp -i -R /opt/patch_manager/staged/html/* $new_web_dir
 	fi
 	# check if changes were made in shell scripts via sed
 	grep "__SERVER_AUTHKEY_SET_ME__" "${new_web_dir}client/run_commands.sh" > /dev/null 2>&1
@@ -917,10 +914,21 @@ if [[ -d $web_dir ]]; then
                 sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${new_web_dir}client/run_commands.sh
         fi
 else
-	mkdir -p $web_dir
-	\cp -R html/* $web_dir
-	\cp -R /opt/patch_manager/staged/html/* $web_dir
+	mkdir -p $new_web_dir
+	\cp -R html/* $new_web_dir
+	\cp -R /opt/patch_manager/staged/html/.htaccess $new_web_dir
+	\cp -R /opt/patch_manager/staged/html/* $new_web_dir
 	# check if changes were made in shell scripts via sed
+	grep "__SERVER_AUTHKEY_SET_ME__" /opt/patch_manager/patch_checker.sh > /dev/null 2>&1
+        if [[ "$?" -eq 0 ]]; then
+                echo -e "\e[32mNotice\e[0m: AuthKey correcly set in: /opt/patch_manager/patch_checker.sh"
+                sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' /opt/patch_manager/patch_checker.sh
+        fi
+        grep "__SERVER_URI_SET_ME__" /opt/patch_manager/patch_checker.sh > /dev/null 2>&1
+        if [[ "$?" -eq 0 ]]; then
+                echo -e "\e[32mNotice\e[0m: URI correcly set in: /opt/patch_manager/patch_checker.sh\n"
+                sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" /opt/patch_manager/patch_checker.sh
+        fi
 	grep "__SERVER_AUTHKEY_SET_ME__" "${new_web_dir}client/run_commands.sh" > /dev/null 2>&1
         if [[ "$?" -eq 0 ]]; then
                 echo -e "\e[32mNotice\e[0m: AuthKey correcly set in: ${new_web_dir}client/run_commands.sh"
@@ -933,9 +941,9 @@ else
         fi
 fi
 # change perms 
-find $web_dir -type d -print0|xargs -0 chmod 755
-find $web_dir -type f -print0|xargs -0 chmod 644
-chown $web_user:$web_user $web_dir -R
+find $new_web_dir -type d -print0|xargs -0 chmod 755
+find $new_web_dir -type f -print0|xargs -0 chmod 644
+chown $web_user:$web_user $new_web_dir -R
 # restart web service
 service $web_service restart
 rewrite_check=`curl -s localhost${relative_path}rewrite_check|grep 404|wc -l`
