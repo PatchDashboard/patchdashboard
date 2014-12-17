@@ -128,7 +128,7 @@ function OSDetect()
 			echo -e "\e[31mNotice\e[0m: Please wait while prerequisites are installed...\n\n\e[31mNotice\e[0m: Installing Apache and PHP5..."
 			while true;
 			do echo -n .;sleep 1;done &
-			apt-get install -y apache2 apache2-threaded-dev apache2-utils php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc curl > /dev/null 2>&1
+			apt-get install -y apache2 apache2-threaded-dev apache2-utils php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc php5-mssql curl > /dev/null 2>&1
 			kill $!; trap 'kill $!' SIGTERM;
 			echo "ServerName localhost" >> /etc/apache2/httpd.conf
 			echo -e "\n\e[32mNotice\e[0m: Apache/PHP Installation Complete\n"
@@ -148,7 +148,7 @@ function OSDetect()
 			echo -e "\n\n\e[31mNotice\e[0m: Installing MySQL Client and Server..."
 			while true;
                         do echo -n .;sleep 1;done &
-			apt-get install -y mysql-client mysql-server php5-mysql libapache2-mod-auth-mysql libmysqlclient-dev > /dev/null 2>&1
+			apt-get install -y mysql-client mysql-server php5-mysql php5-mssql libapache2-mod-auth-mysql libmysqlclient-dev > /dev/null 2>&1
 			kill $!; trap 'kill $!' SIGTERM;
 			mysql_install_db > /dev/null 2>&1
 			echo -e "\nInstalling MySQL system tables...\nOK"
@@ -220,7 +220,7 @@ function OSDetect()
                         echo -e "\e[31mNotice\e[0m: Installing PHP5..."
                         while true;
                         do echo -n .;sleep 1;done &
-                        yum install -y php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli php-pdo php-php-gettext php-tidy > /dev/null 2>&1
+                        yum install -y php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli php-pdo php-mssql > /dev/null 2>&1
                         kill $!; trap 'kill $!' SIGTERM;
                         echo -e "\n\n\e[32mNotice\e[0m: PHP Installation Complete\n"
                 fi
