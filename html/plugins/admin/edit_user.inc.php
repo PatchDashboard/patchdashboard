@@ -6,7 +6,7 @@ if (!isset($index_check) || $index_check != "active"){
     exit();
 }
 $id = filter_input(INPUT_GET,'id',FILTER_SANITIZE_NUMBER_INT);
-if (!isset($id) || empty($id)){
+if (!isset($id) || empty($id) || !is_numeric($id)){
         $_SESSION['error_message'] = "Invalid user ID";
         echo "<script type='text/javascript'>window.location.href = '".BASE_PATH."manage_users</script>";
         #header("location:".BASE_PATH."manage_users");
