@@ -748,7 +748,7 @@ function InstallApp()
 host_node=`hostname`
 
 # rewrite config for .htaccess
-rewrite_config="ErrorDocument 404 ${relative_path}index.php?page=\$1 [QSA,NC,L]
+rewrite_config="ErrorDocument 404 ${relative_path}index.php?page=\$1
 RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
