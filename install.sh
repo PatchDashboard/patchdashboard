@@ -544,7 +544,7 @@ function WebUIInfo()
 	while [[ "$new_web_dir" = "" ]]; do
         	echo -e "\e[32mNotice\e[0m: Default Location Used: $web_dir"
         	new_web_dir=$web_dir
-			EXTERNAL_WEB_URI="http://${SERVER_IP}${new_web_dir}"
+		EXTERNAL_WEB_URI="http://${SERVER_IP}${new_web_dir}"
 	done
 	echo
 	unset new_relative_path
@@ -552,7 +552,7 @@ function WebUIInfo()
 	while [[ "$new_relative_path" = "" ]]; do
         	echo -e "\e[32mNotice\e[0m: Default Location Used: $relative_path"
         	new_relative_path=$relative_path
-			relpath=$(echo $new_relative_path|cut -d '/' -f 2)
+		relpath=$(echo $new_relative_path|cut -d '/' -f 2)
 	done
 	echo
 	if [ "$new_relative_path" != "$relative_path" ] && [ "$new_relative_path" != "" ]; then
@@ -652,7 +652,7 @@ function WebUIInfoUpdate()
         while [[ "$new_web_dir" = "" ]]; do
                 echo -e "\e[32mNotice\e[0m: Default Location Used: $web_dir"
                 new_web_dir=$web_dir
-                        EXTERNAL_WEB_URI="http://${SERVER_IP}${new_web_dir}"
+                EXTERNAL_WEB_URI="http://${SERVER_IP}${new_web_dir}"
         done
         echo
         unset new_relative_path
@@ -660,7 +660,7 @@ function WebUIInfoUpdate()
         while [[ "$new_relative_path" = "" ]]; do
                 echo -e "\e[32mNotice\e[0m: Default Location Used: $relative_path"
                 new_relative_path=$relative_path
-                        relpath=$(echo $new_relative_path|cut -d '/' -f 2)
+                relpath=$(echo $new_relative_path|cut -d '/' -f 2)
         done
         echo
         if [ "$new_relative_path" != "$relative_path" ] && [ "$new_relative_path" != "" ]; then
@@ -858,6 +858,8 @@ if [[ "$ModeType" = "Install" ]]; then
 	\cp -f html/lib/db_config.php /opt/patch_manager/staged/html/lib/db_config.php
 	sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' /opt/patch_manager/patch_checker.sh
         sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" /opt/patch_manager/patch_checker.sh
+	sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${new_web_dir}client/*.sh
+	sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${new_web_dir}client/*.sh
         echo "$rewrite_config" > /opt/patch_manager/staged/html/.htaccess
         echo "$php_config" > /opt/patch_manager/staged/html/lib/db_config.php
 	echo "$rewrite_config" > ${web_dir}.htaccess
@@ -865,11 +867,28 @@ if [[ "$ModeType" = "Install" ]]; then
 	echo "$bash_config" > /opt/patch_manager/db.conf
 
 elif [[ "$ModeType" = "Update" ]]; then
+
+	# get install key from mysql
+	unset install_key
+	install_key=$(mysql -u $db_user -h $db_host -p"$db_pass" --skip-column-names -D $db_name -e "SELECT install_key from company;")
 	rsync -aq --exclude='db.conf' --exclude='db_config.php' scripts/ /opt/patch_manager/
+	# check if changes were made in shell scripts via sed
+	grep "__SERVER_AUTHKEY_SET_ME__" /opt/patch_manager/patch_checker.sh > /dev/null 2>&1
+	if [[ "$?" -eq 0 ]]; then
+        	echo -e "\e[32mNotice\e[0m: AuthKey correcly set in: /opt/patch_manager/patch_checker.sh"
+	        sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' /opt/patch_manager/patch_checker.sh
+	fi
+	grep "__SERVER_URI_SET_ME__" /opt/patch_manager/patch_checker.sh > /dev/null 2>&1
+	if [[ "$?" -eq 0 ]]; then
+        	echo -e "\e[32mNotice\e[0m: URI correcly set in: /opt/patch_manager/patch_checker.sh\n"
+	        sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" /opt/patch_manager/patch_checker.sh
+	fi
+
 fi
 # check if web_dir exists
 if [[ -d $web_dir ]]; then
 	echo -e "\e[32mNotice\e[0m: $target_web_dir already exists.\n"
+	unset yn
 	read -p "Do you want to overwrite the existing contents? (y/n) " yn
 	echo
 	while [[ "$yn" = "" ]]; do
@@ -878,16 +897,40 @@ if [[ -d $web_dir ]]; then
 	done
 	if [[ "$yn" = "yes" ]] || [[ "$yn" = "y" ]]; then
 		\cp -f -R html/* $web_dir
+		rsync -aqP --exclude='patch_checker.sh' --exclude='run_commands.sh' html/ /opt/patch_manager/
 		\cp -f -R /opt/patch_manager/staged/html/* $web_dir
 	else
+		echo -e "\nAnwer yes to overwrite and no to skip"
 		mkdir -p $web_dir
 		cp -i -R html/* $web_dir
 		cp -i -R /opt/patch_manager/staged/html/* $web_dir
 	fi
+	# check if changes were made in shell scripts via sed
+	grep "__SERVER_AUTHKEY_SET_ME__" "${new_web_dir}client/run_commands.sh" > /dev/null 2>&1
+	if [[ "$?" -eq 0 ]]; then
+                echo -e "\e[32mNotice\e[0m: AuthKey correcly set in: ${new_web_dir}client/run_commands.sh"
+                sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${new_web_dir}client/run_commands.sh
+        fi
+	grep "__SERVER_URI_SET_ME__" "${new_web_dir}client/run_commands.sh" > /dev/null 2>&1
+	if [[ "$?" -eq 0 ]]; then
+                echo -e "\e[32mNotice\e[0m: URI correcly set in: ${new_web_dir}client/run_commands.sh\n"
+                sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${new_web_dir}client/run_commands.sh
+        fi
 else
 	mkdir -p $web_dir
 	\cp -R html/* $web_dir
 	\cp -R /opt/patch_manager/staged/html/* $web_dir
+	# check if changes were made in shell scripts via sed
+	grep "__SERVER_AUTHKEY_SET_ME__" "${new_web_dir}client/run_commands.sh" > /dev/null 2>&1
+        if [[ "$?" -eq 0 ]]; then
+                echo -e "\e[32mNotice\e[0m: AuthKey correcly set in: ${new_web_dir}client/run_commands.sh"
+                sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${new_web_dir}client/run_commands.sh
+        fi
+        grep "__SERVER_URI_SET_ME__" "${new_web_dir}client/run_commands.sh" > /dev/null 2>&1
+        if [[ "$?" -eq 0 ]]; then
+                echo -e "\e[32mNotice\e[0m: URI correcly set in: ${new_web_dir}client/run_commands.sh\n"
+                sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${new_web_dir}client/run_commands.sh
+        fi
 fi
 # change perms 
 find $web_dir -type d -print0|xargs -0 chmod 755
@@ -1031,8 +1074,8 @@ function UpdateUpgrade()
         AddCrontab
         # Finalize the install
         echo -e "\e[36m# Installing Apache related configurations\e[0m\n"
-        InstallApp
 	ModeType="Update"
+        InstallApp
 	# end update
 	exit 0
 }
