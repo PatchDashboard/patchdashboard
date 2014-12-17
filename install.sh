@@ -748,7 +748,7 @@ function InstallApp()
 host_node=`hostname`
 
 # rewrite config for .htaccess
-rewrite_config="ErrorDocument 404 ${relative_path}index.php?page=\$1 [QSA,NC,L]
+rewrite_config="ErrorDocument 404 ${relative_path}index.php?page=\$1
 RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
@@ -860,6 +860,7 @@ if [[ "$ModeType" = "Install" ]]; then
         sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" /opt/patch_manager/patch_checker.sh
         echo "$rewrite_config" > /opt/patch_manager/staged/html/.htaccess
         echo "$php_config" > /opt/patch_manager/staged/html/lib/db_config.php
+        echo "$php_config" > /opt/patch_manager/db_config.php 
 	echo "$bash_config" > /opt/patch_manager/db.conf
 
 elif [[ "$ModeType" = "Update" ]]; then
