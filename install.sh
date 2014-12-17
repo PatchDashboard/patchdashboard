@@ -720,27 +720,48 @@ genInstallKey
 #trim end hiphen from installation_key for echo statements
 export install_key=$(echo $installation_key|awk {'print $1'})
 
-# check if company exist
-unset comp_name_check
-comp_name_check=$(mysql -u $db_user -h $db_host -p"$db_pass" -e "SELECT name from $db_name.company where name='$comp_id';")
-unset comp_disp_check
-comp_disp_check=$(mysql -u $db_user -h $db_host -p"$db_pass" -e "SELECT name from $db_name.company where display_name='$your_company';")
-# check if installation key exist
-unset comp_ikey_check
-comp_ikey_check=$(mysql -u $db_user -h $db_host -p"$db_pass" -e "SELECT install_key from $db_name.company where install_key='$installation_key';")
+# get count from company table
+unset comp_count
+comp_count=$(mysql -u $db_user -h $db_host -p"$db_pass" --skip-column-names -D $db_name -e "SELECT count(*) from company;")
 
-# if not exist, add company and installation key
-if [[ "$comp_name_check" = "" ]] && [[ "$comp_disp_check" = "" ]] && [[ "$comp_ikey_check" = "" ]]; then
-	# add company and installation key
-	echo -e "\e[32mNotice\e[0m: Company added to \e[36m$db_name\e[0m: \e[36m$your_company\e[0m/\e[36m$comp_id\n\e[0m"
-	echo -e "\e[32mNotice\e[0m: Installation Key added to \e[36m$db_name\e[0m: $install_key\n"
-	mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name -e "INSERT INTO company (name,display_name,install_key) VALUES ('$comp_id', '$your_company', '$installation_key');"
-else
+# check if count is zero, if not skip
+if [[ "$comp_count" -gt 0 ]]; then
+	company_exist="yes"
+	unset comp_name
+        comp_name=$(mysql -u $db_user -h $db_host -p"$db_pass" --skip-column-names -D $db_name -e "SELECT name from company LIMIT 1;")
+	# check if company display name exist
+        unset comp_disp
+        comp_disp=$(mysql -u $db_user -h $db_host -p"$db_pass" --skip-column-names -D $db_name -e "SELECT display_name from company LIMIT 1;")
+        # check the key number from db
+        unset comp_keynum
+        comp_keynum=$(mysql -u $db_user -h $db_host -p"$db_pass" --skip-column-names -D $db_name -e "SELECT install_key from company LIMIT 1;")
+
+	echo -e "\e[32mNotice\e[0m: A Company Name already exists: \e[36m$comp_disp\e[0m or \e[36m$comp_name\e[0m with installation key: $comp_keynum\n"
+else 
+	unset comp_name
+	comp_name=$(mysql -u $db_user -h $db_host -p"$db_pass" --skip-column-names -D $db_name -e "SELECT name from company where name='$comp_id';")
+	# check if company display name exist
+	unset comp_disp
+	comp_disp=$(mysql -u $db_user -h $db_host -p"$db_pass" --skip-column-names -D $db_name -e "SELECT name from company where display_name='$your_company';")
+	# check if installation key exist
 	unset comp_ikey
-	comp_ikey=$(mysql --skip-column-names -u $db_user -h $db_host -p"$db_pass" -e "SELECT install_key from $db_name.company;")
-        echo -e "\e[32mNotice\e[0m: Company Name already exists: \e[36m$your_company\e[0m or \e[36m$comp_id\e[0m with installation key: $comp_ikey\n"
-fi
+	comp_ikey_=$(mysql -u $db_user -h $db_host -p"$db_pass" --skip-column-names -D $db_name -e "SELECT install_key from company where install_key='$installation_key';")
+	# check the key number from db
+	unset comp_keynum
+	comp_keynum=$(mysql -u $db_user -h $db_host -p"$db_pass" --skip-column-names -D $db_name -e "SELECT install_key from company LIMIT 1;")
 
+	# if not exist, add company and installation key
+	if [[ "$comp_name" = "" ]] && [[ "$comp_disp" = "" ]] && [[ "$comp_ikey" = "" ]]; then
+		# add company and installation key
+		company_exist="no"
+		echo -e "\e[32mNotice\e[0m: Company added to \e[36m$db_name\e[0m: \e[36m$your_company\e[0m/\e[36m$comp_id\n\e[0m"
+		echo -e "\e[32mNotice\e[0m: Installation Key added to \e[36m$db_name\e[0m: $install_key\n"
+		mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name -e "INSERT INTO company (name,display_name,install_key) VALUES ('$comp_id', '$your_company', '$installation_key');"
+	else
+		company_exist="yes"
+        	echo -e "\e[32mNotice\e[0m: A Company Name already exists: \e[36m$comp_disp\e[0m or \e[36m$comp_name\e[0m with installation key: $comp_keynum\n"
+	fi
+fi
 }
 
 function InstallApp()
@@ -774,6 +795,10 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^([^/]*)$ ${relative_path}index.php?page=\$1 [QSA,L]"
 
+# check display_name setting or your_company
+if [[ "$company_exist" = "yes" ]]; then
+	your_company=$comp_disp
+fi
 # write php config for application
 php_config="<?php
 define('DB_HOST','$db_host');
@@ -882,6 +907,7 @@ elif [[ "$ModeType" = "Update" ]]; then
 	fi
 
 fi
+###### THIS NEEDS FIXING to remove duplicate file copy efforts
 # check if new_web_dir exists
 if [[ -d $new_web_dir ]]; then
 	echo -e "\e[32mNotice\e[0m: $target_web_dir already exists.\n"
@@ -897,7 +923,7 @@ if [[ -d $new_web_dir ]]; then
 		\cp -f -R /opt/patch_manager/staged/html/.htaccess $new_web_dir
 		\cp -f -R /opt/patch_manager/staged/html/* $new_web_dir
 	else
-		echo -e "\nAnwer yes to overwrite and no to skip"
+		echo -e "Answer (y)es to overwrite and (n)o to skip.\n"
 		mkdir -p $new_web_dir
 		cp -i -R html/* $new_web_dir
 		cp -i -R /opt/patch_manager/staged/html/.htaccess $new_web_dir
@@ -1114,7 +1140,7 @@ OSDetect
 echo -e "\e[32mPlease choose an option below\n\e[0m"
 cat <<EOF
 1) Install
-2) Upgrade
+2) Update
 q) Quit
 EOF
 
@@ -1125,7 +1151,7 @@ EOF
                 1|Install)
                 NewInstall
                 ;;
-                2|Upgrade)
+                2|Update)
                 UpdateUpgrade
                 ;;
                 q|Quit)
