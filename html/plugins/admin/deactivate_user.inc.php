@@ -9,6 +9,10 @@ if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == true) {
 		$link = mysql_connect(DB_HOST,DB_USER,DB_PASS);
 		mysql_select_db(DB_NAME,$link);
         	mysql_query($sql);
+                $sql2 = "SELECT `user_id` FROM `users` WHERE `id`=$id LIMIT 1;";
+                $username_res = mysql_query($sql2);
+                $username_row = mysql_fetch_row($username_res);
+                $username = $username_row['user_id'];
 	        mysql_close($link); 
         	$_SESSION['good_notice'] = "$username Deactivated!!! THEY are on holiday while I have to keep watching all these servers? It's not fair!";
             	header('location:'.BASE_PATH.'manage_users');

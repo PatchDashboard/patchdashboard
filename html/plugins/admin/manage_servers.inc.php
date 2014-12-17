@@ -10,32 +10,44 @@ mysql_select_db(DB_NAME,$link);
 $sql = "SELECT * FROM servers;";
 $res = mysql_query($sql);
 $table = "";
+$distro_map_sql = "d.distro_name,dv.version_num, dv.id as version_id,d.id as distro_id FROM distro_version dv LEFT JOIN distro d on d.id=dv.distro_id;";
+$distro_map_res = mysql_query($distro_map_sql);
+while ($distro_map_row = mysql_fetch_assoc($distro_map_res)){
+    $distro_array[$distro_map_row['distro_id']][$distro_map_row['version_id']] = str_replace("_"," ",$distro_map_row['distro_name']." ".$distro_map_row['version_num']);
+}
 while ($row = mysql_fetch_assoc($res)){
     $id = $row['id'];
     $server_name = $row['server_name'];
     $distro_id = $row['distro_id'];
     $server_ip = $row['server_ip'];
     $distro_version = $row['distro_version'];
+    $distro_name = $distro_array[$distro_id][$distro_version];
     $client_key = $row['client_key'];
     $trusted = $row['trusted'];
+    if ($trusted == 0){
+        $trust = "NO";
+    }
+    else{
+        $trust = "YES";
+    }
     $last_seen = $row['last_seen'];
     if ($last_seen == "0000-00-00 00:00:00"){
         $last_seen = "Never";
     }
     
-        if ($active == 1){
-                $active_action = "<a href='".BASE_PATH."plugins/admin/deactivate_user.inc.php?id=$id'>Deactivate</a>";
+        if ($trusted == 1){
+                $active_action = "<a href='".BASE_PATH."plugins/admin/deactivate_server.inc.php?id=$id'>Deactivate/Distrust</a>";
         }
         else{
-                $active_action = "<a href='".BASE_PATH."plugins/admin/activate_user.inc.php?id=$id'>Reactivate</a>";
+                $active_action = "<a href='".BASE_PATH."plugins/admin/activate_server.inc.php?id=$id'>Reactivate/Trust</a>";
         }
     $table .="                          <tr>
-                                        <td>$username</td>
-                                        <td>$email</td>
-                                        <td>$group</td>
+                                        <td>$server_name</td>
+                                        <td>$distro_name</td>
+                                        <td>$server_ip</td>
+                                        <td>$trust</td>
                                         <td>$last_seen</td>
-                                        <td>$alerts</td>
-                                        <td><a href='".BASE_PATH."edit_user?id=$id'>Edit</a> | $active_action | <a href='".BASE_PATH."plugins/admin/delete_user.inc.php?id=$id'>Delete</a></td>
+                                        <td><a href='".BASE_PATH."edit_server?id=$id'>Edit</a> | $active_action | <a href='".BASE_PATH."plugins/admin/delete_server.inc.php?id=$id'>Delete</a></td>
                                 </tr>
 ";
 }
@@ -48,10 +60,10 @@ while ($row = mysql_fetch_assoc($res)){
                 <tr>
                   <th>Sever Name</th>
                   <th>Distro</th>
-                  <th>Version</th>
                   <th>Server IP</th>
                   <th>Trusted?</th>
                   <th>Last Check-in</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
