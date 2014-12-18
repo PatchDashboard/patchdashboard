@@ -116,6 +116,7 @@ function OSInstall()
 
 	if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
 		apache_exists=$(which apache2)
+		php5_exists=$(which php)
 		mysqld_exists=$(which mysqld)
 		if [[ "$os" = "Linux" ]] && [[ "$apache_exists" = "" ]]; then
 			echo -e "\n\e[31mNotice\e[0m: Please install the full LAMP stack before trying to install this application.\n\n\e[31mNotice\e[0m: https://community.rackspace.com/products/f/25/t/49\n"
@@ -128,11 +129,22 @@ function OSInstall()
 			echo -e "\e[31mNotice\e[0m: Please wait while prerequisites are installed...\n\n\e[31mNotice\e[0m: Installing Apache and PHP5..."
 			while true;
 			do echo -n .;sleep 1;done &
-			apt-get install -y apache2 apache2-threaded-dev apache2-utils php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc php5-mssql curl > /dev/null 2>&1
+			apt-get install -y apache2 apache2-threaded-dev apache2-utils curl > /dev/null 2>&1
 			kill $!; trap 'kill $!' SIGTERM;
 			echo "ServerName localhost" >> /etc/apache2/httpd.conf
 			echo -e "\n\e[32mNotice\e[0m: Apache/PHP Installation Complete\n"
 		fi
+		if [[ "$php5_exists" = "" ]]; then
+                        echo -e "\e[31mNotice\e[0m: PHP does not seem to be installed."
+                        unset wait
+                        echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
+                        echo -e "\e[31mNotice\e[0m: Installing PHP5..."
+                        while true;
+                        do echo -n .;sleep 1;done &
+                        apt-get install -y php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc php5-mysql php5-sybase > /dev/null 2>&1
+                        kill $!; trap 'kill $!' SIGTERM;
+                        echo -e "\n\n\e[32mNotice\e[0m: PHP Installation Complete\n"
+                fi
 		if [[ "$mysqld_exists" = "" ]]; then
 			echo -e "\e[31mNotice\e[0m: MySQL does not seem to be installed."
                         unset wait
@@ -148,7 +160,7 @@ function OSInstall()
 			echo -e "\n\n\e[31mNotice\e[0m: Installing MySQL Client and Server..."
 			while true;
                         do echo -n .;sleep 1;done &
-			apt-get install -y mysql-client mysql-server php5-mysql php5-mssql libapache2-mod-auth-mysql libmysqlclient-dev > /dev/null 2>&1
+			apt-get install -y mysql-client mysql-server php5-mysql php5-sybase libapache2-mod-auth-mysql libmysqlclient-dev > /dev/null 2>&1
 			kill $!; trap 'kill $!' SIGTERM;
 			mysql_install_db > /dev/null 2>&1
 			echo -e "\nInstalling MySQL system tables...\nOK"
@@ -180,6 +192,7 @@ function OSInstall()
                 fi
 		# sanity checks
 		phpverCheck
+		PackageCheck
 		checkIPtables
 
 	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
@@ -272,26 +285,26 @@ function OSInstall()
 		# set initial mysql root password
 		mysqlRootPwd
 		# sanity checks
-		PackageCheck
 		phpverCheck
+		PackageCheck
 		checkIPtables
 		localhostChk
 	fi
 }
 function PackageCheck()
 {
-	echo -e "Checking for missing packages...\n"
+	echo -e "\e[32mChecking for missing packages\n\e[0m"
         if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
-	pgkList="apache2 apache2-threaded-dev apache2-utils php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc php5-mssql mysql-client mysql-server php5-mysql php5-mssql libapache2-mod-auth-mysql libmysqlclient-dev curl"
+	pkgList="apache2 apache2-threaded-dev apache2-utils php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc mysql-client mysql-server php5-mysql php5-sybase libapache2-mod-auth-mysql libmysqlclient-dev curl"
 	for package in $pkgList; do
-                status=$(yum info $package|grep installed|grep Repo|awk -F":" {'print $2'}|tr -d " ")
-                if [[ "$status" != "installed" ]]; then
+                dpkg-query -l $package > /dev/null 2>&1
+                if [[ "$?" = "1" ]]; then
                         echo -e "\e[32mPackage\e[0m: \e[36m$package\e[0m not installed, installing missing package"
                         while true;
                         do echo -n .;sleep 1;done &
-                        yum install -y $package > /dev/null 2>&1
+                        apt-get install -y $package > /dev/null 2>&1
                         kill $!; trap 'kill $!' SIGTERM;
-                        echo -e "\e[32mPackage\e[0m: \e[36m$package\e[0m install complete\n"
+                        echo -e "\n\e[32mPackage\e[0m: \e[36m$package\e[0m install complete\n"
                 fi
         done
 	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
@@ -304,7 +317,7 @@ function PackageCheck()
 		        do echo -n .;sleep 1;done &
 			yum install -y $package > /dev/null 2>&1
 			kill $!; trap 'kill $!' SIGTERM;
-			echo -e "\e[32mPackage\e[0m: \e[36m$package\e[0m install complete\n"
+			echo -e "\n\e[32mPackage\e[0m: \e[36m$package\e[0m install complete\n"
 		fi
 	done
 	fi
