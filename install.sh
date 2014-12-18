@@ -107,7 +107,7 @@ fi
 
 ## begin main functions of installer
 
-function OSDetect()
+function OSInstall()
 {
 	if [[ "$os" = "Red" ]]; then
 		os="Red Hat"
@@ -115,8 +115,8 @@ function OSDetect()
 	echo -e "Running install for: \e[32m$os\e[0m\n"
 
 	if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
-		apache_exists=`which apache2`
-		mysqld_exists=`which mysqld`
+		apache_exists=$(which apache2)
+		mysqld_exists=$(which mysqld)
 		if [[ "$os" = "Linux" ]] && [[ "$apache_exists" = "" ]]; then
 			echo -e "\n\e[31mNotice\e[0m: Please install the full LAMP stack before trying to install this application.\n\n\e[31mNotice\e[0m: https://community.rackspace.com/products/f/25/t/49\n"
                         exit 0
@@ -272,9 +272,41 @@ function OSDetect()
 		# set initial mysql root password
 		mysqlRootPwd
 		# sanity checks
+		PackageCheck
 		phpverCheck
 		checkIPtables
 		localhostChk
+	fi
+}
+function PackageCheck()
+{
+	echo -e "Checking for missing packages...\n"
+        if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
+	pgkList="apache2 apache2-threaded-dev apache2-utils php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc php5-mssql mysql-client mysql-server php5-mysql php5-mssql libapache2-mod-auth-mysql libmysqlclient-dev curl"
+	for package in $pkgList; do
+                status=$(yum info $package|grep installed|grep Repo|awk -F":" {'print $2'}|tr -d " ")
+                if [[ "$status" != "installed" ]]; then
+                        echo -e "\e[32mPackage\e[0m: \e[36m$package\e[0m not installed, installing missing package"
+                        while true;
+                        do echo -n .;sleep 1;done &
+                        yum install -y $package > /dev/null 2>&1
+                        kill $!; trap 'kill $!' SIGTERM;
+                        echo -e "\e[32mPackage\e[0m: \e[36m$package\e[0m install complete\n"
+                fi
+        done
+	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
+	pkgList="php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli php-pdo php-mssql mysql mysql-server mysql-devel httpd httpd-devel httpd-tools curl"
+	for package in $pkgList; do
+		status=$(yum info $package|grep installed|grep Repo|awk -F":" {'print $2'}|tr -d " ")
+		if [[ "$status" != "installed" ]]; then
+			echo -e "\e[32mPackage\e[0m: \e[36m$package\e[0m not installed, installing missing package"
+			while true;
+		        do echo -n .;sleep 1;done &
+			yum install -y $package > /dev/null 2>&1
+			kill $!; trap 'kill $!' SIGTERM;
+			echo -e "\e[32mPackage\e[0m: \e[36m$package\e[0m install complete\n"
+		fi
+	done
 	fi
 }
 
@@ -1135,7 +1167,7 @@ echo -e "#######################################################################
 
 # run OS Detection and package installer
 echo -e "\e[36m# Detecting Operating System Version\n\e[0m"
-OSDetect
+OSInstall
 
 echo -e "\e[32mPlease choose an option below\n\e[0m"
 cat <<EOF
