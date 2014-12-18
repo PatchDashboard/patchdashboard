@@ -47,7 +47,7 @@ To keep up-to-date on the direction of this project, you are free to stop by the
 TODO: A LOT!
 ===============
 
-* ~~Complete installer script~~
+* Complete installer script (WIP - please report errors and suggest improvements)
 * Add more distros (This one will be a continual one)
 * ~~make everything database-driven~~
 * ~~Configure patch suppression~~
