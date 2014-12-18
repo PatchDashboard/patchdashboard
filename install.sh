@@ -293,7 +293,7 @@ function OSInstall()
 }
 function PackageCheck()
 {
-	echo -e "\e[32mChecking for missing packages\n\e[0m"
+	echo -e "\e[32mChecking for dependencies and missing packages\n\e[0m"
         if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
 	pkgList="apache2 apache2-threaded-dev apache2-utils php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc mysql-client mysql-server php5-mysql php5-sybase libapache2-mod-auth-mysql libmysqlclient-dev curl"
 	for package in $pkgList; do
@@ -308,14 +308,16 @@ function PackageCheck()
                 fi
         done
 	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
+		if [[ $(grep "exclude=.at" /etc/yum/pluginconf.d/fastestmirror.conf) = "" ]]; then 
+			echo "exclude=.at" >> /etc/yum/pluginconf.d/fastestmirror.conf
+		fi
 	pkgList="php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli php-pdo php-mssql mysql mysql-server mysql-devel httpd httpd-devel httpd-tools curl"
 	for package in $pkgList; do
-		status=$(yum info $package|grep installed|grep Repo|awk -F":" {'print $2'}|tr -d " ")
-		if [[ "$status" != "installed" ]]; then
+		if [[ $(yum list installed|grep "$package[.]") = "" ]]; then
 			echo -e "\e[32mPackage\e[0m: \e[36m$package\e[0m not installed, installing missing package"
 			while true;
 		        do echo -n .;sleep 1;done &
-			yum install -y $package > /dev/null 2>&1
+			yum install -y --skip-broken $package > /dev/null 2>&1
 			kill $!; trap 'kill $!' SIGTERM;
 			echo -e "\n\e[32mPackage\e[0m: \e[36m$package\e[0m install complete\n"
 		fi
