@@ -926,12 +926,11 @@ if [[ "$ModeType" = "Install" ]]; then
 
 	mkdir -p /opt/patch_manager/staged/html/lib/
 	rsync -aq scripts/ /opt/patch_manager/
-	\cp -f html/.htaccess /opt/patch_manager/staged/html/.htaccess
-	\cp -f html/lib/db_config.php /opt/patch_manager/staged/html/lib/db_config.php
+	\cp -f html/.htaccess /opt/patch_manager/.htaccess
+	\cp -f html/lib/db_config.php /opt/patch_manager/db_config.php
 	sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' /opt/patch_manager/patch_checker.sh
         sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" /opt/patch_manager/patch_checker.sh
-        echo "$rewrite_config" > /opt/patch_manager/staged/html/.htaccess
-        echo "$php_config" > /opt/patch_manager/staged/html/lib/db_config.php
+        echo "$rewrite_config" > /opt/patch_manager/.htaccess
         echo "$php_config" > /opt/patch_manager/db_config.php 
 	echo "$bash_config" > /opt/patch_manager/db.conf
 
@@ -940,6 +939,10 @@ elif [[ "$ModeType" = "Update" ]]; then
 	# get install key from mysql
 	unset install_key
 	install_key=$(mysql -u $db_user -h $db_host -p"$db_pass" --skip-column-names -D $db_name -e "SELECT install_key from company;")
+	# check to see if staged dir exists
+	if [[ ! -d /opt/patch_manager/ ]]; then
+		mkdir -p /opt/patch_manager/
+	fi
 	rsync -aq --exclude='db.conf' --exclude='db_config.php' scripts/ /opt/patch_manager/
 	# check if changes were made in shell scripts via sed
 	grep "__SERVER_AUTHKEY_SET_ME__" /opt/patch_manager/patch_checker.sh > /dev/null 2>&1
@@ -967,14 +970,40 @@ if [[ -d $new_web_dir ]]; then
 	done
 	if [[ "$yn" = "yes" ]] || [[ "$yn" = "y" ]]; then
 		rsync -aq --exclude='patch_checker.sh' --exclude='run_commands.sh' html/ $new_web_dir
-		\cp -f -R /opt/patch_manager/staged/html/.htaccess $new_web_dir
-		\cp -f -R /opt/patch_manager/staged/html/* $new_web_dir
+		if [[ ! -f /opt/patch_manager/db.conf ]]; then
+			echo "$bash_config" > /opt/patch_manager/db.conf
+		fi
+	
+		if [[ -f /opt/patch_manager/.htaccess ]]; then
+			\cp -f -R /opt/patch_manager/.htaccess $new_web_dir
+		else
+			echo "$rewrite_config" > /opt/patch_manager/.htaccess
+		fi
+
+		if [[ -f /opt/patch_manager/db_config.php ]]; then
+                        \cp -f -R /opt/patch_manager/db_config.php $new_web_dir/lib/
+		else
+			echo "$php_config" > /opt/patch_manager/db_config.php
+                fi
 	else
 		echo -e "Answer (y)es to overwrite and (n)o to skip.\n"
 		mkdir -p $new_web_dir
 		cp -i -R html/* $new_web_dir
-		cp -i -R /opt/patch_manager/staged/html/.htaccess $new_web_dir
-		cp -i -R /opt/patch_manager/staged/html/* $new_web_dir
+		if [[ ! -f /opt/patch_manager/db.conf ]]; then
+                        echo "$bash_config" > /opt/patch_manager/db.conf
+                fi
+
+		if [[ -f /opt/patch_manager/.htaccess ]]; then
+                        cp -i -R /opt/patch_manager/.htaccess $new_web_dir
+		else
+                        echo "$rewrite_config" > /opt/patch_manager/.htaccess
+                fi
+
+		if [[ -f /opt/patch_manager/db_config.php ]]; then
+                        cp -i -R /opt/patch_manager/db_config.php $new_web_diri/lib/
+                else
+                        echo "$php_config" > /opt/patch_manager/db_config.php
+                fi
 	fi
 	# check if changes were made in shell scripts via sed
 	grep "__SERVER_AUTHKEY_SET_ME__" "${new_web_dir}client/run_commands.sh" > /dev/null 2>&1
