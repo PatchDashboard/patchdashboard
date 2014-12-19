@@ -107,7 +107,7 @@ fi
 
 ## begin main functions of installer
 
-function OSDetect()
+function OSInstall()
 {
 	if [[ "$os" = "Red" ]]; then
 		os="Red Hat"
@@ -115,8 +115,9 @@ function OSDetect()
 	echo -e "Running install for: \e[32m$os\e[0m\n"
 
 	if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
-		apache_exists=`which apache2`
-		mysqld_exists=`which mysqld`
+		apache_exists=$(which apache2)
+		php5_exists=$(which php)
+		mysqld_exists=$(which mysqld)
 		if [[ "$os" = "Linux" ]] && [[ "$apache_exists" = "" ]]; then
 			echo -e "\n\e[31mNotice\e[0m: Please install the full LAMP stack before trying to install this application.\n\n\e[31mNotice\e[0m: https://community.rackspace.com/products/f/25/t/49\n"
                         exit 0
@@ -128,11 +129,22 @@ function OSDetect()
 			echo -e "\e[31mNotice\e[0m: Please wait while prerequisites are installed...\n\n\e[31mNotice\e[0m: Installing Apache and PHP5..."
 			while true;
 			do echo -n .;sleep 1;done &
-			apt-get install -y apache2 apache2-threaded-dev apache2-utils php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc curl > /dev/null 2>&1
+			apt-get install -y apache2 apache2-threaded-dev apache2-utils curl > /dev/null 2>&1
 			kill $!; trap 'kill $!' SIGTERM;
 			echo "ServerName localhost" >> /etc/apache2/httpd.conf
 			echo -e "\n\e[32mNotice\e[0m: Apache/PHP Installation Complete\n"
 		fi
+		if [[ "$php5_exists" = "" ]]; then
+                        echo -e "\e[31mNotice\e[0m: PHP does not seem to be installed."
+                        unset wait
+                        echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
+                        echo -e "\e[31mNotice\e[0m: Installing PHP5..."
+                        while true;
+                        do echo -n .;sleep 1;done &
+                        apt-get install -y php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc php5-mysql php5-sybase > /dev/null 2>&1
+                        kill $!; trap 'kill $!' SIGTERM;
+                        echo -e "\n\n\e[32mNotice\e[0m: PHP Installation Complete\n"
+                fi
 		if [[ "$mysqld_exists" = "" ]]; then
 			echo -e "\e[31mNotice\e[0m: MySQL does not seem to be installed."
                         unset wait
@@ -148,7 +160,7 @@ function OSDetect()
 			echo -e "\n\n\e[31mNotice\e[0m: Installing MySQL Client and Server..."
 			while true;
                         do echo -n .;sleep 1;done &
-			apt-get install -y mysql-client mysql-server php5-mysql libapache2-mod-auth-mysql libmysqlclient-dev > /dev/null 2>&1
+			apt-get install -y mysql-client mysql-server php5-mysql php5-sybase libapache2-mod-auth-mysql libmysqlclient-dev > /dev/null 2>&1
 			kill $!; trap 'kill $!' SIGTERM;
 			mysql_install_db > /dev/null 2>&1
 			echo -e "\nInstalling MySQL system tables...\nOK"
@@ -180,6 +192,7 @@ function OSDetect()
                 fi
 		# sanity checks
 		phpverCheck
+		PackageCheck
 		checkIPtables
 
 	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
@@ -220,7 +233,7 @@ function OSDetect()
                         echo -e "\e[31mNotice\e[0m: Installing PHP5..."
                         while true;
                         do echo -n .;sleep 1;done &
-                        yum install -y php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli php-pdo php-php-gettext php-tidy > /dev/null 2>&1
+                        yum install -y php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli php-pdo php-mssql > /dev/null 2>&1
                         kill $!; trap 'kill $!' SIGTERM;
                         echo -e "\n\n\e[32mNotice\e[0m: PHP Installation Complete\n"
                 fi
@@ -273,8 +286,42 @@ function OSDetect()
 		mysqlRootPwd
 		# sanity checks
 		phpverCheck
+		PackageCheck
 		checkIPtables
 		localhostChk
+	fi
+}
+function PackageCheck()
+{
+	echo -e "\e[32mChecking for dependencies and missing packages\n\e[0m"
+        if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
+	pkgList="apache2 apache2-threaded-dev apache2-utils php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc mysql-client mysql-server php5-mysql php5-sybase libapache2-mod-auth-mysql libmysqlclient-dev curl"
+	for package in $pkgList; do
+                dpkg-query -l $package > /dev/null 2>&1
+                if [[ "$?" = "1" ]]; then
+                        echo -e "\e[32mPackage\e[0m: \e[36m$package\e[0m not installed, installing missing package"
+                        while true;
+                        do echo -n .;sleep 1;done &
+                        apt-get install -y $package > /dev/null 2>&1
+                        kill $!; trap 'kill $!' SIGTERM;
+                        echo -e "\n\e[32mPackage\e[0m: \e[36m$package\e[0m install complete\n"
+                fi
+        done
+	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
+		if [[ $(grep "exclude=.at" /etc/yum/pluginconf.d/fastestmirror.conf) = "" ]]; then 
+			echo "exclude=.at" >> /etc/yum/pluginconf.d/fastestmirror.conf
+		fi
+	pkgList="php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli php-pdo php-mssql mysql mysql-server mysql-devel httpd httpd-devel httpd-tools curl"
+	for package in $pkgList; do
+		if [[ $(yum list installed|grep "$package[.]") = "" ]]; then
+			echo -e "\e[32mPackage\e[0m: \e[36m$package\e[0m not installed, installing missing package"
+			while true;
+		        do echo -n .;sleep 1;done &
+			yum install -y --skip-broken $package > /dev/null 2>&1
+			kill $!; trap 'kill $!' SIGTERM;
+			echo -e "\n\e[32mPackage\e[0m: \e[36m$package\e[0m install complete\n"
+		fi
+	done
 	fi
 }
 
@@ -879,12 +926,11 @@ if [[ "$ModeType" = "Install" ]]; then
 
 	mkdir -p /opt/patch_manager/staged/html/lib/
 	rsync -aq scripts/ /opt/patch_manager/
-	\cp -f html/.htaccess /opt/patch_manager/staged/html/.htaccess
-	\cp -f html/lib/db_config.php /opt/patch_manager/staged/html/lib/db_config.php
+	\cp -f html/.htaccess /opt/patch_manager/.htaccess
+	\cp -f html/lib/db_config.php /opt/patch_manager/db_config.php
 	sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' /opt/patch_manager/patch_checker.sh
         sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" /opt/patch_manager/patch_checker.sh
-        echo "$rewrite_config" > /opt/patch_manager/staged/html/.htaccess
-        echo "$php_config" > /opt/patch_manager/staged/html/lib/db_config.php
+        echo "$rewrite_config" > /opt/patch_manager/.htaccess
         echo "$php_config" > /opt/patch_manager/db_config.php 
 	echo "$bash_config" > /opt/patch_manager/db.conf
 
@@ -893,6 +939,10 @@ elif [[ "$ModeType" = "Update" ]]; then
 	# get install key from mysql
 	unset install_key
 	install_key=$(mysql -u $db_user -h $db_host -p"$db_pass" --skip-column-names -D $db_name -e "SELECT install_key from company;")
+	# check to see if staged dir exists
+	if [[ ! -d /opt/patch_manager/ ]]; then
+		mkdir -p /opt/patch_manager/
+	fi
 	rsync -aq --exclude='db.conf' --exclude='db_config.php' scripts/ /opt/patch_manager/
 	# check if changes were made in shell scripts via sed
 	grep "__SERVER_AUTHKEY_SET_ME__" /opt/patch_manager/patch_checker.sh > /dev/null 2>&1
@@ -920,14 +970,40 @@ if [[ -d $new_web_dir ]]; then
 	done
 	if [[ "$yn" = "yes" ]] || [[ "$yn" = "y" ]]; then
 		rsync -aq --exclude='patch_checker.sh' --exclude='run_commands.sh' html/ $new_web_dir
-		\cp -f -R /opt/patch_manager/staged/html/.htaccess $new_web_dir
-		\cp -f -R /opt/patch_manager/staged/html/* $new_web_dir
+		if [[ ! -f /opt/patch_manager/db.conf ]]; then
+			echo "$bash_config" > /opt/patch_manager/db.conf
+		fi
+	
+		if [[ -f /opt/patch_manager/.htaccess ]]; then
+			\cp -f -R /opt/patch_manager/.htaccess $new_web_dir
+		else
+			echo "$rewrite_config" > /opt/patch_manager/.htaccess
+		fi
+
+		if [[ -f /opt/patch_manager/db_config.php ]]; then
+                        \cp -f -R /opt/patch_manager/db_config.php $new_web_dir/lib/
+		else
+			echo "$php_config" > /opt/patch_manager/db_config.php
+                fi
 	else
 		echo -e "Answer (y)es to overwrite and (n)o to skip.\n"
 		mkdir -p $new_web_dir
 		cp -i -R html/* $new_web_dir
-		cp -i -R /opt/patch_manager/staged/html/.htaccess $new_web_dir
-		cp -i -R /opt/patch_manager/staged/html/* $new_web_dir
+		if [[ ! -f /opt/patch_manager/db.conf ]]; then
+                        echo "$bash_config" > /opt/patch_manager/db.conf
+                fi
+
+		if [[ -f /opt/patch_manager/.htaccess ]]; then
+                        cp -i -R /opt/patch_manager/.htaccess $new_web_dir
+		else
+                        echo "$rewrite_config" > /opt/patch_manager/.htaccess
+                fi
+
+		if [[ -f /opt/patch_manager/db_config.php ]]; then
+                        cp -i -R /opt/patch_manager/db_config.php $new_web_diri/lib/
+                else
+                        echo "$php_config" > /opt/patch_manager/db_config.php
+                fi
 	fi
 	# check if changes were made in shell scripts via sed
 	grep "__SERVER_AUTHKEY_SET_ME__" "${new_web_dir}client/run_commands.sh" > /dev/null 2>&1
@@ -1135,7 +1211,7 @@ echo -e "#######################################################################
 
 # run OS Detection and package installer
 echo -e "\e[36m# Detecting Operating System Version\n\e[0m"
-OSDetect
+OSInstall
 
 echo -e "\e[32mPlease choose an option below\n\e[0m"
 cat <<EOF

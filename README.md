@@ -10,6 +10,8 @@ In a future release (Hopefully sometime in August), it will give you the ability
 a per-server or a global basis, as well as tell the system to install a single package, or fully update a
 server.
 
+Compatible with: Debian Wheezy+/Ubuntu 12.04+/CentOS 5.x+/Red Hat EL5+/Fedora FC19+
+
 ===============
 ##Install
 
@@ -45,7 +47,7 @@ To keep up-to-date on the direction of this project, you are free to stop by the
 TODO: A LOT!
 ===============
 
-* ~~Complete installer script~~
+* Complete installer script (WIP - please report errors and suggest improvements)
 * Add more distros (This one will be a continual one)
 * ~~make everything database-driven~~
 * ~~Configure patch suppression~~
