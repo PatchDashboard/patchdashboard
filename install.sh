@@ -577,10 +577,12 @@ function dbCreate()
 {
 	mysql -u $db_user -h $db_host -p"$db_pass" -e "create database $db_name;"
         mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < database/db_create.sql
+        mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < database/centos_data.sql
 }
 function dbUpdate()
 {
         mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < database/db_update.sql
+        mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < database/centos_data.sql
 }
 
 function WebUIInfo()
@@ -969,7 +971,7 @@ if [[ -d $new_web_dir ]]; then
 		echo
 	done
 	if [[ "$yn" = "yes" ]] || [[ "$yn" = "y" ]]; then
-		rsync -aq --exclude='patch_checker.sh' --exclude='run_commands.sh' html/ $new_web_dir
+		rsync -aq --exclude='patch_checker.sh' --exclude='run_commands.sh' --exclude='.htaccess' --exclude='db_config.php' html/ $new_web_dir
 		if [[ ! -f /opt/patch_manager/db.conf ]]; then
 			echo "$bash_config" > /opt/patch_manager/db.conf
 		fi
