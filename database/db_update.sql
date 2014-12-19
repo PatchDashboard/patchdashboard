@@ -228,3 +228,11 @@ INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`,`on_navba
 INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`,`on_navbar`,`glyph`) VALUES('manage_servers','manage_servers.inc.php',2,1,'glyphicon-hdd');
 INSERT IGNORE INTO `page_maps`(`page_name`,`real_file`,`plugin_parent`,`on_navbar`,`glyph`) VALUES('add_user','add_user.inc.php',2,1,'glyphicon-eye-open');
 DROP table page_maps_old;
+
+-- DROP TABLE IF EXISTS wsus_data_old;
+-- CREATE TABLE wsus_data_old LIKE wsus_data;
+-- INSERT IGNORE INTO wsus_data_old SELECT * FROM wsus_data;
+-- DROP TABLE wsus_data;
+-- CREATE TABLE IF NOT EXISTS `wsus_data` (
+-- ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+-- INSERT IGNORE INTO `wsus_data` SELECT * from wsus_data_old;
