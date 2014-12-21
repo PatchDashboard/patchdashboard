@@ -10,7 +10,8 @@ mysql_select_db(DB_NAME,$link);
 $sql = "SELECT * FROM servers;";
 $res = mysql_query($sql);
 $table = "";
-$distro_map_sql = "d.distro_name,dv.version_num, dv.id as version_id,d.id as distro_id FROM distro_version dv LEFT JOIN distro d on d.id=dv.distro_id;";
+$distro_array = array();
+$distro_map_sql = "SELECT d.distro_name as distro_name,dv.version_num as version_num, dv.id as version_id,d.id as distro_id FROM distro_version dv LEFT JOIN distro d on d.id=dv.distro_id;";
 $distro_map_res = mysql_query($distro_map_sql);
 while ($distro_map_row = mysql_fetch_assoc($distro_map_res)){
     $distro_array[$distro_map_row['distro_id']][$distro_map_row['version_id']] = str_replace("_"," ",$distro_map_row['distro_name']." ".$distro_map_row['version_num']);
