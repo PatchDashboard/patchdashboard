@@ -926,7 +926,7 @@ target_web_dir=$(echo $new_web_dir|sed 's=/[^/]*$==;s/\.$//')
 # check install mode
 if [[ "$ModeType" = "Install" ]]; then
 
-	mkdir -p /opt/patch_manager/staged/html/lib/
+	mkdir -p /opt/patch_manager/
 	rsync -aq scripts/ /opt/patch_manager/
 	\cp -f html/.htaccess /opt/patch_manager/.htaccess
 	\cp -f html/lib/db_config.php /opt/patch_manager/db_config.php
@@ -941,7 +941,7 @@ elif [[ "$ModeType" = "Update" ]]; then
 	# get install key from mysql
 	unset install_key
 	install_key=$(mysql -u $db_user -h $db_host -p"$db_pass" --skip-column-names -D $db_name -e "SELECT install_key from company;")
-	# check to see if staged dir exists
+	# check to see if patch_manager dir exists
 	if [[ ! -d /opt/patch_manager/ ]]; then
 		mkdir -p /opt/patch_manager/
 	fi
@@ -1021,8 +1021,8 @@ if [[ -d $new_web_dir ]]; then
 else
 	mkdir -p $new_web_dir
 	\cp -R html/* $new_web_dir
-	\cp -R /opt/patch_manager/staged/html/.htaccess $new_web_dir
-	\cp -R /opt/patch_manager/staged/html/* $new_web_dir
+	\cp -R /opt/patch_manager/.htaccess $new_web_dir
+	\cp -R /opt/patch_manager/db_config.php ${new_web_dir}lib/db_config.php
 	# check if changes were made in shell scripts via sed
 	grep "__SERVER_AUTHKEY_SET_ME__" /opt/patch_manager/patch_checker.sh > /dev/null 2>&1
         if [[ "$?" -eq 0 ]]; then
