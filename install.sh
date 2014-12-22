@@ -930,10 +930,12 @@ if [[ "$ModeType" = "Install" ]]; then
 	rsync -aq scripts/ /opt/patch_manager/
 	\cp -f html/.htaccess /opt/patch_manager/.htaccess
 	\cp -f html/lib/db_config.php /opt/patch_manager/db_config.php
-	sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' /opt/patch_manager/patch_checker.sh
-        sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" /opt/patch_manager/patch_checker.sh
-        echo "$rewrite_config" > /opt/patch_manager/.htaccess
-        echo "$php_config" > /opt/patch_manager/db_config.php 
+	sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' /opt/patch_manager/*
+	sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" /opt/patch_manager/*
+	sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${targetdir}client/*
+	sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${targetdir}client/*
+	echo "$rewrite_config" > /opt/patch_manager/.htaccess
+	echo "$php_config" > /opt/patch_manager/db_config.php 
 	echo "$bash_config" > /opt/patch_manager/db.conf
 
 elif [[ "$ModeType" = "Update" ]]; then

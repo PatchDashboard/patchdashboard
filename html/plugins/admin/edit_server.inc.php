@@ -58,7 +58,7 @@ if (!isset($id) || empty($id) || !is_numeric($id)) {
     } else {
         $last_seen = $seen;
     }
-    if ($last_checkin == "2000-01-01 00:00:00"){
+    if ($last_checkin == "2001-01-01 00:00:00"){
         $last_check = "Never";
     }
     else{

@@ -3,13 +3,13 @@ session_start();
 include '../../lib/db_config.php';
 if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == true) {
     if (isset($_POST)) {
-        $distro_ver_id = filter_input(INPUT_POST, 'distro', FILTER_SANITIZE_NUMBER_INT);
+        $distro_ver_id = filter_input(INPUT_POST, 'distro_ver_id', FILTER_SANITIZE_NUMBER_INT);
         $distro_array = explode("-",$distro_ver_id);
         $distro = $distro_array[0];
         $distro_ver = $distro_array[1];
         $server_name = filter_input(INPUT_POST, 'server_name', FILTER_SANITIZE_SPECIAL_CHARS);
         $id = filter_input(INPUT_POST, 'id', FILTER_SANITIZE_NUMBER_INT);
-        $trusted = filter_input(INPUT_POST, 'trusted', FILTER_SANITIZE_NUMBER_INT);
+        $trusted = filter_input(INPUT_POST, 'trusted', FILTER_SANITIZE_SPECIAL_CHARS);
         $sql_array = array();
         if (isset($server_name) && !empty($server_name) && isset($id) && !empty($id) && is_numeric($id)){
             $sql_array[] = "`server_name`='$server_name'";

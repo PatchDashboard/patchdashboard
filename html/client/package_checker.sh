@@ -2,21 +2,12 @@
 # generated installation key and server URI from install
 auth_key="__SERVER_AUTHKEY_SET_ME__"
 server_uri="__SERVER_URI_SET_ME__"
-submit_patch_uri="${server_uri}client/send_packages.php"
-# remove old file is blank
-if [[ -s /opt/patch_manager/.patchrc ]]; then
-        rm -rf /opt/patch_manager/.patchrc
-fi
+submit_packages_uri="${server_uri}client/send_packages.php"
 
-# generate client key
+#Force a run of check-in.sh if .patchrc is missing.
 if [[ ! -f "/opt/patch_manager/.pachrc" ]]; then
-	host=$(hostname -f)
-	random_bits=$(< /dev/urandom tr -dc 'a-zA-Z0-9~!@#$%^&*_-' | head -c${1:-32})
-	client_key=$(echo "${host}${random_bits}"|sha256sum|cut -d ' ' -f 1)
-	if [[ ! -d /opt/patch_manager ]]; then
-		mkdir -p /opt/patch_manager
-	fi
-	echo "client_key=\"$client_key\"" > /opt/patch_manager/.patchrc
+	echo "Please run /opt/patch_manager/check-in.sh as root (sudo) before trying to run this manually"
+	exit 0
 fi
 # load the file
 . /opt/patch_manager/.patchrc
@@ -40,5 +31,5 @@ fi
 if [ -z "$data" ]; then
     exit 0
 else
-	curl -H "X-CLIENT-KEY: $client_key" $submit_patch_uri -d "$package_list" > /dev/null 2>&1
+	curl -H "X-CLIENT-KEY: $client_key" $submit_packages_uri -d "$data" > /dev/null 2>&1
 fi

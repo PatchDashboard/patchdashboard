@@ -1,6 +1,6 @@
 <?php
 
-include '../lib/db_config.inc.php';
+include '../lib/db_config.php';
 $client_key = filter_input(INPUT_SERVER, 'HTTP_X_CLIENT_KEY');
 if (isset($client_key) && !empty($client_key)) {
     $sql = "SELECT * FROM `servers` WHERE `client_key`='$client_key' and `trusted`= 1;";
@@ -17,22 +17,24 @@ if (isset($client_key) && !empty($client_key)) {
         $check_res = mysql_query($sql_check);
         if (mysql_num_rows($check_res) == 0) {
             $server_ip = filter_input(INPUT_SERVER, 'REMOTE_ADDR');
-            $sql2 = "INSERT INTO `servers`(`server_name`,`distro_id`,`distro_version`,`server_ip`,`client_key`) VALUES('UNKNOWN SERVER',0,0,'$server_ip',$client_key');";
+            $sql2 = "INSERT INTO `servers`(`server_name`,`distro_id`,`distro_version`,`server_ip`,`client_key`) VALUES('UNKNOWN SERVER',0,0,'$server_ip','$client_key');";
             mysql_query($sql2);
         }
         $out = "allowed='FALSE'
 key_to_check='FALSE'
 check_patches='FALSE'";
     } else {
-        $time_sql = "SELECT * FROM `servers` WHERE `last_checked` > NOW() - INTERVAL 2 HOUR AND `client_key`='$client_key' LIMIT 1;";
+        $time_sql = "SELECT * FROM `servers` WHERE `last_checked` < NOW() - INTERVAL 2 HOUR AND `client_key`='$client_key' LIMIT 1;";
         $time_res = mysql_query($time_sql);
-        if (mysql_num_rows($time_res) == 0) {
+        if (mysql_num_rows($time_res) == 1) {
             $CHECK_PATCHES = "TRUE";
             mysql_query("UPDATE `servers` SET `last_checked` = NOW() WHERE `client_key` = '$client_key' LIMIT 1;");
+            echo "UPDATE `servers` SET `last_checked` = NOW() WHERE `client_key` = '$client_key' LIMIT 1;";
         } else {
             $CHECK_PATCHES = "FALSE";
         }
         $sql2 = "UPDATE `servers` SET `last_seen` = NOW() WHERE `client_key`='$client_key';";
+        echo $sql2;
         mysql_query($sql2);
         $out = "allowed='TRUE'
 key_to_check='$key_to_check'
