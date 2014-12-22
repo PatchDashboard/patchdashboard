@@ -932,8 +932,6 @@ if [[ "$ModeType" = "Install" ]]; then
 	\cp -f html/lib/db_config.php /opt/patch_manager/db_config.php
 	sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' /opt/patch_manager/*
 	sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" /opt/patch_manager/*
-	sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${targetdir}/client/*
-	sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${targetdir}/client/*
 	echo "$rewrite_config" > /opt/patch_manager/.htaccess
 	echo "$php_config" > /opt/patch_manager/db_config.php 
 	echo "$bash_config" > /opt/patch_manager/db.conf
@@ -1044,7 +1042,14 @@ else
         grep "__SERVER_URI_SET_ME__" "${new_web_dir}client/run_commands.sh" > /dev/null 2>&1
         if [[ "$?" -eq 0 ]]; then
                 echo -e "\e[32mNotice\e[0m: URI correcly set in: ${new_web_dir}client/run_commands.sh\n"
-                sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${new_web_dir}client/run_commands.sh
+				sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${targetdir}/client/check-in.sh
+				sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${targetdir}/client/package_checker.sh
+				sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${targetdir}/client/patch_checker.sh
+				sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${targetdir}/client/run_commands.sh
+				sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${targetdir}/client/check-in.sh
+				sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${targetdir}/client/package_checker.sh
+				sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${targetdir}/client/patch_checker.sh
+				sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${targetdir}/client/run_commands.sh
         fi
 fi
 # change perms 
