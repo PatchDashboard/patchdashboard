@@ -17,6 +17,8 @@ if (isset($client_key) && !empty($client_key)) {
     } else {
         $row1 = mysql_fetch_array($res);
         $server_name = $row['server_name'];
+        $id = $row['id'];
+        $to_reboot = $row['reboot_cmd_sent'];
         $sql2 = "UPDATE `servers` SET `last_seen` = NOW() WHERE `client_key`='$client_key';";
         mysql_query($sql2);
         $sql3 = "SELECT `package_name` FROM `patches` WHERE `to_upgrade`=` and `upgraded`=0;";
@@ -45,7 +47,16 @@ if (isset($client_key) && !empty($client_key)) {
         $cmd_res = mysql_query($cmd_sql);
         $cmd_row = mysql_fetch_array($cmd_res);
         $cmd = $cmd_row['cmd'];
-        echo "$key_to_check\n$cmd $package_string";
+        // If it needs to be rebooted, lets add it on to the end of the rest of the cmd.
+        if ($to_reboot == 1){
+            $reboot_cmd_sent_sql = "UPDATE `servers` SET `reboot_cmd_sent`=0 WHERE `id`=$id LIMIT 1;";
+            mysql_query($reboot_cmd_sent_sql);
+            $add_after = "/sbin/reboot";
+        }
+        else{
+            $add_after = "";
+        }
+        echo "$key_to_check\n$cmd $package_string;$add_after";
     }
 }
 mysql_close($link);

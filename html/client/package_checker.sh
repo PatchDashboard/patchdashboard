@@ -5,7 +5,7 @@ server_uri="__SERVER_URI_SET_ME__"
 submit_packages_uri="${server_uri}client/send_packages.php"
 
 #Force a run of check-in.sh if .patchrc is missing.
-if [[ ! -f "/opt/patch_manager/.pachrc" ]]; then
+if [[ ! -f "/opt/patch_manager/.patchrc" ]]; then
 	echo "Please run /opt/patch_manager/check-in.sh as root (sudo) before trying to run this manually"
 	exit 0
 fi

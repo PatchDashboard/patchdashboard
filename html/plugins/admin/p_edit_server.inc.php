@@ -29,6 +29,14 @@ if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == true) {
             $replacement_parts = implode(", ", $sql_array);
             $sql = "UPDATE `servers` SET $replacement_parts WHERE `id`='$id';";
             $link = mysql_connect(DB_HOST,DB_USER,DB_PASS);
+            $old_server_name_sql = "SELECT `server_name` FROM `servers` WHERE `id`=$id LIMIT 1;";
+            $old_server_name_res = mysql_query($old_server_name_sql);
+            $old_server_name_row = mysql_fetch_array($old_server_name_res);
+            $old_server_name = $old_server_name_row['server_name'];
+            $patch_update_sql = "UPDATE `patches` SET `server_name`='$server_name` WHERE `server_name`='$old_server_name'; UPDATE `patch_allpackages` SET `server_name`='$server_name' WHERE `server_name`='$old_server_name';";
+            echo $patch_update_sql;
+            exit();
+            mysql_query($patch_update_sql);
             mysql_select_db(DB_NAME,$link);
             mysql_query($sql);
             mysql_close($link);

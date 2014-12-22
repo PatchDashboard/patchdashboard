@@ -5,16 +5,16 @@ if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == true) {
     if (isset($_GET)) {
 	$id = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBER_INT);
 	if (isset($id) && !empty($id)){
-		$sql = "UPDATE `servers`SET `trusted`=0 WHERE `id`=$id LIMIT 1;";
+		$sql = "UPDATE `servers` SET `trusted`=0 WHERE `id`=$id LIMIT 1;";
 		$link = mysql_connect(DB_HOST,DB_USER,DB_PASS);
 		mysql_select_db(DB_NAME,$link);
         	mysql_query($sql);
-                $sql2 = "SELECT `server_name` FROM `servers` WHERE `id`=$id LIMIT 1;";
-                $server_res = mysql_query($sql2);
-                $server_row = mysql_fetch_row($server_res);
-                $servername = $server_row['server_name'];
+                $servername_sql = "SELECT `server_name` FROM `servers` WHERE `id`=$id LIMIT 1;";
+                $servername_res = mysql_query($servername_sql);
+                $servername_row = mysql_fetch_array($servername_res);
+                $server_name = $servername_row['server_name'];
 	        mysql_close($link); 
-        	$_SESSION['good_notice'] = "$servername No Longer Trusted. I always knew they were a sneaky, no-good #!*&amp; :-(";
+        	$_SESSION['good_notice'] = "$server_name No Longer Trusted. I always knew they were a sneaky, no-good <strong>#!*&amp; :-(</strong>";
             	header('location:'.BASE_PATH.'manage_servers');
         }
         else{
