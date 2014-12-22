@@ -7,6 +7,10 @@ if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == true) {
 	$sql = "DELETE FROM `users` WHERE `id`=$id LIMIT 1;";
 	$link = mysql_connect(DB_HOST,DB_USER,DB_PASS);
 	mysql_select_db(DB_NAME,$link);
+        $username_sql = "SELECT `user_id` FROM `users` WHERE `id`=$id LIMIT 1;";
+        $username_res = mysql_query($username_sql);
+        $username_row = mysql_fetch_array($username_res);
+        $username = $username_row['user_id'];
         mysql_query($sql);
         mysql_close($link); 
         $_SESSION['good_notice'] = "$username DELETED!!! Live Long and Prosper.";
