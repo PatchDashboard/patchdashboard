@@ -88,7 +88,6 @@ ROADMAP:
 
 * v1.5
   * Stable release of Windows Server management
-===============
 
 DEVELOPERS:
 ===============
