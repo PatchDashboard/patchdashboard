@@ -61,33 +61,33 @@ TODO: NOT MUCH!
 ROADMAP:
 ===============
 * v1.0 RC1 -- ETC 2014-12-24
-** Will be able to use Push or Pull methods to manage servers.  Pull is by far the easiest method
-** Admin of servers and users is complete in this build
-** Installing via the web UI will be fully implemented by RC1
+  * Will be able to use Push or Pull methods to manage servers.  Pull is by far the easiest method
+  * Admin of servers and users is complete in this build
+  * Installing via the web UI will be fully implemented by RC1
 
 * v1.0 RC2 -- ETC 2015-01-16
-** All the things we have done in v1.0 RC1, but with QA blessing
+  * All the things we have done in v1.0 RC1, but with QA blessing
 
 * v1.0 -- ETC 2015-02-01
-** All things in the previous releases, but with Security Engineering approval
+  * All things in the previous releases, but with Security Engineering approval
 
 * v1.0.1 -- ETC 2015-02-15
-** Suppression implemented
+  * Suppression implemented
 
 * v1.1
-** First integration with off-site CVE database
+  * First integration with off-site CVE database
 
 * v1.2
-** Addition of a plugin management system
+  * Addition of a plugin management system
 
 * v1.3
-** Alpha testing of Windows Server management
+  * Alpha testing of Windows Server management
 
 * v1.4
-** Beta testing of Windows Server management
+  * Beta testing of Windows Server management
 
 * v1.5
-** Stable release of Windows Server management
+  * Stable release of Windows Server management
 ===============
 
 DEVELOPERS:
