@@ -240,7 +240,7 @@ Sub CheckUpdates
 End Sub 
 
 Sub DisplayHelp
-	WScript.Echo "Check Available Updates v." 
+	WScript.Echo "Check Available Updates" 
 	Wscript.Echo "----------------------------------------------"
 	WScript.Echo "Usage: cscript.exe check_updates.vbs [options]"
  	WScript.Echo VbCrLf
@@ -274,80 +274,6 @@ Sub SetOptions(strOption)
 	Else
 		strFlag = Left(strOption,2)
 		Select Case strFlag
-			Case "-c"
-				cCriticalSecurityOption = False
-				cImportantSecurityOption = False
-				cModerateSecurityOption = False
-				cLowSecurityOption = False
-				cCriticalUpdateOption = False
-				cImportantUpdateOption = False
-				If (nArguments > 2) Then
-					For i = 3 To nArguments
-						strParameter = Mid(strOption,i,1)
-						Select Case strParameter
-							Case "c"
-								cCriticalSecurityOption = True
-							Case "i"
-								cImportantSecurityOption = True
-							Case "m"
-								cModerateSecurityOption = True
-							Case "l"
-								cLowSecurityOption = True
-							Case "U"
-								cCriticalUpdateOption = True
-							Case "u"
-								cImportantUpdateOption = True
-							Case Else
-								bInvalidArgument = True
-						End Select
-					Next
-				End If
-			Case "-w"
-				wCriticalSecurityOption = False
-				wImportantSecurityOption = False
-				wModerateSecurityOption = False
-				wLowSecurityOption = False
-				wCriticalUpdateOption = False
-				wImportantUpdateOption = False
-				If (nArguments > 2) Then
-					For i = 3 To nArguments
-						strParameter = Mid(strOption,i,1)
-						Select Case strParameter
-							Case "c"
-								wCriticalSecurityOption = True
-							Case "i"
-								wImportantSecurityOption = True
-							Case "m"
-								wModerateSecurityOption = True
-							Case "l"
-								wLowSecurityOption = True
-							Case "U"
-								wCriticalUpdateOption = True
-							Case "u"
-								wImportantUpdateOption = True
-							Case Else
-								bInvalidArgument = True
-						End Select
-					Next
-				End If
-			Case "-r"
-				nRebootStatusOption = rOK
-				If (nArguments > 2) Then
-					For i = 3 To nArguments
-						strParameter = Mid(strOption,i,1)
-						Select Case strParameter
-							Case "o"
-								nRebootStatusOption = rOK
-							Case "w"
-								nRebootStatusOption = rWarning
-							Case "c"
-								nRebootStatusOption = rCritical
-							Case Else
-								bInvalidArgument = True
-						End Select
-					Next
-				End If
-			
 			Case "-h"
 				bDisplayHelp = True
 			Case Else
