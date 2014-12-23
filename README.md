@@ -17,7 +17,7 @@ Compatible with: Debian Wheezy+/Ubuntu 12.04+/CentOS 5.x+/Red Hat EL5+/Fedora FC
 
 To install:
 
-* simply clone this git (git clone https://github.com/jonsjava/patchdashboard.git)
+* simply clone this git (git clone https://github.com/PatchDashboard/patchdashboard)
 * cd into patchdashboard (cd /opt/patchdashboard)
 * run install.sh (./install.sh)
 
