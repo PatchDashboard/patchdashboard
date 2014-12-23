@@ -27,6 +27,7 @@ CREATE TABLE `servers` (
   `client_key` varchar(255),
   `trusted` tinyint(1) NOT NULL DEFAULT 0,
   `last_seen` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `reboot_cmd_sent` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE INDEX (`client_key`),
   KEY `ix_server_name` (`server_name`),
