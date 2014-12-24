@@ -8,7 +8,7 @@
 ##
 ## Date: 11/22/2014
 ##
-## Version: 1.0
+## Version: 1.0 RC1
 ##
 ## Changelog: 0.1 - Initial Release
 ##            0.2 - Improved base installer for OS detection
@@ -30,9 +30,10 @@
 ##                - Fixed some more issues with install apache/mysql/php on el5
 ##            0.8 - Added more logic for handling CentOS version installs
 ##            0.9 - Added a staged path and fixed how its copied to the web_dir
-##
 ##            1.0 - Fixed password generation issues, default passwords now work
 ##                - This is a release ready version :)
+##
+##            RC1 - Updated the installer to handle new changes for RC1
 ##
 #################################################################################
 
@@ -581,7 +582,7 @@ function dbCreate()
 }
 function dbUpdate()
 {
-        mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < database/db_update.sql
+        mysql -u $db_user -h $db_host -p"$db_pass" -s -D $db_name < database/db_update.sql
         mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < database/centos_data.sql
 }
 
@@ -813,6 +814,74 @@ else
 fi
 }
 
+function AuthKeyURI()
+{
+	# trim extra char if exists
+        install_key=$(echo $install_key|awk {'print $1'})
+	# check if changes were made in shell scripts via sed
+	# auth key /opt/patch_manager/patch_checker.sh
+	grep "__SERVER_AUTHKEY_SET_ME__" /opt/patch_manager/patch_checker.sh > /dev/null 2>&1
+        if [[ "$?" -eq 0 ]]; then
+                sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' /opt/patch_manager/patch_checker.sh
+        fi
+	# uri key /opt/patch_manager/patch_checker.sh
+        grep "__SERVER_URI_SET_ME__" /opt/patch_manager/patch_checker.sh > /dev/null 2>&1
+        if [[ "$?" -eq 0 ]]; then
+                sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" /opt/patch_manager/patch_checker.sh
+        fi
+	# echo if any of the above get changed
+        if [[ "$?" -eq 0 ]]; then
+		echo -e "\e[32mNotice\e[0m: URI & Auth Key correcly set in /opt/patch_manager/patch_checker.sh"
+        fi
+	# auth key check-in.sh
+	grep "__SERVER_AUTHKEY_SET_ME__" "${new_web_dir}client/check-in.sh" > /dev/null 2>&1
+        if [[ "$?" -eq 0 ]]; then
+                sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${targetdir}/client/check-in.sh
+        fi
+        # auth key package_checker.sh
+        grep "__SERVER_AUTHKEY_SET_ME__" "${new_web_dir}client/package_checker.sh" > /dev/null 2>&1
+        if [[ "$?" -eq 0 ]]; then
+                sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${targetdir}/client/package_checker.sh
+        fi
+        # auth key patch_checker.sh
+        grep "__SERVER_AUTHKEY_SET_ME__" "${new_web_dir}client/patch_checker.sh" > /dev/null 2>&1
+        if [[ "$?" -eq 0 ]]; then
+                sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${targetdir}/client/patch_checker.sh
+        fi
+        # auth key run_commands.sh
+        grep "__SERVER_AUTHKEY_SET_ME__" "${new_web_dir}client/run_commands.sh" > /dev/null 2>&1
+        if [[ "$?" -eq 0 ]]; then
+                sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${targetdir}/client/run_commands.sh
+        fi
+        # uri key check-in.sh
+        grep "__SERVER_URI_SET_ME__" "${new_web_dir}client/check-in.sh" > /dev/null 2>&1
+        if [[ "$?" -eq 0 ]]; then
+                sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${targetdir}/client/check-in.sh
+        fi
+        # uri key package_checker.sh
+        grep "__SERVER_URI_SET_ME__" "${new_web_dir}client/package_checker.sh" > /dev/null 2>&1
+        if [[ "$?" -eq 0 ]]; then
+                sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${targetdir}/client/package_checker.sh
+        fi
+        # uri key patch_checker.sh
+        grep "__SERVER_URI_SET_ME__" "${new_web_dir}client/patch_checker.sh" > /dev/null 2>&1
+        if [[ "$?" -eq 0 ]]; then
+                sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${targetdir}/client/patch_checker.sh
+        fi
+        # uri key run_commands.sh
+        grep "__SERVER_URI_SET_ME__" "${new_web_dir}client/run_commands.sh" > /dev/null 2>&1
+        if [[ "$?" -eq 0 ]]; then
+                sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${targetdir}/client/run_commands.sh
+        fi
+        # echo if any of the above get changed
+        if [[ "$?" -eq 0 ]]; then
+                echo -e "\e[32mNotice\e[0m: URI & Auth Key correcly set in client script(s) (${targetdir}/client/*.sh"
+        fi
+	if [[ "$?" -eq 0 ]]; then
+		echo
+	fi
+}
+
 function InstallApp()
 {
 host_node=`hostname`
@@ -930,8 +999,6 @@ if [[ "$ModeType" = "Install" ]]; then
 	rsync -aq scripts/ /opt/patch_manager/
 	\cp -f html/.htaccess /opt/patch_manager/.htaccess
 	\cp -f html/lib/db_config.php /opt/patch_manager/db_config.php
-	sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' /opt/patch_manager/*
-	sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" /opt/patch_manager/*
 	echo "$rewrite_config" > /opt/patch_manager/.htaccess
 	echo "$php_config" > /opt/patch_manager/db_config.php 
 	echo "$bash_config" > /opt/patch_manager/db.conf
@@ -946,17 +1013,6 @@ elif [[ "$ModeType" = "Update" ]]; then
 		mkdir -p /opt/patch_manager/
 	fi
 	rsync -aq --exclude='db.conf' --exclude='db_config.php' scripts/ /opt/patch_manager/
-	# check if changes were made in shell scripts via sed
-	grep "__SERVER_AUTHKEY_SET_ME__" /opt/patch_manager/patch_checker.sh > /dev/null 2>&1
-	if [[ "$?" -eq 0 ]]; then
-        	echo -e "\e[32mNotice\e[0m: AuthKey correcly set in: /opt/patch_manager/patch_checker.sh"
-	        sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' /opt/patch_manager/patch_checker.sh
-	fi
-	grep "__SERVER_URI_SET_ME__" /opt/patch_manager/patch_checker.sh > /dev/null 2>&1
-	if [[ "$?" -eq 0 ]]; then
-        	echo -e "\e[32mNotice\e[0m: URI correcly set in: /opt/patch_manager/patch_checker.sh\n"
-	        sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" /opt/patch_manager/patch_checker.sh
-	fi
 
 fi
 ###### THIS NEEDS FIXING to remove duplicate file copy efforts
@@ -1007,50 +1063,15 @@ if [[ -d $new_web_dir ]]; then
                         echo "$php_config" > /opt/patch_manager/db_config.php
                 fi
 	fi
-	# check if changes were made in shell scripts via sed
-	grep "__SERVER_AUTHKEY_SET_ME__" "${new_web_dir}client/run_commands.sh" > /dev/null 2>&1
-	if [[ "$?" -eq 0 ]]; then
-                echo -e "\e[32mNotice\e[0m: AuthKey correcly set in: ${new_web_dir}client/run_commands.sh"
-                sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${new_web_dir}client/run_commands.sh
-        fi
-	grep "__SERVER_URI_SET_ME__" "${new_web_dir}client/run_commands.sh" > /dev/null 2>&1
-	if [[ "$?" -eq 0 ]]; then
-                echo -e "\e[32mNotice\e[0m: URI correcly set in: ${new_web_dir}client/run_commands.sh\n"
-                sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${new_web_dir}client/run_commands.sh
-        fi
+	# run authkey and uri check
+        AuthKeyURI
 else
 	mkdir -p $new_web_dir
 	\cp -R html/* $new_web_dir
 	\cp -R /opt/patch_manager/.htaccess $new_web_dir
 	\cp -R /opt/patch_manager/db_config.php ${new_web_dir}lib/db_config.php
-	# check if changes were made in shell scripts via sed
-	grep "__SERVER_AUTHKEY_SET_ME__" /opt/patch_manager/patch_checker.sh > /dev/null 2>&1
-        if [[ "$?" -eq 0 ]]; then
-                echo -e "\e[32mNotice\e[0m: AuthKey correcly set in: /opt/patch_manager/patch_checker.sh"
-                sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' /opt/patch_manager/patch_checker.sh
-        fi
-        grep "__SERVER_URI_SET_ME__" /opt/patch_manager/patch_checker.sh > /dev/null 2>&1
-        if [[ "$?" -eq 0 ]]; then
-                echo -e "\e[32mNotice\e[0m: URI correcly set in: /opt/patch_manager/patch_checker.sh\n"
-                sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" /opt/patch_manager/patch_checker.sh
-        fi
-	grep "__SERVER_AUTHKEY_SET_ME__" "${new_web_dir}client/run_commands.sh" > /dev/null 2>&1
-        if [[ "$?" -eq 0 ]]; then
-                echo -e "\e[32mNotice\e[0m: AuthKey correcly set in: ${new_web_dir}client/run_commands.sh"
-                sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${new_web_dir}client/run_commands.sh
-        fi
-        grep "__SERVER_URI_SET_ME__" "${new_web_dir}client/run_commands.sh" > /dev/null 2>&1
-        if [[ "$?" -eq 0 ]]; then
-                echo -e "\e[32mNotice\e[0m: URI & Auth Key correcly set in all client scripts (${targetdir}/client/*.sh\n"
-				sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${targetdir}/client/check-in.sh
-				sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${targetdir}/client/package_checker.sh
-				sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${targetdir}/client/patch_checker.sh
-				sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${targetdir}/client/run_commands.sh
-				sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${targetdir}/client/check-in.sh
-				sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${targetdir}/client/package_checker.sh
-				sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${targetdir}/client/patch_checker.sh
-				sed -i "s/__SERVER_URI_SET_ME__/http:\/\/${SERVER_IP}\/${relpath}\//" ${targetdir}/client/run_commands.sh
-        fi
+	# run authkey and uri check
+        AuthKeyURI
 fi
 # change perms 
 find $new_web_dir -type d -print0|xargs -0 chmod 755
