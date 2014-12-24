@@ -7,10 +7,11 @@ if (isset($client_key) && !empty($client_key)) {
     $link = mysql_connect(DB_HOST, DB_USER, DB_PASS);
     mysql_select_db(DB_NAME, $link);
     $company = YOUR_COMPANY;
-    $company_sql = "SELECT * FROM `company` WHERE `name`='$company' LIMIT 1;";
+    $company_sql = "SELECT * FROM `company` WHERE `display_name`='$company' LIMIT 1;";
     $company_res = mysql_query($company_sql);
     $company_row = mysql_fetch_array($company_res);
-    $key_to_check = $company_row['install_key'];
+    $key_to_check_array = explode(" ",$company_row['install_key']);
+    $key_to_check = $key_to_check_array[0];
     $res = mysql_query($sql);
     if (mysql_num_rows($res) == 0) {
         $sql_check = "SELECT * FROM `servers` WHERE `client_key`='$client_key';";
@@ -29,12 +30,12 @@ check_patches='FALSE'";
         if (mysql_num_rows($time_res) == 1) {
             $CHECK_PATCHES = "TRUE";
             mysql_query("UPDATE `servers` SET `last_checked` = NOW() WHERE `client_key` = '$client_key' LIMIT 1;");
-            echo "UPDATE `servers` SET `last_checked` = NOW() WHERE `client_key` = '$client_key' LIMIT 1;";
+            #echo "UPDATE `servers` SET `last_checked` = NOW() WHERE `client_key` = '$client_key' LIMIT 1;";
         } else {
             $CHECK_PATCHES = "FALSE";
         }
         $sql2 = "UPDATE `servers` SET `last_seen` = NOW() WHERE `client_key`='$client_key';";
-        echo $sql2;
+        #echo $sql2;
         mysql_query($sql2);
         $out = "allowed='TRUE'
 key_to_check='$key_to_check'
@@ -45,4 +46,5 @@ check_patches='$CHECK_PATCHES'";
 key_to_check='FALSE'
 check_patches='FALSE'";
 }
+echo $out;
 mysql_close($link);

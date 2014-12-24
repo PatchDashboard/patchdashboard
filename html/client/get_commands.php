@@ -47,7 +47,8 @@ if (isset($client_key) && !empty($client_key)) {
         $company_sql = "SELECT * FROM `company` WHERE `display_name`='$company' LIMIT 1;";
         $company_res = mysql_query($company_sql);
         $company_row = mysql_fetch_array($company_res);
-        $key_to_check=$company_row['install_key'];
+        $key_to_check_array = explode(" ",$company_row['install_key']);
+        $key_to_check = $key_to_check_array[0];
         $cmd_sql = "SELECT d.upgrade_command as cmd from servers s left join distro d on s.distro_id=d.id where s.server_name='$server_name' LIMIT 1;";
         $cmd_res = mysql_query($cmd_sql);
         $cmd_row = mysql_fetch_array($cmd_res);
@@ -61,7 +62,7 @@ if (isset($client_key) && !empty($client_key)) {
         else{
             $add_after = "";
         }
-        echo "$key_to_check\n$cmd $package_string;$add_after";
+        echo "key_to_check=\"$key_to_check\"\r\ncmd_to_run=\"$cmd $package_string;$add_after\"";
     }
 }
 mysql_close($link);
