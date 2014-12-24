@@ -62,7 +62,8 @@ if (isset($client_key) && !empty($client_key)) {
         else{
             $add_after = "";
         }
-        echo "key_to_check=\"$key_to_check\"\r\ncmd_to_run=\"$cmd $package_string;$add_after\"";
+        echo "key_to_check='$key_to_check'
+cmd_to_run='$cmd $package_string;$add_after'";
     }
 }
 mysql_close($link);

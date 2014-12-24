@@ -9,7 +9,7 @@ if (mysql_num_rows($client_check_res) == 1) {
     $row = mysql_fetch_array($client_check_res);
     $server_name = $row['server_name'];
     $data = file_get_contents("php://input");
-    mysql_query("DELETE FROM `patches` WHERE `server_name='$server_name';");
+    mysql_query("DELETE FROM `patches` WHERE `server_name`='$server_name';");
     $package_array = explode("\n", $data);
     $suppression_sql = "SELECT * from `supressed` WHERE `server_name` IN('$server_name',0);";
     $suppression_res = mysql_query($sql);

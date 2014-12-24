@@ -8,12 +8,14 @@ if [[ ! -f "/opt/patch_manager/.patchrc" ]]; then
         exit 0
 fi
 . /opt/patch_manager/.patchrc
+rm -rf /tmp/cmds_$client_key > /dev/null 2>&1
 curl -s -H "X-CLIENT-KEY: $client_key" $get_cmd_uri > /tmp/cmds_$client_key
 cmds_line_count=$(cat /tmp/cmds_$client_key|wc -l)
 if [ "$cmds_line_count" -gt "0" ]; then
         . /tmp/cmds_$client_key
-        key_to_check=$(head -n 1 /tmp/cmds_$client_key)
-        if [ "$key_to_check" = "$auth_key" ]; then
+        key_sum=$(echo $key_to_check|sha256sum)
+        auth_sum=$(echo $auth_key|sha256sum)
+        if [ "$key_sum" == "$auth_sum" ]; then
                 echo $cmd_to_run|bash
         fi
 fi
