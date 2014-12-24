@@ -1,4 +1,4 @@
-patchdashboard
+PatchMD
 ==============
 
 Patch Management Dashboard
@@ -12,8 +12,19 @@ server.
 
 Compatible with: Debian Wheezy+/Ubuntu 12.04+/CentOS 5.x+/Red Hat EL5+/Fedora FC19+
 
+News
 ===============
-##Install
+
+v1.0-RC1 is now available.  You can grab a copy [here](https://github.com/PatchDashboard/patchdashboard/releases/tag/v1.0-RC1) or by clicking on the one you want below:
+
+* [zip](https://github.com/PatchDashboard/patchdashboard/archive/v1.0-RC1.zip)
+* [tar.gz](https://github.com/PatchDashboard/patchdashboard/archive/v1.0-RC1.tar.gz)
+
+Please give it a spin. If you have any issues, please submit a [new issue](https://github.com/PatchDashboard/patchdashboard/issues/new)
+
+
+Install
+===============
 
 To install:
 
