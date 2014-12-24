@@ -37,6 +37,9 @@
 ##
 #################################################################################
 
+# get hostname into var
+export host_node=`hostname`
+
 # generate random passwords
 SERVER_IP=$(ip addr|grep inet|grep eth0|awk '{print $2}'|cut -d'/' -f1)
 MY_PATH="`dirname \"$0\"`"
@@ -324,6 +327,98 @@ function PackageCheck()
 		fi
 	done
 	fi
+}
+
+function EnableSSL()
+{
+	# install SSL
+	yum install mod_ssl openssl -y > /dev/null 2>&1
+	# ask questions for key generation
+	echo -e "\e[32mSSL\e[0m: Generating SSL Keys for $web_service"
+	echo -e "\e[32mSSL\e[0m: please answer the following questions for the the location of the hosted environment.\n"
+	read -p "Country: " country
+	while [[ $country = "" ]]; do
+		read -p "Country: " country
+	done
+	read -p "State: " state
+        while [[ $state = "" ]]; do
+                read -p "State: " state
+        done
+	read -p "City: " city
+        while [[ $city = "" ]]; do
+                read -p "City: " city
+        done
+	read -p "Orginization: " org
+        while [[ $org = "" ]]; do
+                read -p "Orginization: " org
+        done
+	read -p "Orginizational Unit: " orgu
+        while [[ $orgu = "" ]]; do
+                read -p "Orginizational Unit: " orgu
+        done
+	# generate private key 
+	openssl genrsa -out /etc/pki/tls/private/ca.key 4096 > /dev/null 2>&1
+	# generate CSR
+	openssl req -new -subj "/C=$(country)/ST=$(state)/L=$(city)/O=$(org)/OU=$(orgu)/CN=$(host_node)" -key /etc/pki/tls/private/ca.key -out /etc/pki/tls/private/ca.csr
+	# generate Self Signed Key
+	openssl x509 -req -days 1095 -in /etc/pki/tls/private/ca.csr -signkey /etc/pki/tls/private/ca.key -out /etc/pki/tls/certs/ca.crt
+	# add needed vhost to apache/httpd
+
+        echo -e "\n\e[32m\e[4mWebpage Location Setup\e[0m\n"
+        unset new_web_dir
+        read -p "Please enter location for web interface [Default: $web_dir]: " new_web_dir
+        while [[ "$new_web_dir" = "" ]]; do
+                echo -e "\e[32mNotice\e[0m: Default Location Used: $web_dir"
+                new_web_dir=$web_dir
+                EXTERNAL_WEB_URI="http://${SERVER_IP}${new_web_dir}"
+        done
+        echo
+        unset new_relative_path
+        read -p "Please enter the relative path [Default: $relative_path]: " new_relative_path
+        while [[ "$new_relative_path" = "" ]]; do
+                echo -e "\e[32mNotice\e[0m: Default Location Used: $relative_path"
+                new_relative_path=$relative_path
+                relpath=$(echo $new_relative_path|cut -d '/' -f 2)
+        done
+        echo
+        if [ "$new_relative_path" != "$relative_path" ] && [ "$new_relative_path" != "" ]; then
+                relative_path="$new_relative_path"
+        fi
+        if [ "${new_relative_path:LEN}" != "/" ]; then
+                new_relative_path=$new_relative_path"/"
+        fi
+        if [ "$new_web_dir" != "$web_dir" ] && [ "$new_web_dir" != "" ]; then
+                web_dir="$new_web_dir"
+        fi
+        if [ "${web_dir:LEN}" != "/" ]; then
+                web_dir=$web_dir"/"
+        fi
+
+	echo -e "\n\e[32mSSL\e[0m: Adding SSL configuration to /etc/httpd/conf.d/patch_manager.conf\n"
+cat <<EOA > /etc/httpd/conf.d/patch_manager.conf
+	
+NameVirtualHost *:443
+<VirtualHost *:443>
+        SSLEngine on
+        SSLCertificateFile /etc/pki/tls/certs/ca.crt
+        SSLCertificateKeyFile /etc/pki/tls/private/ca.key
+        <Directory $targetdir>
+	   AllowOverride All
+        </Directory>
+        DocumentRoot $targetdir
+        ServerName localhost
+</VirtualHost>
+EOA
+
+service $web_service restart
+rewrite_check=`curl -s localhost${relative_path}rewrite_check|grep 404|wc -l`
+if [ "$rewrite_check" = "1" ]; then
+        echo -e "\n\e[31mError\e[0m: Apache Mod_rewrite or .htaccess is not working.  Please ensure you have mod_rewrite installed and enabled.  If it is, please make sure you change 'AllowOverride None' to 'AllowOverride All'"
+        echo -e "\e[31mError\e[0m: If you don't, this site won't work. \e[31mYou've been warned\e[0m."
+fi
+echo -e "\n\e[32mNotice\e[0m: SSL installation is now complete. You can now go to https://${host_node}${relative_path}"
+exit 0
+
 }
 
 function phpversion()
@@ -884,9 +979,8 @@ function AuthKeyURI()
 
 function InstallApp()
 {
-host_node=`hostname`
-
 # rewrite config for .htaccess
+
 rewrite_config="ErrorDocument 404 ${relative_path}index.php?page=\$1
 RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
@@ -1082,9 +1176,9 @@ service $web_service restart
 rewrite_check=`curl -s localhost${relative_path}rewrite_check|grep 404|wc -l`
 if [ "$rewrite_check" = "1" ]; then
 	echo -e "\n\e[31mError\e[0m: Apache Mod_rewrite or .htaccess is not working.  Please ensure you have mod_rewrite installed and enabled.  If it is, please make sure you change 'AllowOverride None' to 'AllowOverride All'"
-	echo -e "\e[31mError\e[0m: If you don't, this site won't work.  You've been warned."
+	echo -e "\e[31mError\e[0m: If you don't, this site won't work. \e[31mYou've been warned\e[0m."
 fi
-echo -e "\n\e[32mNotice\e[0m: Install is now complete. You can now go to  http://${host_node}${relative_path} and begin working with this tool.  To add servers, use the following command:
+echo -e "\n\e[32mNotice\e[0m: Basic Installation is now complete. You can now go to http://${host_node}${relative_path} and begin working with this tool.  To add servers, use the following command:
 	/opt/patch_manager/add_server.sh -s server_name -ip ip_address
 	It will ask you some questions regarding the user, password, and some other things.  Just follow the prompts.
 	
