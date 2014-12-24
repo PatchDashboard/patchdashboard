@@ -12,7 +12,7 @@ if [ ! -f /opt/patch_manager/.patchrc ]; then
         echo "client_key=\"$client_key\"" > /opt/patch_manager/.patchrc
 fi
 . /opt/patch_manager/.patchrc
-curl -s -H "X-CLIENT-KEY: $client_key" $check_in > /tmp/check-in_$client_key
+curl -k -s -H "X-CLIENT-KEY: $client_key" $check_in > /tmp/check-in_$client_key
 cmds_line_count=$(cat /tmp/check-in_$client_key|wc -l)
 if [ "$cmds_line_count" -gt "1" ]; then
         . /tmp/check-in_$client_key

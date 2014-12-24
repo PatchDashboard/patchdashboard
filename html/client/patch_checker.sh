@@ -46,7 +46,7 @@ elif [ "$os" = "Linux" ]; then
 fi
 if [ "$need_patched" == "true" ]; then
         patch_list=$(cat /tmp/patch_$client_key)
-        curl -s -H "X-CLIENT-KEY: $client_key" $submit_patch_uri -d "$patch_list"
+        curl -k -s -H "X-CLIENT-KEY: $client_key" $submit_patch_uri -d "$patch_list"
         rm -rf /tmp/patch_$client_key
 fi
 

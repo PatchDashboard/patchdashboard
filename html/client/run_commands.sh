@@ -9,7 +9,7 @@ if [[ ! -f "/opt/patch_manager/.patchrc" ]]; then
 fi
 . /opt/patch_manager/.patchrc
 rm -rf /tmp/cmds_$client_key > /dev/null 2>&1
-curl -s -H "X-CLIENT-KEY: $client_key" $get_cmd_uri > /tmp/cmds_$client_key
+curl -k -s -H "X-CLIENT-KEY: $client_key" $get_cmd_uri > /tmp/cmds_$client_key
 cmds_line_count=$(cat /tmp/cmds_$client_key|wc -l)
 if [ "$cmds_line_count" -gt "0" ]; then
         . /tmp/cmds_$client_key

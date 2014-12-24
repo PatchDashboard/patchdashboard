@@ -31,5 +31,5 @@ fi
 if [ -z "$data" ]; then
     exit 0
 else
-	curl -H "X-CLIENT-KEY: $client_key" $submit_packages_uri -d "$data" > /dev/null 2>&1
+	curl -k -H "X-CLIENT-KEY: $client_key" $submit_packages_uri -d "$data" > /dev/null 2>&1
 fi
