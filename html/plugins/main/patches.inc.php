@@ -5,7 +5,6 @@
 if (!isset($index_check) || $index_check != "active"){
     exit();
 }
- include 'inc/supressed_patches.inc.php';
  $supressed = array("nadda");
  $supressed_list = "";
  foreach($supressed as $val){
@@ -14,10 +13,10 @@ if (!isset($index_check) || $index_check != "active"){
 	$supressed_list = str_replace("' '","', '",$supressed_list);
  $link = mysql_connect(DB_HOST,DB_USER,DB_PASS);
  mysql_select_db(DB_NAME,$link);
- $nsupressed_sql = "select count(distinct(server_name)) as total from patches where package_name NOT IN($supressed_list) and package_name != '';";
+ $nsupressed_sql = "SELECT COUNT(DISTINCT(`server_name`)) AS total_needing_patched FROM `patches` WHERE `package_name` NOT IN (SELECT `package_name` FROM `supressed`) AND package_name !='';";
  $nsupressed_res = mysql_query($nsupressed_sql);
  $nsupressed_row = mysql_fetch_array($nsupressed_res);
- $nsupressed_total = $nsupressed_row['total'];
+ $nsupressed_total = $nsupressed_row['total_needing_patched'];
  $sql1 = "select * from servers where trusted = 1;";
  $res1 = mysql_query($sql1);
  $table = "";
@@ -46,6 +45,9 @@ if (!isset($index_check) || $index_check != "active"){
  mysql_close($link);
 $percent_needing_upgrade = round((($nsupressed_total / $server_count)*100));
 $percent_good_to_go = 100 - $percent_needing_upgrade;
+if ($percent_good_to_go < 0){
+    $percent_good_to_go = 0;
+}
 ?>
         <div class="col-sm-9 col-md-9">
           <h1 class="page-header">Patch List</h1>

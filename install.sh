@@ -1041,7 +1041,7 @@ else
         fi
         grep "__SERVER_URI_SET_ME__" "${new_web_dir}client/run_commands.sh" > /dev/null 2>&1
         if [[ "$?" -eq 0 ]]; then
-                echo -e "\e[32mNotice\e[0m: URI correcly set in: ${new_web_dir}client/run_commands.sh\n"
+                echo -e "\e[32mNotice\e[0m: URI & Auth Key correcly set in all client scripts (${targetdir}/client/*.sh\n"
 				sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${targetdir}/client/check-in.sh
 				sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${targetdir}/client/package_checker.sh
 				sed -i 's/__SERVER_AUTHKEY_SET_ME__/'$install_key'/g' ${targetdir}/client/patch_checker.sh

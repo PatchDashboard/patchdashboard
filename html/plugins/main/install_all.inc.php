@@ -1,6 +1,6 @@
 <?php
 session_start();
-include '../lib/db_config.inc.php';
+include '../../lib/db_config.php';
 if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] == "true") {
     $id = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBER_INT);
     $reboot = filter_input(INPUT_GET, 'reboot', FILTER_SANITIZE_NUMBER_INT);
@@ -17,7 +17,7 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] == "true") {
         }
         $res = mysql_query($sql);
         $row1 = mysql_fetch_array($res);
-        $server_name = $row['server_name'];
+        $server_name = $row1['server_name'];
         $suppression_sql = "SELECT * FROM `supressed` WHERE `server_name` IN (0,'$server_name');";
         $suppression_res = mysql_query($sql);
         $suppression_array = array();
@@ -25,7 +25,7 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] == "true") {
             $suppression_array[] = "'" . $suppression_row['package_name'] . "'";
         }
         $suppression_list = implode(", ", $suppression_array);
-        $sql3 = "UPDATE `patches` SET `to_upgrade=1 WHERE `to_upgrade=0 AND `server_name`='$server_name' AND `upgraded`=0 AND `package_name` NOT IN ($suppression_list);";
+        $sql3 = "UPDATE `patches` SET `to_upgrade`=1 WHERE `to_upgrade`=0 AND `server_name`='$server_name' AND `upgraded`=0 AND `package_name` NOT IN ($suppression_list);";
         mysql_query($sql3);
         $_SESSION['good_notice'] = "All non-suppressed packages set to upgrade on <strong>$server_name</strong>. $message_injection Bionic machine closer than I thought.";
         header('location:' . BASE_PATH . "patches/server/$server_name");

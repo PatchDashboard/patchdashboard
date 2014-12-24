@@ -7,7 +7,7 @@ if [[ ! -f "/opt/patch_manager/.patchrc" ]]; then
 	echo "Please run /opt/patch_manager/check-in.sh as root (sudo) before trying to run this manually"
 	exit 0
 fi
-. /opt/patch_manager/.pachrc
+. /opt/patch_manager/.patchrc
 curl -H "X-CLIENT-KEY: $client_key" $get_cmd_uri > /tmp/cmds_$client_key
 cmds_line_count=$(cat /tmp/cmds_$client_key|wc -l)
 if [ "$cmds_line_count" = "2" ]; then
