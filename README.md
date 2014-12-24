@@ -6,11 +6,23 @@ Patch Management Dashboard
 Patch Management Dashboard does one thing, but it does it well:
 * Monitors for needed patches on your nodes.
 
-In a future release (Hopefully sometime in August), it will give you the ability to suppress patches on
+~~In a future release (Hopefully sometime in August), it will give you the ability to suppress patches on
 a per-server or a global basis, as well as tell the system to install a single package, or fully update a
-server.
+server.~~ **Suppression is complete everywhere except the UI. If you want to add a suppressed package, you can do so with a command similar to this:**
 
-Compatible with: Debian Wheezy+/Ubuntu 12.04+/CentOS 5.x+/Red Hat EL5+/Fedora FC19+
+Single server named 'some server'
+
+```
+INSERT INTO `supressed` (`package_name`,`server_name`) VALUES('some_package','some-server');
+```
+
+Global Suppression
+
+```
+INSERT INTO `supressed` (`package_name`,`server_name`) VALUES('some_package',0);
+```
+
+Compatible with: Debian Wheezy+/Ubuntu 10.04+/CentOS 5.x+/Red Hat EL5+/Fedora FC19+
 
 News
 ===============
