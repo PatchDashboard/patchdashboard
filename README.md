@@ -41,12 +41,19 @@ Finally To add a node:
 
 On each node:
 
+If you want to do the push method, follow the instructions below.
 * make sure root can log in, and is not blocked by sshd_config directives
 * if root cannot log in (their password is hashed, but SSH allows them), make sure to copy the contents of "id_rsa.pub" in /root/.ssh into /root/.ssh/authorized_keys on each node
  * after adding the shared key, from the patch server, ssh into the node as root to make sure the keypair works.
 * if root can log in (they have a password set), run this from the patch server:
  * ssh-copy-id root@SERVER_IP (change SERVER_IP to the nodes IP address)
 
+If you want to use the easier pull method:
+* go to your PatchDashboard Web UI
+* Click on "Add a Server"
+* Follow the second set of instructions, which will look something like this
+  * "run the following on each node"
+    * "curl https://1.1.1.1/client/client_installer.php|bash"
 
 ===============
 ##Links
