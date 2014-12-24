@@ -129,7 +129,7 @@ function OSInstall()
 		if [[ "$apache_exists" = "" ]]; then
 			echo -e "\e[31mNotice\e[0m: Apache/PHP does not seem to be installed."
 			unset wait
-			echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
+			echo -e "\e[32m";read -p "Press enter to continue install" wait;echo -e "\e[0m"
 			echo -e "\e[31mNotice\e[0m: Please wait while prerequisites are installed...\n\n\e[31mNotice\e[0m: Installing Apache and PHP5..."
 			while true;
 			do echo -n .;sleep 1;done &
@@ -141,7 +141,7 @@ function OSInstall()
 		if [[ "$php5_exists" = "" ]]; then
                         echo -e "\e[31mNotice\e[0m: PHP does not seem to be installed."
                         unset wait
-                        echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
+                        echo -e "\e[32m";read -p "Press enter to continue install" wait;echo -e "\e[0m"
                         echo -e "\e[31mNotice\e[0m: Installing PHP5..."
                         while true;
                         do echo -n .;sleep 1;done &
@@ -152,7 +152,7 @@ function OSInstall()
 		if [[ "$mysqld_exists" = "" ]]; then
 			echo -e "\e[31mNotice\e[0m: MySQL does not seem to be installed."
                         unset wait
-			echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
+			echo -e "\e[32m";read -p "Press enter to continue install" wait;echo -e "\e[0m"
 			db_user_id="root"
 			mysqlPasswd
 			if [[ "$mysql_passwd" != "$mysql_passwd_again" ]]; then
@@ -206,7 +206,7 @@ function OSInstall()
 		if [[ "$httpd_exists" = "" ]]; then
 			echo -e "\e[31mNotice\e[0m: Apache does not seem to be installed."
                         unset wait
-                        echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
+                        echo -e "\e[32m";read -p "Press enter to continue install" wait;echo -e "\e[0m"
                         echo -e "\e[31mNotice\e[0m: Please wait while prerequisites are installed...\n\n\e[31mNotice\e[0m: Installing Apache..."
 			if [[ "$CentOSVer" = "5" ]]; then
 				while true;
@@ -233,7 +233,7 @@ function OSInstall()
 		if [[ "$php_exists" = "" ]]; then
                         echo -e "\e[31mNotice\e[0m: PHP does not seem to be installed."
                         unset wait
-                        echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
+                        echo -e "\e[32m";read -p "Press enter to continue install" wait;echo -e "\e[0m"
                         echo -e "\e[31mNotice\e[0m: Installing PHP5..."
                         while true;
                         do echo -n .;sleep 1;done &
@@ -244,7 +244,7 @@ function OSInstall()
 		if [[ "$mysqld_exists" = "" ]]; then
                         echo -e "\e[31mNotice\e[0m: MySQL does not seem to be installed."
                         unset wait
-                        echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
+                        echo -e "\e[32m";read -p "Press enter to continue install" wait;echo -e "\e[0m"
                         db_user_id="root"
                         mysqlPasswd
 			echo -e "\n\n\e[32m\e[4mMySQL Database Install and Setup\n\e[0m"
@@ -331,40 +331,62 @@ function PackageCheck()
 
 function EnableSSL()
 {
+	if [[ $(uname -r|grep el) = "" ]]; then
+		echo -e "\e[32mEnableSSL\e[0m: \e[36m$os\e[0m is not currently supported. This will be added in the near future."
+		sleep 3
+		mainMenu
+	fi
+
+	echo -e "\e[32mEnableSSL\e[0m: Preparing to setup SSL for the Patch Management Dashboard web interface."
+	echo -e "\e[32m";read -p "Press enter to continue install" wait;echo -e "\e[0m"
 	# install SSL
 	yum install mod_ssl openssl -y > /dev/null 2>&1
-	# ask questions for key generation
-	echo -e "\e[32mSSL\e[0m: Generating SSL Keys for $web_service"
-	echo -e "\e[32mSSL\e[0m: please answer the following questions for the the location of the hosted environment.\n"
-	read -p "Country: " country
-	while [[ $country = "" ]]; do
-		read -p "Country: " country
-	done
-	read -p "State: " state
-        while [[ $state = "" ]]; do
-                read -p "State: " state
-        done
-	read -p "City: " city
-        while [[ $city = "" ]]; do
-                read -p "City: " city
-        done
-	read -p "Orginization: " org
-        while [[ $org = "" ]]; do
-                read -p "Orginization: " org
-        done
-	read -p "Orginizational Unit: " orgu
-        while [[ $orgu = "" ]]; do
-                read -p "Orginizational Unit: " orgu
-        done
-	# generate private key 
-	openssl genrsa -out /etc/pki/tls/private/ca.key 4096 > /dev/null 2>&1
-	# generate CSR
-	openssl req -new -subj "/C=$(country)/ST=$(state)/L=$(city)/O=$(org)/OU=$(orgu)/CN=$(host_node)" -key /etc/pki/tls/private/ca.key -out /etc/pki/tls/private/ca.csr
-	# generate Self Signed Key
-	openssl x509 -req -days 1095 -in /etc/pki/tls/private/ca.csr -signkey /etc/pki/tls/private/ca.key -out /etc/pki/tls/certs/ca.crt
-	# add needed vhost to apache/httpd
-
-        echo -e "\n\e[32m\e[4mWebpage Location Setup\e[0m\n"
+	# check existing keys, if not setup new
+	if [[ -f /etc/pki/tls/private/ca.key ]]; then
+		echo -e "\e[31mSSL\e[0m: Keys already exist in /etc/pki/tls/cert and /etc/pki/tls/private.\n"
+		unset yn
+		read -p "Do you want to create a new keys? (yes/no): " yn
+        	while [[ $yn = "" ]]; do
+                	read -p "Do you want to create a new keys? (yes/no): " yn
+        	done
+		echo
+		if [[ "$yn" = "yes" || "$yn" = "y" ]]; then
+			# ask questions for key generation
+        		echo -e "\e[32mSSL\e[0m: Generating SSL Keys for $web_service"
+		        echo -e "\e[32mSSL\e[0m: please answer the following questions for the the location of the hosted environment.\n"
+		        read -p "Country: " country
+		        while [[ $country = "" ]]; do
+		                read -p "Country: " country
+		        done
+		        read -p "State: " state
+		        while [[ $state = "" ]]; do
+		                read -p "State: " state
+		        done
+		        read -p "City: " city
+		        while [[ $city = "" ]]; do
+		                read -p "City: " city
+		        done
+		        read -p "Orginization: " org
+		        while [[ $org = "" ]]; do
+		                read -p "Orginization: " org
+		        done
+		        read -p "Orginizational Unit: " orgu
+		        while [[ $orgu = "" ]]; do
+		                read -p "Orginizational Unit: " orgu
+		        done
+			# generate private key 
+			rm -rf /etc/pki/tls/private/ca.key
+			openssl genrsa -out /etc/pki/tls/private/ca.key 4096 > /dev/null 2>&1
+			# generate CSR
+			rm -rf /etc/pki/tls/private/ca.csr
+			openssl req -new -subj "/C=$country/ST=$state/L=$city/O=$org/OU=$orgu/CN=$host_node" -key /etc/pki/tls/private/ca.key -out /etc/pki/tls/private/ca.csr
+			# generate Self Signed Key
+			rm -rf /etc/pki/tls/private/ca.crt
+			openssl x509 -req -days 1095 -in /etc/pki/tls/private/ca.csr -signkey /etc/pki/tls/private/ca.key -out /etc/pki/tls/certs/ca.crt
+			# add needed vhost to apache/httpd
+		fi
+	fi
+        echo -e "\e[32m\e[4mWebpage Location Setup\e[0m\n"
         unset new_web_dir
         read -p "Please enter location for web interface [Default: $web_dir]: " new_web_dir
         while [[ "$new_web_dir" = "" ]]; do
@@ -393,9 +415,11 @@ function EnableSSL()
         if [ "${web_dir:LEN}" != "/" ]; then
                 web_dir=$web_dir"/"
         fi
+	if [[ $(grep "/etc/pki/tls/certs/ca.crt" /etc/httpd/conf.d/patch_manager.conf) = "" ]]; then
+		targetdir=$(echo $new_web_dir|sed 's=/[^/]*$==;s/\.$//')
+		echo -e "\e[32mSSL\e[0m: Adding SSL configuration to /etc/httpd/conf.d/patch_manager.conf\n"
 
-	echo -e "\n\e[32mSSL\e[0m: Adding SSL configuration to /etc/httpd/conf.d/patch_manager.conf\n"
-cat <<EOA > /etc/httpd/conf.d/patch_manager.conf
+cat <<EOA >> /etc/httpd/conf.d/patch_manager.conf
 	
 NameVirtualHost *:443
 <VirtualHost *:443>
@@ -409,14 +433,17 @@ NameVirtualHost *:443
         ServerName localhost
 </VirtualHost>
 EOA
-
+	else
+		echo -e "\e[31mSSL\e[0m: SSL configuration already exists in /etc/httpd/conf.d/patch_manager.conf\n"
+	fi
+# process web service restart
 service $web_service restart
 rewrite_check=`curl -s localhost${relative_path}rewrite_check|grep 404|wc -l`
 if [ "$rewrite_check" = "1" ]; then
         echo -e "\n\e[31mError\e[0m: Apache Mod_rewrite or .htaccess is not working.  Please ensure you have mod_rewrite installed and enabled.  If it is, please make sure you change 'AllowOverride None' to 'AllowOverride All'"
         echo -e "\e[31mError\e[0m: If you don't, this site won't work. \e[31mYou've been warned\e[0m."
 fi
-echo -e "\n\e[32mNotice\e[0m: SSL installation is now complete. You can now go to https://${host_node}${relative_path}"
+echo -e "\n\e[32mNotice\e[0m: SSL installation is now complete. You can now go to https://${host_node}${relative_path}\n"
 exit 0
 
 }
@@ -445,7 +472,7 @@ function phpExtraInst()
 	rpm -Uvh "http://repo.webtatic.com/yum/centos/5/latest.rpm" > /dev/null 2>&1
 	sed -i 's/enabled=0/enabled=1/g' /etc/yum.repos.d/webtatic.repo
 	unset wait
-	echo -e "\e[32m";read -p "Press enter to contunue install" wait;echo -e "\e[0m"
+	echo -e "\e[32m";read -p "Press enter to continue install" wait;echo -e "\e[0m"
 	echo -e "\e[32mPHP Install\e[0m: Installing PHP5.3 or greater..."
 	while true;
 	do echo -n .;sleep 1;done &
@@ -1339,8 +1366,13 @@ OSInstall
 
 echo -e "\e[32mPlease choose an option below\n\e[0m"
 cat <<EOF
+Base Setup:
 1) Install
 2) Update
+
+Optional:
+3) EnableSSL
+
 q) Quit
 EOF
 
@@ -1351,8 +1383,11 @@ EOF
                 1|Install)
                 NewInstall
                 ;;
-                2|Update)
+		2|Update)
                 UpdateUpgrade
+                ;;
+		3|EnableSSL)
+                EnableSSL
                 ;;
                 q|Quit)
                 exit 0
