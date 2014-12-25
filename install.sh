@@ -476,7 +476,7 @@ NameVirtualHost *:443
 </VirtualHost>
 EOA
 	else
-		echo -e "\e[31mSSL\e[0m: SSL configuration already exists in /etc/httpd/conf.d/patch_manager.conf\n"
+		echo -e "\e[31mSSL\e[0m: SSL configuration already exists in /etc/$web_service/conf.d/patch_manager.conf\n"
 	fi
 # process web service restart
 service $web_service restart
