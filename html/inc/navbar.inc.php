@@ -5,7 +5,7 @@
 if (!isset($index_check) || $index_check != "active"){
     exit();
 }
-$patch_list_sql = "SELECT count(*) as total_found FROM `patches` p LEFT JOIN servers s on s.server_name = p.server_name WHERE s.trusted = 1 and p.upgraded=0; and p.package_name !='';";
+$patch_list_sql = "SELECT count(*) as total_found FROM `patches` p LEFT JOIN servers s on s.server_name = p.server_name WHERE s.trusted = 1 and p.upgraded=0 and p.package_name !='';";
 $patch_list_link = mysql_connect(DB_HOST,DB_USER,DB_PASS);
 mysql_select_db(DB_NAME,$patch_list_link);
 $patch_list_res = mysql_query($patch_list_sql);

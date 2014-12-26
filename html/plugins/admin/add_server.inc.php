@@ -6,10 +6,12 @@ else{
     $protocol = 'http://';
 }
 if ($protocol == 'https://'){
-    $advise = "<br /><br /><h3><p style='color:green'> Because you're using HTTPS, we advise using the pull method.</h3></p>";
+    $advice = "<br /><br /><h3><p style='color:green'> Because you're using HTTPS, we advise using the pull method.</h3></p>";
+    $curl_cmd = "curl -s -k";
 }
 else{
     $advice = "<br /><br /><h3><p style='color:red'> Because you're not using HTTPS, we <strong>HIGHLY</strong> advise against the pull method.</h3></p>";
+    $curl_cmd = "curl";
 }
 include '../lib/db_config.php';
 $SERVER_URI = $protocol.$_SERVER['HTTP_HOST'].BASE_PATH;
@@ -27,7 +29,7 @@ $SERVER_URI = $protocol.$_SERVER['HTTP_HOST'].BASE_PATH;
                     <?php echo $advice;?>
                     <br/><br/><p>The easier method -- the Pull Method, if you are running this via HTTPS, or you implicitly trust all traffic on your network (from each guest machine/node):</p>
                     <pre>sudo -i
-curl <?php echo "${SERVER_URI}client/client_installer.php";?> | bash</pre>
+<?php echo $curl_cmd;?> <?php echo "${SERVER_URI}client/client_installer.php";?> | bash</pre>
                     <br/><br/><br/><p>We do not ever plan on allowing the addition of servers via the web interface.  We belive that keeping the trust (Pull method) or managing the shared keys (Push method) should <strong><i>only</i></strong> be done via the terminal.</p>
                 </div>
                 <div class="error-actions">
