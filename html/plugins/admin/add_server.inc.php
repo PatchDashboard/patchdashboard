@@ -24,7 +24,7 @@ $SERVER_URI = $protocol.$_SERVER['HTTP_HOST'].BASE_PATH;
                     <p>To add a server, you have 2 options -- The Push method, and The Pull method.</p>
                     <p>The Push method is a little more in-depth, but more secure if you aren't running this site on HTTPS<br />
                         Simply put, you would merely do this from the PatchDashboard server:</p>
-                    <pre>/opt/patch_dashboard/add_server.sh</pre>
+                    <pre>/opt/patch_manager/add_server.sh</pre>
                     <p>It will ask you some questions, then instruct you on how to complete the setup on each node (controlled server).</p>
                     <?php echo $advice;?>
                     <br/><br/><p>The easier method -- the Pull Method, if you are running this via HTTPS, or you implicitly trust all traffic on your network (from each guest machine/node):</p>

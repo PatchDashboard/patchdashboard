@@ -331,19 +331,28 @@ function PackageCheck()
 
 function EnableSSL()
 {
-	if [[ $(uname -r|grep el) = "" ]]; then
-		echo -e "\e[32mEnableSSL\e[0m: \e[36m$os\e[0m is not currently supported. This will be added in the near future."
-		sleep 3
-		mainMenu
-	fi
 
 	echo -e "\e[32mEnableSSL\e[0m: Preparing to setup SSL for the Patch Management Dashboard web interface."
-	echo -e "\e[32m";read -p "Press enter to continue install" wait;echo -e "\e[0m"
-	# install SSL
-	yum install mod_ssl openssl -y > /dev/null 2>&1
+        echo -e "\e[32m";read -p "Press enter to continue install" wait;echo -e "\e[0m"
+
+	if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
+		# set ssl key path
+		ssl_path="/etc/ssl"
+		# install SSL
+		a2enmod ssl 
+		a2ensite default-ssl
+		echo
+
+	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
+		# set ssl key path
+		ssl_path="/etc/pki/tls"
+		# install SSL
+		yum install mod_ssl openssl -y > /dev/null 2>&1
+	fi
+
 	# check existing keys, if not setup new
-	if [[ -f /etc/pki/tls/private/ca.key ]]; then
-		echo -e "\e[31mSSL\e[0m: Keys already exist in /etc/pki/tls/cert and /etc/pki/tls/private.\n"
+	if [[ -f $ssl_path/private/ca.key ]]; then
+		echo -e "\e[31mSSL\e[0m: Keys already exist in $ssl_path/certs and $ssl_path/private.\n"
 		unset yn
 		read -p "Do you want to create a new keys? (yes/no): " yn
         	while [[ $yn = "" ]]; do
@@ -375,24 +384,57 @@ function EnableSSL()
 		                read -p "Orginizational Unit: " orgu
 		        done
 			# generate private key 
-			rm -rf /etc/pki/tls/private/ca.key
-			openssl genrsa -out /etc/pki/tls/private/ca.key 4096 > /dev/null 2>&1
+			rm -rf $ssl_path/private/ca.key
+			openssl genrsa -out $ssl_path/private/ca.key 4096 > /dev/null 2>&1
 			# generate CSR
-			rm -rf /etc/pki/tls/private/ca.csr
-			openssl req -new -subj "/C=$country/ST=$state/L=$city/O=$org/OU=$orgu/CN=$host_node" -key /etc/pki/tls/private/ca.key -out /etc/pki/tls/private/ca.csr
+			rm -rf $ssl_path/private/ca.csr
+			openssl req -new -subj "/C=$country/ST=$state/L=$city/O=$org/OU=$orgu/CN=$host_node" -key $ssl_path/private/ca.key -out $ssl_path/private/ca.csr
 			# generate Self Signed Key
-			rm -rf /etc/pki/tls/private/ca.crt
-			openssl x509 -req -days 1095 -in /etc/pki/tls/private/ca.csr -signkey /etc/pki/tls/private/ca.key -out /etc/pki/tls/certs/ca.crt
-			# add needed vhost to apache/httpd
+			rm -rf $ssl_path/private/ca.crt
+			openssl x509 -req -days 1095 -in $ssl_path/private/ca.csr -signkey $ssl_path/private/ca.key -out $ssl_path/certs/ca.crt
 		fi
+	else
+		# ask questions for key generation
+                echo -e "\e[32mSSL\e[0m: Generating SSL Keys for $web_service"
+                echo -e "\e[32mSSL\e[0m: please answer the following questions for the the location of the hosted environment.\n"
+                read -p "Country: " country
+                while [[ $country = "" ]]; do
+	                read -p "Country: " country
+                done
+        	read -p "State: " state
+                while [[ $state = "" ]]; do
+                	read -p "State: " state
+                done
+                read -p "City: " city
+                while [[ $city = "" ]]; do
+                	read -p "City: " city
+                done
+                read -p "Orginization: " org
+                while [[ $org = "" ]]; do
+                	read -p "Orginization: " org
+                done
+                read -p "Orginizational Unit: " orgu
+                while [[ $orgu = "" ]]; do
+                	read -p "Orginizational Unit: " orgu
+                done
+                # generate private key 
+                rm -rf $ssl_path/private/ca.key
+                openssl genrsa -out $ssl_path/private/ca.key 4096 > /dev/null 2>&1
+                # generate CSR
+                rm -rf $ssl_path/private/ca.csr
+                openssl req -new -subj "/C=$country/ST=$state/L=$city/O=$org/OU=$orgu/CN=$host_node" -key $ssl_path/private/ca.key -out $ssl_path/private/ca.csr
+                # generate Self Signed Key
+                rm -rf $ssl_path/private/ca.crt
+                openssl x509 -req -days 1095 -in $ssl_path/private/ca.csr -signkey $ssl_path/private/ca.key -out $ssl_path/certs/ca.crt
+		echo
 	fi
+
         echo -e "\e[32m\e[4mWebpage Location Setup\e[0m\n"
         unset new_web_dir
         read -p "Please enter location for web interface [Default: $web_dir]: " new_web_dir
         while [[ "$new_web_dir" = "" ]]; do
                 echo -e "\e[32mNotice\e[0m: Default Location Used: $web_dir"
                 new_web_dir=$web_dir
-                EXTERNAL_WEB_URI="http://${SERVER_IP}${new_web_dir}"
         done
         echo
         unset new_relative_path
@@ -415,17 +457,17 @@ function EnableSSL()
         if [ "${web_dir:LEN}" != "/" ]; then
                 web_dir=$web_dir"/"
         fi
-	if [[ $(grep "/etc/pki/tls/certs/ca.crt" /etc/httpd/conf.d/patch_manager.conf) = "" ]]; then
+	if [[ $(grep "$ssl_path/certs/ca.crt" /etc/$web_service/conf.d/patch_manager.conf) = "" ]]; then
 		targetdir=$(echo $new_web_dir|sed 's=/[^/]*$==;s/\.$//')
-		echo -e "\e[32mSSL\e[0m: Adding SSL configuration to /etc/httpd/conf.d/patch_manager.conf\n"
+		echo -e "\e[32mSSL\e[0m: Adding SSL configuration to /etc/$web_service/conf.d/patch_manager.conf\n"
 
-cat <<EOA >> /etc/httpd/conf.d/patch_manager.conf
+cat <<EOA >> /etc/$web_service/conf.d/patch_manager.conf
 	
 NameVirtualHost *:443
 <VirtualHost *:443>
         SSLEngine on
-        SSLCertificateFile /etc/pki/tls/certs/ca.crt
-        SSLCertificateKeyFile /etc/pki/tls/private/ca.key
+        SSLCertificateFile $ssl_path/certs/ca.crt
+        SSLCertificateKeyFile $ssl_path/private/ca.key
         <Directory $targetdir>
 	   AllowOverride All
         </Directory>
@@ -434,7 +476,7 @@ NameVirtualHost *:443
 </VirtualHost>
 EOA
 	else
-		echo -e "\e[31mSSL\e[0m: SSL configuration already exists in /etc/httpd/conf.d/patch_manager.conf\n"
+		echo -e "\e[31mSSL\e[0m: SSL configuration already exists in /etc/$web_service/conf.d/patch_manager.conf\n"
 	fi
 # process web service restart
 service $web_service restart
