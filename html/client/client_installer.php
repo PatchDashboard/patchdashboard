@@ -21,7 +21,8 @@ else
     cron_dir='/var/spool/cron/'
 fi
 mkdir -p /opt/patch_manager/
-if [[ $(ls /opt/patch_manager/*.sh) = \"\" ]]; then
+ls /opt/patch_manager/*.sh > /dev/null 2>&1
+if [[ \"$?\" != \"0\" ]]; then
 	curl -k -s ${SERVER_URI}client/check-in.sh > /opt/patch_manager/check-in.sh
 	curl -k -s ${SERVER_URI}client/patch_checker.sh > /opt/patch_manager/patch_checker.sh
 	curl -k -s ${SERVER_URI}client/package_checker.sh > /opt/patch_manager/package_checker.sh
