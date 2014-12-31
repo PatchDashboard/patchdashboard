@@ -38,9 +38,9 @@ fi
 chmod +x /opt/patch_manager/*.sh
 if [[ $(crontab -l|grep check-in.sh) = \"\" ]]; then
 	if [ -f \"\${cron_dir}root\" ]; then
-    		echo \"* * * * * /opt/patch_manager/check-in.sh\" >>  \${cron_dir}root
+    		echo -e \"\n* * * * * /opt/patch_manager/check-in.sh\" >>  \${cron_dir}root
 	else
-    		echo \"* * * * * /opt/patch_manager/check-in.sh\" >  \${cron_dir}root
+    		echo -e \"\n* * * * * /opt/patch_manager/check-in.sh\" >  \${cron_dir}root
 	fi
 fi
 ";
