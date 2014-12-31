@@ -21,15 +21,26 @@ else
     cron_dir='/var/spool/cron/'
 fi
 mkdir -p /opt/patch_manager/
-curl -k -s ${SERVER_URI}client/check-in.sh > /opt/patch_manager/check-in.sh
-curl -k -s ${SERVER_URI}client/patch_checker.sh > /opt/patch_manager/patch_checker.sh
-curl -k -s ${SERVER_URI}client/package_checker.sh > /opt/patch_manager/package_checker.sh
-curl -k -s ${SERVER_URI}client/run_commands.sh > /opt/patch_manager/run_commands.sh
-chmod +x /opt/patch_manager/*.sh
-if [ -f \"\${cron_dir}root\" ]; then
-    echo \"* * * * * /opt/patch_manager/check-in.sh\" >>  \${cron_dir}root
+if [[ $(ls /opt/patch_manager/*.sh) = \"\" ]]; then
+	curl -k -s ${SERVER_URI}client/check-in.sh > /opt/patch_manager/check-in.sh
+	curl -k -s ${SERVER_URI}client/patch_checker.sh > /opt/patch_manager/patch_checker.sh
+	curl -k -s ${SERVER_URI}client/package_checker.sh > /opt/patch_manager/package_checker.sh
+	curl -k -s ${SERVER_URI}client/run_commands.sh > /opt/patch_manager/run_commands.sh
 else
-    echo \"* * * * * /opt/patch_manager/check-in.sh\" >  \${cron_dir}root
+	echo \"Updating existing install located at: /opt/patch_manager/\"
+	rm -rf /opt/patch_manager/*.sh
+	curl -k -s ${SERVER_URI}client/check-in.sh > /opt/patch_manager/check-in.sh
+	curl -k -s ${SERVER_URI}client/patch_checker.sh > /opt/patch_manager/patch_checker.sh
+       	curl -k -s ${SERVER_URI}client/package_checker.sh > /opt/patch_manager/package_checker.sh
+	curl -k -s ${SERVER_URI}client/run_commands.sh > /opt/patch_manager/run_commands.sh
+fi
+chmod +x /opt/patch_manager/*.sh
+if [[ $(crontab -l|grep check-in.sh) = \"\" ]]; then
+	if [ -f \"\${cron_dir}root\" ]; then
+    		echo \"* * * * * /opt/patch_manager/check-in.sh\" >>  \${cron_dir}root
+	else
+    		echo \"* * * * * /opt/patch_manager/check-in.sh\" >  \${cron_dir}root
+	fi
 fi
 ";
 echo $script;
