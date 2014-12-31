@@ -20,7 +20,7 @@ INSERT INTO servers_old SELECT * FROM servers;
 DROP TABLE servers;
 CREATE TABLE `servers` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
-  `server_name` varchar(20) NOT NULL,
+  `server_name` varchar(60) NOT NULL,
   `distro_id` mediumint(8) NOT NULL,
   `server_ip` varchar(60) NOT NULL,
   `distro_version` mediumint(8) NOT NULL,
