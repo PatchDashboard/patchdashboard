@@ -1239,7 +1239,7 @@ fi
 find $new_web_dir -type d -print0|xargs -0 chmod 755
 find $new_web_dir -type f -print0|xargs -0 chmod 644
 chmod 640 /opt/patch_manager/db_config.php
-chmod 640 $new_web_diri/lib/db_config.php
+chmod 640 $new_web_dir/lib/db_config.php
 chmod 640 /opt/patch_manager/db.conf
 chown $web_user:$web_user $new_web_dir -R
 # restart web service
