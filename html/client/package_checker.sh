@@ -18,7 +18,7 @@ elif [[ -f /etc/debian_version ]]; then
 elif [[ -f /etc/redhat-release ]]; then
         export os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
 else
-        export os="$(uname -s) $(uname -r)|head -1|awk {'print $1'}"
+        export os=$(uname -s -r|head -1|awk {'print $1'})
 fi
 if [ "$os" = "CentOS" ] || [ "$os" = "Fedora" ] || [ "$os" = "Red" ]; then
         data=$(rpm -qa --qf '%{NAME}:::%{VERSION}\n')
