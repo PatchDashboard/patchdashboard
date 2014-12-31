@@ -1178,7 +1178,6 @@ elif [[ "$ModeType" = "Update" ]]; then
 	rsync -aq --exclude='db.conf' --exclude='db_config.php' scripts/ /opt/patch_manager/
 
 fi
-###### THIS NEEDS FIXING to remove duplicate file copy efforts
 # check if new_web_dir exists
 if [[ -d $new_web_dir ]]; then
 	echo -e "\e[32mNotice\e[0m: $target_web_dir already exists.\n"
@@ -1239,6 +1238,9 @@ fi
 # change perms 
 find $new_web_dir -type d -print0|xargs -0 chmod 755
 find $new_web_dir -type f -print0|xargs -0 chmod 644
+chmod 640 /opt/patch_manager/db_config.php
+chmod 640 $new_web_diri/lib/db_config.php
+chmod 640 /opt/patch_manager/db.conf
 chown $web_user:$web_user $new_web_dir -R
 # restart web service
 service $web_service restart
