@@ -14,7 +14,7 @@ if (isset($client_key) && !empty($client_key)) {
         $check_res = mysql_query($sql_check);
         if (mysql_num_rows($check_res) == 0) {
             $server_ip = filter_input(INPUT_SERVER, 'REMOTE_ADDR');
-            $os_id = "SELECT `id` FROM `distro` WHERE `distro_name`='$client_os';";
+            $os_id = "SELECT `id` FROM `distro` WHERE `distro_name` LIKE '$client_os';";
             #$sql2 = "INSERT INTO `servers`(`server_name`,`distro_id`,`distro_version`,`server_ip`,`client_key`) VALUES('UNKNOWN SERVER',0,0,'$server_ip','$client_key');";
             if (empty($client_host)) {$client_host = 'UNKNOWN SERVER';}
             if (empty($client_os)) {$os_id = 0;}
