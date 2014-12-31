@@ -28,9 +28,9 @@ if [ ! -f /opt/patch_manager/.patchrc ]; then
 fi
 . /opt/patch_manager/.patchrc
 curl -k -s -H "X-CLIENT-KEY: $client_key" $check_in > /tmp/check-in_$client_key
-curl -k -s -H "X_CLIENT_HOST: $host" $check_in >> /tmp/check-in_$client_key
-curl -k -s -H "X_CLIENT_OS: $client_os" $check_in >> /tmp/check-in_$client_key
-curl -k -s -H "X_CLIENT_OSVER: $client_os_ver" $check_in >> /tmp/check-in_$client_key
+curl -k -s -H "X_CLIENT_HOST: $host" $check_in 
+curl -k -s -H "X_CLIENT_OS: $client_os" $check_in
+curl -k -s -H "X_CLIENT_OSVER: $client_os_ver" $check_in
 cmds_line_count=$(cat /tmp/check-in_$client_key|wc -l)
 if [ "$cmds_line_count" -gt "1" ]; then
         . /tmp/check-in_$client_key
