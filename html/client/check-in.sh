@@ -1,7 +1,22 @@
 #!/bin/bash
-auth_key="__SERVER_AUTHKEY_SET_ME__"
-server_uri="__SERVER_URI_SET_ME__"
+auth_key="c162e5b3535f5d441e3672888096019475c1aaacfa24a2172adfcbb36325ad0d"
+server_uri="http://10.0.0.195/patchmgr/"
 check_in="${server_uri}client/check-in.php"
+
+if [[ -f /etc/lsb-release ]]; then
+        export client_os=$(lsb_release -s -d|head -1|awk {'print $1'})
+        export client_os_ver=$(lsb_release -s -d|head -1|awk {'print $2'}|cut -d "." -f 1)
+elif [[ -f /etc/debian_version ]]; then
+        export client_os="Debian $(cat /etc/debian_version)|head -1|awk {'print $1'}"
+        export client_os_ver="Debian $(cat /etc/debian_version)|head -1|awk {'print $2'}|cut -d "." -f 1"
+elif [[ -f /etc/redhat-release ]]; then
+        export client_os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
+        export client_os_ver=$(cat /etc/redhat-release|head -1|awk {'print $3'}|cut -d "." -f 1)
+else
+        export client_os=$(uname -s -r|head -1|awk {'print $1'})
+        export client_os_ver=$(uname -s -r|head -1|awk {'print $2'}|cut -d "." -f 1)
+fi
+
 if [ ! -f /opt/patch_manager/.patchrc ]; then
         host=$(hostname -f)
         random_bits=$(< /dev/urandom tr -dc 'a-zA-Z0-9~!@#$%^&*_-' | head -c${1:-32})
@@ -13,6 +28,9 @@ if [ ! -f /opt/patch_manager/.patchrc ]; then
 fi
 . /opt/patch_manager/.patchrc
 curl -k -s -H "X-CLIENT-KEY: $client_key" $check_in > /tmp/check-in_$client_key
+curl -k -s -H "X_CLIENT_HOST: $host" $check_in >> /tmp/check-in_$client_key
+curl -k -s -H "X_CLIENT_OS: $client_os" $check_in >> /tmp/check-in_$client_key
+curl -k -s -H "X_CLIENT_OSVER: $client_os_ver" $check_in >> /tmp/check-in_$client_key
 cmds_line_count=$(cat /tmp/check-in_$client_key|wc -l)
 if [ "$cmds_line_count" -gt "1" ]; then
         . /tmp/check-in_$client_key
