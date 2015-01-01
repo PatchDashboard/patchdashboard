@@ -15,11 +15,6 @@ if [ \"\$user\" != \"root\" ]; then
 		sudo curl ${SERVER_URI}client/client-installer.php|bash
 \"
 fi
-if [ -d \"/var/spool/cron/crontabs\" ]; then
-    cron_dir='/var/spool/cron/crontabs/'
-else
-    cron_dir='/var/spool/cron/'
-fi
 mkdir -p /opt/patch_manager/
 ls /opt/patch_manager/*.sh > /dev/null 2>&1
 if [[ \"$?\" != \"0\" ]]; then
@@ -36,12 +31,20 @@ else
 	curl -k -s ${SERVER_URI}client/run_commands.sh > /opt/patch_manager/run_commands.sh
 fi
 chmod +x /opt/patch_manager/*.sh
-if [[ $(crontab -l|grep check-in.sh) = \"\" ]]; then
-	if [ -f \"\${cron_dir}root\" ]; then
-    		echo -e \"\n* * * * * /opt/patch_manager/check-in.sh\" >>  \${cron_dir}root
-	else
-    		echo -e \"\n* * * * * /opt/patch_manager/check-in.sh\" >  \${cron_dir}root
-	fi
+ls \"/etc/cron.d/patch-manager\" > /dev/null 2>&1
+if [[ \"$?\" != \"0\" ]]; then
+	touch /etc/cron.d/patch-manager > /dev/null 2>&1
 fi
+grep check-in.sh \"/etc/cron.d/patch-manager\" > /dev/null 2>&1
+if [[ \"$?\" != \"0\" ]]; then
+	if [[ \"\$count_lines\" -gt \"0\" ]]; then
+		echo -e \"* * * * * /opt/patch_manager/check-in.sh >> /dev/null 2>&1\" >>  /etc/cron.d/patch-manager
+	else
+		echo -e \"* * * * * /opt/patch_manager/check-in.sh >> /dev/null 2>&1\" >  /etc/cron.d/patch-manager
+	fi
+else
+	echo \"Crontab entry already exists in: /etc/cron.d/patch-manager\"
+fi
+echo \"Client Install completed.\"
 ";
 echo $script;
