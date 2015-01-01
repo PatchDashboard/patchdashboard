@@ -4,7 +4,7 @@ server_uri="__SERVER_URI_SET_ME__"
 check_in="${server_uri}client/check-in.php"
 client_host=$(hostname -f)
 
-if [[ -f /etc/lsb-release ]]; then
+if [[ -f /etc/lsb-release && -f /etc/debian_version ]]; then
         export client_os=$(lsb_release -s -d|head -1|awk {'print $1'})
         export client_os_ver=$(lsb_release -s -d|head -1|awk {'print $2'}|cut -d "." -f 1)
 elif [[ -f /etc/debian_version ]]; then
@@ -28,8 +28,11 @@ if [ ! -f /opt/patch_manager/.patchrc ]; then
 else
         client_key=$(grep client_key /opt/patch_manager/.patchrc|awk -F\" {'print $2'})
 fi
+# load client_key
 . /opt/patch_manager/.patchrc
-curl -k -s -H "X-CLIENT-KEY: $client_key" -H "X-CLIENT-HOST: $client_host" -H "X-CLIENT-OS: $client_os" -H "X-CLIENT-OSVER: $client_os_ver" $check_in > /tmp/check-in_$client_key
+# remove any special characters
+client_os=$(echo $client_os|sed -e 's/[^a-zA-Z0-9]//g')
+curl -k -s -H "X-CLIENT-KEY: $client_key" -H "X-CLIENT-HOST: $client_host" -H "X-CLIENT-OS: $client_os" -H "X-CLIENT-OS-VER: $client_os_ver" $check_in > /tmp/check-in_$client_key
 cmds_line_count=$(cat /tmp/check-in_$client_key|wc -l)
 if [ "$cmds_line_count" -gt "1" ]; then
         . /tmp/check-in_$client_key

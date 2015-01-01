@@ -4,7 +4,7 @@ include '../lib/db_config.php';
 $client_key = filter_input(INPUT_SERVER, 'HTTP_X_CLIENT_KEY');
 $client_host = filter_input(INPUT_SERVER, 'HTTP_X_CLIENT_HOST');
 $client_os = filter_input(INPUT_SERVER, 'HTTP_X_CLIENT_OS');
-$client_os_ver = filter_input(INPUT_SERVER, 'HTTP_X_CLIENT_OSVER');
+$client_os_ver = filter_input(INPUT_SERVER, 'HTTP_X_CLIENT_OS_VER');
 if (isset($client_key) && !empty($client_key)) {
     $sql = "SELECT * FROM `servers` WHERE `client_key`='$client_key' and `trusted`= 1;";
     $link = mysql_connect(DB_HOST, DB_USER, DB_PASS);
@@ -21,12 +21,14 @@ if (isset($client_key) && !empty($client_key)) {
         $check_res = mysql_query($sql_check);
         if (mysql_num_rows($check_res) == 0) {
             $server_ip = filter_input(INPUT_SERVER, 'REMOTE_ADDR');
-            $os_id = "SELECT `id` FROM `distro` WHERE `distro_name` LIKE '$client_os';";
-            #$sql2 = "INSERT INTO `servers`(`server_name`,`distro_id`,`distro_version`,`server_ip`,`client_key`) VALUES('UNKNOWN SERVER',0,0,'$server_ip','$client_key');";
+            $os_versql = "SELECT `id` FROM `distro` WHERE `distro_name` LIKE '$client_os' LIMIT 1;";
+            $os_version = mysql_query($os_versql); $os_version = mysql_result($os_version, 0);
+            $os_dissql = "SELECT `id` FROM `distro_version` WHERE `distro_id`='$os_version' AND `version_num`='$client_os_ver' LIMIT 1;";
+            $os_distro = mysql_query($os_dissql); $os_distro = mysql_result($os_distro, 0);
             if (empty($client_host)) {$client_host = 'UNKNOWN SERVER';}
             if (empty($client_os)) {$os_id = 0;}
             if (empty($client_os_ver)) {$client_os_ver = 0;}
-            $sql2 = "INSERT INTO `servers`(`server_name`,`distro_id`,`distro_version`,`server_ip`,`client_key`) VALUES('$client_host','$os_id','$client_os_ver','$server_ip','$client_key');";
+            $sql2 = "INSERT INTO `servers`(`server_name`,`distro_id`,`distro_version`,`server_ip`,`client_key`) VALUES('$client_host','$os_version','$os_distro','$server_ip','$client_key');";
             mysql_query($sql2);
         }
         $out = "allowed='FALSE'
