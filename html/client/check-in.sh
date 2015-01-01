@@ -2,8 +2,12 @@
 auth_key="__SERVER_AUTHKEY_SET_ME__"
 server_uri="__SERVER_URI_SET_ME__"
 check_in="${server_uri}client/check-in.php"
+# get hostname FQDN
 client_host=$(hostname -f)
-
+if [[ $(echo $client_host|grep '[^a-zA-Z0-9]') = "" ]]; then
+        client_host=$(hostname -a)
+fi
+# get OS info and version
 if [[ -f /etc/lsb-release && -f /etc/debian_version ]]; then
         export client_os=$(lsb_release -s -d|head -1|awk {'print $1'})
         export client_os_ver=$(lsb_release -s -d|head -1|awk {'print $2'}|cut -d "." -f 1)
