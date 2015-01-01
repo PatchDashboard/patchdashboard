@@ -34,6 +34,7 @@
 ##                - This is a release ready version :)
 ##
 ##            RC1 - Updated the installer to handle new changes for RC1
+##.           1.1 - Added EnableSSL function to setup SSL and certificates
 ##
 #################################################################################
 
