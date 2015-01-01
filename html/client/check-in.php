@@ -23,7 +23,7 @@ if (isset($client_key) && !empty($client_key)) {
             $server_ip = filter_input(INPUT_SERVER, 'REMOTE_ADDR');
             $os_versql = "SELECT `id` FROM `distro` WHERE `distro_name` LIKE '$client_os' LIMIT 1;";
             $os_version = mysql_query($os_versql); $os_version = mysql_result($os_version, 0);
-            $os_dissql = "SELECT `id` FROM `distro_version` WHERE `distro_id`='$os_version' AND `version_num`='$client_os_ver' LIMIT 1;";
+            $os_dissql = "SELECT `id` FROM `distro_version` WHERE `distro_id`='$os_version' AND `version_num` LIKE '$client_os_ver%' LIMIT 1;";
             $os_distro = mysql_query($os_dissql); $os_distro = mysql_result($os_distro, 0);
             if (empty($client_host)) {$client_host = 'UNKNOWN SERVER';}
             if (empty($client_os)) {$os_id = 0;}
