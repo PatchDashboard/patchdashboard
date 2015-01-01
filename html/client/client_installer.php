@@ -38,9 +38,9 @@ fi
 grep check-in.sh \"/etc/cron.d/patch-manager\" > /dev/null 2>&1
 if [[ \"$?\" != \"0\" ]]; then
 	if [[ \"\$count_lines\" -gt \"0\" ]]; then
-		echo -e \"* * * * * /opt/patch_manager/check-in.sh >> /dev/null 2>&1\" >>  /etc/cron.d/patch-manager
+		echo -e \"* * * * * root /opt/patch_manager/check-in.sh >> /dev/null 2>&1\" >>  /etc/cron.d/patch-manager
 	else
-		echo -e \"* * * * * /opt/patch_manager/check-in.sh >> /dev/null 2>&1\" >  /etc/cron.d/patch-manager
+		echo -e \"* * * * * root /opt/patch_manager/check-in.sh >> /dev/null 2>&1\" >  /etc/cron.d/patch-manager
 	fi
 else
 	echo \"Crontab entry already exists in: /etc/cron.d/patch-manager\"
