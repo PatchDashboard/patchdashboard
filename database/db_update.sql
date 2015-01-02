@@ -21,6 +21,7 @@ DROP TABLE servers;
 CREATE TABLE `servers` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
   `server_name` varchar(512) NOT NULL,
+  `server_alias` varchar(512) NOT NULL,
   `distro_id` mediumint(8) NOT NULL,
   `server_ip` varchar(60) NOT NULL,
   `distro_version` mediumint(8) NOT NULL,
@@ -32,6 +33,7 @@ CREATE TABLE `servers` (
   PRIMARY KEY (`id`),
   UNIQUE INDEX (`client_key`),
   KEY `ix_server_name` (`server_name`),
+  KEY `ix_server_alias` (`server_alias`),
   KEY `ix_server_ip` (`server_ip`),
   KEY `ix_client_key` (`client_key`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
