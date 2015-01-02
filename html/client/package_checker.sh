@@ -11,14 +11,14 @@ if [[ ! -f "/opt/patch_manager/.patchrc" ]]; then
 fi
 # load the file
 . /opt/patch_manager/.patchrc
-if [[ -f /etc/lsb-release ]]; then
-        export os=$(lsb_release -s -d|head -1|awk {'print $1'})
+if [[ -f /etc/lsb-release && -f /etc/debian_version ]]; then
+        os=$(lsb_release -s -d|head -1|awk {'print $1'})
 elif [[ -f /etc/debian_version ]]; then
-        export os="Debian $(cat /etc/debian_version)|head -1|awk {'print $1'}"
+        os="Debian $(cat /etc/debian_version)|head -1|awk {'print $1'}"
 elif [[ -f /etc/redhat-release ]]; then
-        export os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
+        os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
 else
-        export os=$(uname -s -r|head -1|awk {'print $1'})
+        os=$(uname -s -r|head -1|awk {'print $1'})
 fi
 if [ "$os" = "CentOS" ] || [ "$os" = "Fedora" ] || [ "$os" = "Red" ]; then
         data=$(rpm -qa --qf '%{NAME}:::%{VERSION}\n')
@@ -29,7 +29,7 @@ elif [ "$os" = "Linux" ]; then
 	exit 0
 fi
 if [ -z "$data" ]; then
-    exit 0
+	exit 0
 else
 	curl -k -H "X-CLIENT-KEY: $client_key" $submit_packages_uri -d "$data" > /dev/null 2>&1
 fi
