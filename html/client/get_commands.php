@@ -20,7 +20,7 @@ if (isset($client_key) && !empty($client_key)) {
             if (empty($client_host)) {$client_host = 'UNKNOWN SERVER';}
             if (empty($client_os)) {$os_id = 0;}
             if (empty($client_os_ver)) {$client_os_ver = 0;}
-            $sql2 = "INSERT INTO `servers`(`server_name`,`distro_id`,`distro_version`,`server_ip`,`client_key`) VALUES('$client_host','$os_version','$os_distro','$server_ip','$client_key');";
+            $sql2 = "INSERT INTO `servers`(`server_name`,`server_alias`,`distro_id`,`distro_version`,`server_ip`,`client_key`) VALUES('$client_host','$client_host','$os_version','$os_distro','$server_ip','$client_key');";
             mysql_query($sql2);
         }
     } else {
