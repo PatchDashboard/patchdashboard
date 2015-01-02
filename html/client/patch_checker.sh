@@ -25,7 +25,7 @@ elif [[ -f /etc/redhat-release ]]; then
 else
 	os=$(uname -s -r|head -1|awk {'print $1'})
 fi
-if [ "$os" = "CentOS" ] || [ "$os" = "Fedora" ] || [ "$os" = "Red" ]; then
+if [ "$os" = "CentOS" ] || [ "$os" = "Fedora" ] || [ "$os" = "RHEL" ]; then
 	need_patched="true"
         yum -q check-update| while read i
         do

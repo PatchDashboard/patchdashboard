@@ -25,7 +25,7 @@ elif [[ -f /etc/redhat-release ]]; then
 else
         os=$(uname -s -r|head -1|awk {'print $1'})
 fi
-if [ "$os" = "CentOS" ] || [ "$os" = "Fedora" ] || [ "$os" = "Red" ]; then
+if [ "$os" = "CentOS" ] || [ "$os" = "Fedora" ] || [ "$os" = "RHEL" ]; then
         data=$(rpm -qa --qf '%{NAME}:::%{VERSION}\n')
 elif [ "$os" = "Ubuntu" ] || [ "$os" = "Debian" ]; then
 	data=$(dpkg -l|grep "ii"|awk '{print $2":::"$3}')
