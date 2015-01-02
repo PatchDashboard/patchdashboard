@@ -28,6 +28,7 @@ if (!isset($id) || empty($id) || !is_numeric($id)) {
     $row = mysql_fetch_array($res_edit_server);
     $id = $row['id'];
     $server_name = $row['server_name'];
+    $server_alias = $row['server_alias'];
     $distro_id_main = $row['distro_id'];
     $server_ip = $row['server_ip'];
     $last_checkin = $row['last_checked'];
@@ -72,6 +73,7 @@ if (!isset($id) || empty($id) || !is_numeric($id)) {
                 <div class="form-group"><label class="col-sm-5 control-label">Last Seen</label><div class="col-sm-5"><input type="text" value="<?php echo $last_seen; ?>" class="form-control" readonly /></div></div>
                 <div class="form-group"><label class="col-sm-5 control-label">Last Checked for updates</label><div class="col-sm-5"><input type="text" name="last_checkin" value="<?php echo $last_check; ?>" class="form-control" readonly /></div></div>
                 <div class="form-group"><label class="col-sm-5 control-label">Server Name</label><div class="col-sm-5"><input value="<?php echo $server_name; ?>" type="text" name="server_name" class="form-control" placeholder="Server Name" required autofocus ></div></div>
+                <div class="form-group"><label class="col-sm-5 control-label">Server Alias</label><div class="col-sm-5"><input value="<?php echo $server_alias; ?>" type="text" name="server_alias" class="form-control" placeholder="Server Alias" required autofocus ></div></div>
                 <div class="form-group"><label class="col-sm-5 control-label">IP Address</label><div class="col-sm-5"><input type="text" name="server_ip" value="<?php echo $server_ip; ?>" class="form-control" placeholder="IP Address" /></div></div>
                 <div class="form-group"><label class="col-sm-5 control-label">Distro</label><div class="col-sm-5"><?php echo $select_html;?></div></div>
                 <div class="form-group"><label class="col-sm-5 control-label">Trusted?</label><div class="col-sm-5"><input type="checkbox" name="trusted" class="form-control" <?php echo $trusted_checked; ?>></div></div>
