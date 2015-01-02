@@ -1269,8 +1269,8 @@ function AddCrontab()
 {
 	if [[ ! -f /etc/cron.d/patch-manager ]]; then
 		echo -e "\e[36m# Adding Crontab entries to /etc/cron.d/patch-manager\e[0m\n"
-		echo "0 */2 * * * /opt/patch_manager/start_get_package_list.sh > /dev/null 2>&1" > /etc/cron.d/patch-manager
-		echo "1 */2 * * * /opt/patch_manager/start_patch_check.sh > /dev/null 2>&1" >> /etc/cron.d/patch-manager
+		echo "0 */2 * * * root /opt/patch_manager/start_get_package_list.sh > /dev/null 2>&1" > /etc/cron.d/patch-manager
+		echo "1 */2 * * * root /opt/patch_manager/start_patch_check.sh > /dev/null 2>&1" >> /etc/cron.d/patch-manager
 		echo -e "\e[32mNotice\e[0m: Added Crontab entries for 2 hour runs\e[0m\n"
 	fi
 }
