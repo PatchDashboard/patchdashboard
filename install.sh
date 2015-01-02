@@ -307,6 +307,7 @@ function OSInstall()
 function PackageCheck()
 {
 	echo -e "\e[32mChecking for dependencies and missing packages\n\e[0m"
+	echo -e "\e[31mWARNING\e[0m: Please keep in mind this is not a fool proof process, if you have 3rd party repo's, the automated package installer may fail.\n"
         if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
 	pkgList="apache2 apache2-threaded-dev apache2-utils php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc mysql-client mysql-server php5-mysql php5-sybase libapache2-mod-auth-mysql libmysqlclient-dev curl"
 	for package in $pkgList; do
@@ -321,8 +322,11 @@ function PackageCheck()
                 fi
         done
 	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]] || [[ "$os" = "Red Hat Enterprise" ]]; then
-		if [[ $(grep "exclude=.at" /etc/yum/pluginconf.d/fastestmirror.conf) = "" ]]; then 
-			echo "exclude=.at" >> /etc/yum/pluginconf.d/fastestmirror.conf
+		ls /etc/yum/pluginconf.d/fastestmirror.conf > /dev/null 2>&1
+		if [[ "$?" = 0 ]]; then
+			if [[ $(grep "exclude=.at" /etc/yum/pluginconf.d/fastestmirror.conf) = "" ]]; then 
+				echo "exclude=.at" >> /etc/yum/pluginconf.d/fastestmirror.conf
+			fi
 		fi
 	pkgList="php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli php-pdo php-mssql mysql mysql-server mysql-devel httpd httpd-devel httpd-tools curl"
 	for package in $pkgList; do
