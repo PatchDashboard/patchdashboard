@@ -320,7 +320,7 @@ function PackageCheck()
                         echo -e "\n\e[32mPackage\e[0m: \e[36m$package\e[0m install complete\n"
                 fi
         done
-	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
+	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]] || [[ "$os" = "Red Hat Enterprise" ]]; then
 		if [[ $(grep "exclude=.at" /etc/yum/pluginconf.d/fastestmirror.conf) = "" ]]; then 
 			echo "exclude=.at" >> /etc/yum/pluginconf.d/fastestmirror.conf
 		fi
@@ -352,7 +352,7 @@ function EnableSSL()
 		a2ensite default-ssl
 		echo
 
-	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
+	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]] || [[ "$os" = "Red Hat Enterprise" ]]; then
 		# set ssl key path
 		ssl_path="/etc/pki/tls"
 		# install SSL
@@ -554,7 +554,7 @@ function checkIPtables()
 			iptables -I INPUT -p tcp -m tcp --dport 443 -j ACCEPT
 			service iptables-persistent save
 			echo
-		elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
+		elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]] || [[ "$os" = "Red Hat Enterprise" ]]; then
 			# add rules and save
 			iptables -I INPUT -p tcp -m tcp --dport 80 -j ACCEPT
 			iptables -I INPUT -p tcp -m tcp --dport 443 -j ACCEPT
@@ -1138,7 +1138,7 @@ ErrorLog /var/log/apache2/patch_manager/${host_node}_error.log
 </Directory>
 EOA
 
-elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
+elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]] || [[ "$os" = "Red Hat Enterprise" ]]; then
 # create log dir and set perms
 mkdir -p /var/log/httpd/patch_manager/
 chown $web_user:$web_user /var/log/httpd/patch_manager/ -R
