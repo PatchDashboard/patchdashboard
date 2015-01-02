@@ -9,6 +9,7 @@ if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == true) {
         $distro_ver = $distro_array[1];
         $server_name = filter_input(INPUT_POST, 'server_name', FILTER_SANITIZE_SPECIAL_CHARS);
         $server_alias = filter_input(INPUT_POST, 'server_alias', FILTER_SANITIZE_SPECIAL_CHARS);
+        $server_group = filter_input(INPUT_POST, 'server_group', FILTER_SANITIZE_SPECIAL_CHARS);
         $id = filter_input(INPUT_POST, 'id', FILTER_SANITIZE_NUMBER_INT);
         $trusted = filter_input(INPUT_POST, 'trusted', FILTER_SANITIZE_SPECIAL_CHARS);
         $sql_array = array();
@@ -20,6 +21,9 @@ if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == true) {
             }
             if (isset($server_alias) && !empty($server_alias)){
                 $sql_array[] = "`server_alias`='$server_alias'";
+            }
+            if (isset($server_group) && !empty($server_group)){
+                $sql_array[] = "`server_group`='$server_group'";
             }
             if (isset($server_ip) && !empty($server_ip)){
                 $sql_array = "`server_ip`='$server_ip'";

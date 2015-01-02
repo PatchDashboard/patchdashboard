@@ -12,6 +12,7 @@ CREATE TABLE `servers` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
   `server_name` varchar(512) NOT NULL,
   `server_alias` varchar(512) NOT NULL,
+  `server_group` varchar(512) DEFAULT NULL,
   `distro_id` mediumint(8) NOT NULL,
   `server_ip` varchar(60) NOT NULL,
   `distro_version` mediumint(8) NOT NULL,
