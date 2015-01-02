@@ -12,11 +12,19 @@ if [[ -f /etc/lsb-release && -f /etc/debian_version ]]; then
         export client_os=$(lsb_release -s -d|head -1|awk {'print $1'})
         export client_os_ver=$(lsb_release -s -d|head -1|awk {'print $2'}|cut -d "." -f 1)
 elif [[ -f /etc/debian_version ]]; then
-        export client_os="Debian $(cat /etc/debian_version)|head -1|awk {'print $1'}"
+        export client_os="Debian"
         export client_os_ver="Debian $(cat /etc/debian_version)|head -1|awk {'print $2'}|cut -d "." -f 1"
 elif [[ -f /etc/redhat-release ]]; then
-        export client_os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
-        export client_os_ver=$(cat /etc/redhat-release|head -1|awk {'print $3'}|cut -d "." -f 1)
+	export client_os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
+	if [[ "$client_os" = "Red" && $(grep -i enterprise /etc/redhat-release) != "" ]]; then
+		export client_os="RHEL"
+		export client_os_ver=$(cat /etc/redhat-release|head -1|awk {'print $7'}|cut -d "." -f 1)
+	elif [[ "$client_os" = "Red" ]]; then
+		export client_os="RHEL"
+		export client_os_ver=$(cat /etc/redhat-release|head -1|awk {'print $6'}|cut -d "." -f 1)
+	else
+		export client_os_ver=$(cat /etc/redhat-release|head -1|awk {'print $2'}|cut -d "." -f 1)
+	fi
 else
         export client_os=$(uname -s -r|head -1|awk {'print $1'})
         export client_os_ver=$(uname -s -r|head -1|awk {'print $2'}|cut -d "." -f 1)

@@ -14,9 +14,14 @@ rm -rf /tmp/patch_$client_key
 if [[ -f /etc/lsb-release && -f /etc/debian_version ]]; then
         os=$(lsb_release -s -d|head -1|awk {'print $1'})
 elif [[ -f /etc/debian_version ]]; then
-        os="Debian $(cat /etc/debian_version)|head -1|awk {'print $1'}"
+        os="Debian"
 elif [[ -f /etc/redhat-release ]]; then
         os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
+        if [[ "$os" = "Red" && $(grep -i enterprise /etc/redhat-release) != "" ]]; then
+                os="RHEL"
+        elif [[ "$os" = "Red" ]]; then
+                os="RHEL"
+        fi
 else
 	os=$(uname -s -r|head -1|awk {'print $1'})
 fi
