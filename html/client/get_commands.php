@@ -3,7 +3,7 @@ include '../lib/db_config.php';
 $client_key = filter_input(INPUT_SERVER, 'HTTP_X_CLIENT_KEY');
 $client_host = filter_input(INPUT_SERVER, 'HTTP_X_CLIENT_HOST');
 $client_os = filter_input(INPUT_SERVER, 'HTTP_X_CLIENT_OS');
-$client_os_ver = filter_input(INPUT_SERVER, 'HTTP_X_CLIENT_OSVER');
+$client_os_ver = filter_input(INPUT_SERVER, 'HTTP_X_CLIENT_OS_VER');
 if (isset($client_key) && !empty($client_key)) {
     $sql = "SELECT * FROM `servers` WHERE `client_key`='$client_key' and `trusted`= 1;";
     $link = mysql_connect(DB_HOST, DB_USER, DB_PASS);
