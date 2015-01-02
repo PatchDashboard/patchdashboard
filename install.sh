@@ -100,24 +100,32 @@ if [ ! -f /root/.ssh/id_rsa ]; then
 fi
 
 # get OS information and run applicable function
-if [[ -f /etc/lsb-release ]]; then
-	export os=$(lsb_release -s -d|head -1|awk {'print $1'})
+if [[ -f /etc/lsb-release && -f /etc/debian_version ]]; then
+        export os=$(lsb_release -s -d|head -1|awk {'print $1'})
+        export os_ver=$(lsb_release -s -d|head -1|awk {'print $2'}|cut -d "." -f 1)
 elif [[ -f /etc/debian_version ]]; then
-	export os="Debian $(cat /etc/debian_version)|head -1|awk {'print $1'}"
+        export os="Debian $(cat /etc/debian_version)|head -1|awk {'print $1'}"
+        export os_ver="Debian $(cat /etc/debian_version)|head -1|awk {'print $2'}|cut -d "." -f 1"
 elif [[ -f /etc/redhat-release ]]; then
-	export os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
+        export os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
+	if [[ "$os" = "Red" && $(grep -i enterprise /etc/redhat-release) != "" ]]; then
+		export os="Red Hat Enterprise"
+		export os_ver=$(cat /etc/redhat-release|head -1|awk {'print $7'}|cut -d "." -f 1)
+	elif [[ "$os" = "Red" ]]; then
+		export os="Red Hat"
+		export os_ver=$(cat /etc/redhat-release|head -1|awk {'print $6'}|cut -d "." -f 1)
+	else
+		export os_ver=$(cat /etc/redhat-release|head -1|awk {'print $2'}|cut -d "." -f 1)
+	fi
 else
-	export os=$(uname -s -r|head -1|awk {'print $1'})
+        export os=$(uname -s -r|head -1|awk {'print $1'})
+        export os_ver=$(uname -s -r|head -1|awk {'print $2'}|cut -d "." -f 1)
 fi
 
 ## begin main functions of installer
-
 function OSInstall()
 {
-	if [[ "$os" = "Red" ]]; then
-		os="Red Hat"
-	fi
-	echo -e "Running install for: \e[32m$os\e[0m\n"
+	echo -e "Running install for: \e[32m$os $os_ver\e[0m\n"
 
 	if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
 		apache_exists=$(which apache2)
@@ -200,7 +208,7 @@ function OSInstall()
 		PackageCheck
 		checkIPtables
 
-	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
+	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]] || [[ "$os" = "Red Hat Enterprise" ]]; then
 		httpd_exists=$(rpm -qa | grep "httpd")
 		php_exists=$(rpm -qa | grep "php")
 		mysqld_exists=$(rpm -qa | grep "mysql-server")
@@ -209,7 +217,7 @@ function OSInstall()
                         unset wait
                         echo -e "\e[32m";read -p "Press enter to continue install" wait;echo -e "\e[0m"
                         echo -e "\e[31mNotice\e[0m: Please wait while prerequisites are installed...\n\n\e[31mNotice\e[0m: Installing Apache..."
-			if [[ "$CentOSVer" = "5" ]]; then
+			if [[ "$os_ver" = "5" ]]; then
 				while true;
                         	do echo -n .;sleep 1;done &
 				yum install --disablerepo=webtatic -y httpd httpd-devel httpd-tools curl > /dev/null 2>&1
@@ -498,7 +506,7 @@ function phpversion()
 
 function phpverCheck()
 {
-	phpver=$(php -version|grep "PHP 5"|awk {'print $2'})
+	phpver=$(php --version|grep "PHP 5"|awk {'print $2'})
 
 	if [[ $(phpversion $phpver) < $(phpversion 5.2.0) ]]; then
 		echo -e "\e[0mYou are running PHP Version: \e[031m$phpver\e[0m which is incompatible with this application.\n"
@@ -508,7 +516,7 @@ function phpverCheck()
 
 function phpExtraInst()
 {
-	export CentOSVer="5"
+	#export CentOSVer="5"
 	echo -e "\e[32mPHP Install\e[0m: Installing PHP 5.3/5.4 depending on your distro\n"
 	echo -e "\e[32mPHP Install\e[0m: Adding EPEL and WebTatic Repos"
 	rpm -Uvh "http://dl.fedoraproject.org/pub/epel/5/x86_64/epel-release-5-4.noarch.rpm" > /dev/null 2>&1
