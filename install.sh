@@ -1194,6 +1194,17 @@ fi
 # check if new_web_dir exists
 if [[ -d $new_web_dir ]]; then
 	echo -e "\e[32mNotice\e[0m: $target_web_dir already exists.\n"
+	# get authkey,uri from existing files
+	ls ${new_web_dir}client/*sh > /dev/null 2>&1
+	if [[ "$?" = 0 ]]; then	
+		auth_key=$(grep auth_key=\" ${new_web_dir}client/*.sh|awk -F\" {'print $2'}|head -n 1)
+		server_uri=$(grep server_uri=\" ${new_web_dir}client/*.sh|awk -F\" {'print $2'}|head -n 1)
+	else
+		echo -e "\e[31mError\e[0m: The client shell files do not exist, we recommend you run a new install.\n"
+		unset wait
+		read -p "Press 'Enter' to return to the Main Menu." wait
+		mainMenu
+	fi
 	unset yn
 	read -p "Do you want to overwrite the existing contents? (y/n) " yn
 	echo
@@ -1202,7 +1213,7 @@ if [[ -d $new_web_dir ]]; then
 		echo
 	done
 	if [[ "$yn" = "yes" ]] || [[ "$yn" = "y" ]]; then
-		rsync -aq --exclude='patch_checker.sh' --exclude='run_commands.sh' --exclude='.htaccess' --exclude='db_config.php' html/ $new_web_dir
+		rsync -aq --exclude='.htaccess' --exclude='db_config.php' html/ $new_web_dir
 		if [[ ! -f /opt/patch_manager/db.conf ]]; then
 			echo "$bash_config" > /opt/patch_manager/db.conf
 		fi
