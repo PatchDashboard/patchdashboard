@@ -3,14 +3,19 @@
 auth_key="__SERVER_AUTHKEY_SET_ME__"
 server_uri="__SERVER_URI_SET_ME__"
 submit_packages_uri="${server_uri}client/send_packages.php"
-
-#Force a run of check-in.sh if .patchrc is missing.
-if [[ ! -f "/opt/patch_manager/.patchrc" ]]; then
-	echo "Please run /opt/patch_manager/check-in.sh as root (sudo) before trying to run this manually"
+# set client_path
+if [[ -d /opt/patch_client ]]; then
+        client_path="/opt/patch_client/"
+else
+        client_path="/opt/patch_manager/"
+fi
+# if $client_path does not exist
+if [[ ! -f "${client_path}.patchrc" ]]; then
+	echo "Please run ${client_path}check-in.sh as root (sudo) before trying to run this manually"
 	exit 0
 fi
 # load the file
-. /opt/patch_manager/.patchrc
+. ${client_path}.patchrc
 if [[ -f /etc/lsb-release && -f /etc/debian_version ]]; then
         os=$(lsb_release -s -d|head -1|awk {'print $1'})
 elif [[ -f /etc/debian_version ]]; then

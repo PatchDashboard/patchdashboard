@@ -1,12 +1,17 @@
 #!/bin/bash
 if [[ -f /etc/lsb-release && -f /etc/debian_version ]]; then
-        export os=$(lsb_release -s -d|head -1|awk {'print $1'})
+        os=$(lsb_release -s -d|head -1|awk {'print $1'})
 elif [[ -f /etc/debian_version ]]; then
-        export os="Debian $(cat /etc/debian_version)|head -1|awk {'print $1'}"
+        os="Debian"
 elif [[ -f /etc/redhat-release ]]; then
-        export os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
+        os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
+        if [[ "$os" = "Red" && $(grep -i enterprise /etc/redhat-release) != "" ]]; then
+                os="RHEL"
+        elif [[ "$os" = "Red" ]]; then
+                os="RHEL"
+        fi
 else
-        export os="$(uname -s) $(uname -r)|head -1|awk {'print $1'}"
+        os=$(uname -s -r|head -1|awk {'print $1'})
 fi
 # remove any special characters
 os=$(echo $os|sed -e 's/[^a-zA-Z0-9]//g')

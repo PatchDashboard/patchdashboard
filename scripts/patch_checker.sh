@@ -4,32 +4,43 @@
 auth_key="__SERVER_AUTHKEY_SET_ME__"
 server_uri="__SERVER_URI_SET_ME__"
 submit_patch_uri="${server_uri}client/send_patches.php"
+# set client_path
+if [[ -d /opt/patch_client ]]; then
+        client_path="/opt/patch_client/"
+else
+        client_path="/opt/patch_manager/"
+fi
 # remove old file is blank
-if [[ -s /opt/patch_manager/.patchrc ]]; then
-        rm -rf /opt/patch_manager/.patchrc
+if [[ -s ${client_path}.patchrc ]]; then
+        rm -rf ${client_path}.patchrc
 fi
 
 # generate client key
-if [[ ! -f "/opt/patch_manager/.pachrc" ]]; then
+if [[ ! -f "${client_path}.pachrc" ]]; then
 	host=$(hostname -f)
 	random_bits=$(< /dev/urandom tr -dc 'a-zA-Z0-9~!@#$%^&*_-' | head -c${1:-32})
 	client_key=$(echo "${host}${random_bits}"|sha256sum|cut -d ' ' -f 1)
-	if [[ ! -d /opt/patch_manager ]]; then
-		mkdir -p /opt/patch_manager
+	if [[ ! -d ${client_path} ]]; then
+		mkdir -p ${client_path}
 	fi
-	echo "client_key=\"$client_key\"" > /opt/patch_manager/.patchrc
+	echo "client_key=\"$client_key\"" > ${client_path}.patchrc
 fi
 # load the file
-. /opt/patch_manager/.patchrc
+. ${client_path}.patchrc
 rm -rf /tmp/$client_key > /dev/null 2>&1
 if [[ -f /etc/lsb-release && -f /etc/debian_version ]]; then
-	export os=$(lsb_release -s -d|head -1|awk {'print $1'})
+        os=$(lsb_release -s -d|head -1|awk {'print $1'})
 elif [[ -f /etc/debian_version ]]; then
-	export os="Debian $(cat /etc/debian_version)|head -1|awk {'print $1'}"
+        os="Debian"
 elif [[ -f /etc/redhat-release ]]; then
-	export os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
+        os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
+        if [[ "$os" = "Red" && $(grep -i enterprise /etc/redhat-release) != "" ]]; then
+                os="RHEL"
+        elif [[ "$os" = "Red" ]]; then
+                os="RHEL"
+        fi
 else
-	export os="$(uname -s) $(uname -r)|head -1|awk {'print $1'}"
+        os=$(uname -s -r|head -1|awk {'print $1'})
 fi
 # remove any special characters
 os=$(echo $os|sed -e 's/[^a-zA-Z0-9]//g')
@@ -62,5 +73,5 @@ fi
 if [[ "$need_patched" = "true" ]]; then
 	patch_list=$(cat /tmp/$client_key)
 	curl -H "X-CLIENT-KEY: $client_key" $submit_patch_uri -d "$patch_list" > /dev/null 2>&1
-	rm -rf /tmp/$client_key
+	rm -rf /tmp/$client_key > /dev/null 2>&1
 fi
