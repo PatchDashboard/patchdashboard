@@ -107,7 +107,6 @@ elif [[ -f /etc/debian_version ]]; then
         export os="Debian $(cat /etc/debian_version)|head -1|awk {'print $1'}"
         export os_ver="Debian $(cat /etc/debian_version)|head -1|awk {'print $2'}|cut -d "." -f 1"
 elif [[ -f /etc/redhat-release ]]; then
-        export os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
 	if [[ "$os" = "Red" && $(grep -i enterprise /etc/redhat-release) != "" ]]; then
 		export os="Red Hat Enterprise"
 		export os_ver=$(cat /etc/redhat-release|head -1|awk {'print $7'}|cut -d "." -f 1)
@@ -115,7 +114,8 @@ elif [[ -f /etc/redhat-release ]]; then
 		export os="Red Hat"
 		export os_ver=$(cat /etc/redhat-release|head -1|awk {'print $6'}|cut -d "." -f 1)
 	else
-		export os_ver=$(cat /etc/redhat-release|head -1|awk {'print $2'}|cut -d "." -f 1)
+		export os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
+		export os_ver=$(cat /etc/redhat-release|head -1|awk {'print $3'}|cut -d "." -f 1)
 	fi
 else
         export os=$(uname -s -r|head -1|awk {'print $1'})
