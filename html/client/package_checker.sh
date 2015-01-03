@@ -25,6 +25,9 @@ elif [[ -f /etc/redhat-release ]]; then
 else
         os=$(uname -s -r|head -1|awk {'print $1'})
 fi
+# remove any special characters
+os=$(echo $os|sed -e 's/[^a-zA-Z0-9]//g')
+# begin update checks
 if [ "$os" = "CentOS" ] || [ "$os" = "Fedora" ] || [ "$os" = "RHEL" ]; then
         data=$(rpm -qa --qf '%{NAME}:::%{VERSION}\n')
 elif [ "$os" = "Ubuntu" ] || [ "$os" = "Debian" ]; then

@@ -10,7 +10,7 @@ if [[ ! -f "/opt/patch_manager/.patchrc" ]]; then
 fi
 # load the file
 . /opt/patch_manager/.patchrc
-rm -rf /tmp/patch_$client_key
+rm -rf /tmp/patch_$client_key > /dev/null 2>&1
 if [[ -f /etc/lsb-release && -f /etc/debian_version ]]; then
         os=$(lsb_release -s -d|head -1|awk {'print $1'})
 elif [[ -f /etc/debian_version ]]; then
@@ -25,6 +25,9 @@ elif [[ -f /etc/redhat-release ]]; then
 else
 	os=$(uname -s -r|head -1|awk {'print $1'})
 fi
+# remove any special characters
+os=$(echo $os|sed -e 's/[^a-zA-Z0-9]//g')
+# begin update checks
 if [ "$os" = "CentOS" ] || [ "$os" = "Fedora" ] || [ "$os" = "RHEL" ]; then
 	need_patched="true"
         yum -q check-update| while read i
@@ -52,6 +55,6 @@ fi
 if [ "$need_patched" == "true" ]; then
         patch_list=$(cat /tmp/patch_$client_key)
         curl -k -s -H "X-CLIENT-KEY: $client_key" $submit_patch_uri -d "$patch_list"
-        rm -rf /tmp/patch_$client_key
+        rm -rf /tmp/patch_$client_key > /dev/null 2>&1
 fi
 
