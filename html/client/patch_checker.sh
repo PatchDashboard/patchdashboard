@@ -28,12 +28,12 @@ fi
 # remove any special characters
 os=$(echo $os|sed -e 's/[^a-zA-Z0-9]//g')
 # begin update checks
-if [ "$os" = "CentOS" ] || [ "$os" = "Fedora" ] || [ "$os" = "RHEL" ]; then
+if [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "RHEL" ]]; then
 	need_patched="true"
         yum -q check-update| while read i
         do
                 i=$(echo $i) #this strips off yum's irritating use of whitespace
-                if [ "${i}x" != "x" ]
+                if [[ "${i}x" != "x" ]]
                 then
                         UVERSION=${i#*\ }
                         UVERSION=${UVERSION%\ *}
@@ -44,15 +44,16 @@ if [ "$os" = "CentOS" ] || [ "$os" = "Fedora" ] || [ "$os" = "RHEL" ]; then
                         echo "$patches_to_install" >> /tmp/patch_$client_key
                 fi
         done
-elif [ "$os" = "Ubuntu" ] || [ "$os" = "Debian" ]; then
+elif [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]]; then
         need_patched="true"
         #apt-get --just-print upgrade 2>&1 | perl -ne 'if (/Inst\s([\w,\-,\d,\.,~,:,\+]+)\s\[([\w,\-,\d,\.,~,:,\+]+)\]\s\(([\w,\-,\d,\.,~,:,\+]+)\)? /i) {print "$1:::$2:::$3\n"}'
         patches_to_install=$(apt-get --just-print upgrade 2>&1 | perl -ne 'if (/Inst\s([\w,\-,\d,\.,~,:,\+]+)\s\[([\w,\-,\d,\.,~,:,\+]+)\]\s\(([\w,\-,\d,\.,~,:,\+]+)\)? /i) {print "$1:::$2:::$3\n"}')
-elif [ "$os" = "Linux" ]; then
+	echo "$patches_to_install" >> /tmp/patch_$client_key
+elif [[ "$os" = "Linux" ]]; then
         echo "unspecified $os not supported"
         exit 0
 fi
-if [ "$need_patched" == "true" ]; then
+if [[ "$need_patched" == "true" ]]; then
         patch_list=$(cat /tmp/patch_$client_key)
         curl -k -s -H "X-CLIENT-KEY: $client_key" $submit_patch_uri -d "$patch_list"
         rm -rf /tmp/patch_$client_key > /dev/null 2>&1
