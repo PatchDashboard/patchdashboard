@@ -780,7 +780,7 @@ function WebUIInfo()
         	new_web_dir=$web_dir
 		EXTERNAL_WEB_URI="http://${SERVER_IP}${new_web_dir}"
 	done
-	echo $new_web_dir|grep --word-regexp "$doc_root" > /dev/null 2>&1
+	echo ${new_web_dir%%/html}|grep --word-regexp "$doc_root" > /dev/null 2>&1
         if [[ "$?" = 1 ]]; then
                 echo -e "\n\e[31mNotice\e[0m: $new_web_dir is not within the DocumentRoot: $doc_root\n\e[31mNotice\e[0m: Please try again.\n"
                 WebUIInfo
@@ -893,7 +893,7 @@ function WebUIInfoUpdate()
                 new_web_dir=$web_dir
                 EXTERNAL_WEB_URI="http://${SERVER_IP}${new_web_dir}"
         done
-	echo $new_web_dir|grep --word-regexp "$doc_root" > /dev/null 2>&1
+	echo ${new_web_dir%%/html}|grep --word-regexp "$doc_root" > /dev/null 2>&1
         if [[ "$?" = 1 ]]; then
                 echo -e "\n\e[31mNotice\e[0m: $new_web_dir is not within the DocumentRoot: $doc_root\n\e[31mNotice\e[0m: Please try again.\n"
                 WebUIInfo
