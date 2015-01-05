@@ -548,7 +548,7 @@ function checkIPtables()
 		if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
 			if [[ $(dpkg -s iptables-persistent|grep "Status:"|cut -d " " -f2-4) != "install ok installed" ]]; then
 				# install iptables-persistent
-	                        echo -e "\e[32mIptables\e[0m: $os detected, installing iptables-persistent\n"
+	                        echo -e "\n\e[32mIptables\e[0m: $os detected, installing iptables-persistent\n"
 	                        debconf-set-selections <<< "iptables-persistent iptables-persistent/autosave_v4 boolean true"
 	                        debconf-set-selections <<< "iptables-persistent iptables-persistent/autosave_v6 boolean true"
                         	apt-get install -y iptables-persistent > /dev/null 2>&1
