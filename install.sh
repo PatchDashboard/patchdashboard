@@ -86,6 +86,9 @@ relative_path="/patchmgr/"
 # get user running installer
 user=`whoami`
 
+# default elevated mysql id
+export db_root_id="root"
+
 # if user is not root, exit
 if [ "$user" != "root" ]; then
 	echo -e "\e[31Error\e[0m: You must be root to install this!"
@@ -169,7 +172,6 @@ function OSInstall()
 			echo -e "\e[31mNotice\e[0m: MySQL does not seem to be installed."
                         unset wait
 			echo -e "\e[32m";read -p "Press enter to continue install" wait;echo -e "\e[0m"
-			db_user_id="root"
 			mysqlPasswd
 			if [[ "$mysql_passwd" != "$mysql_passwd_again" ]]; then
 				echo -e "\n\n\e[31mNotice\e[0m: Passwords do not match, please try again.\n"
@@ -187,7 +189,6 @@ function OSInstall()
 			echo -e "Filling help tables...\nOK"
 			echo -e "\n\e[36mNotice\e[0m: You may run /usr/bin/mysql_secure_installation to secure the MySQL installation once this application setup has been completed."
 			echo -e "\n\e[32mNotice\e[0m: MySQL Installation Complete\n"
-			unset db_user_id
 		fi
 		web_dir="/var/www/patch_manager/"
 		web_user="www-data"
@@ -261,7 +262,6 @@ function OSInstall()
                         echo -e "\e[31mNotice\e[0m: MySQL does not seem to be installed."
                         unset wait
                         echo -e "\e[32m";read -p "Press enter to continue install" wait;echo -e "\e[0m"
-                        db_user_id="root"
                         mysqlPasswd
 			echo -e "\n\n\e[32m\e[4mMySQL Database Install and Setup\n\e[0m"
                         if [[ "$mysql_passwd" != "$mysql_passwd_again" ]]; then
@@ -279,7 +279,6 @@ function OSInstall()
                         echo -e "Filling help tables...\nOK"
                         echo -e "\n\e[36mNotice\e[0m: You may run /usr/bin/mysql_secure_installation to secure the MySQL installation once this application setup has been completed."
                         echo -e "\n\e[32mNotice\e[0m: MySQL Installation Complete\n"
-                        unset db_user_id
 			echo -e "\e[32mChecking mysqld start up config\n\e[0m"
                 	if [[ -z $(chkconfig --list mysqld|grep "2:on\|3:on\|5:on") ]]; then
                         	# enable mysqld at startup 235
@@ -608,17 +607,17 @@ function mysqlPasswd()
 {
 	echo -e "Create a new password for the root MySQL account\n"
 	unset mysql_passwd
-        read -s -p "Enter MySQL $db_user_id password: " mysql_passwd
+        read -s -p "Enter MySQL $db_root_id password: " mysql_passwd
         while [[ "$mysql_passwd" = "" ]]; do
-        	echo -e "\n\e[36mNotice\e[0m: Please provide the MySQL $db_user_id password, please try again.\n"
-                read -p "Enter MySQL $db_user_id password: " mysql_passwd
+        	echo -e "\n\e[36mNotice\e[0m: Please provide the MySQL $db_root_id password, please try again.\n"
+                read -p "Enter MySQL $db_root_id password: " mysql_passwd
         done
 	echo
         unset mysql_passwd_again
-        read -s -p "Enter MySQL $db_user_id password again: " mysql_passwd_again
+        read -s -p "Enter MySQL $db_root_id password again: " mysql_passwd_again
         	while [[ "$mysql_passwd_again" = "" ]]; do
-                echo -e "\n\e[36mNotice\e[0m: Please provide the MySQL $db_user_id password again, please try again.\n"
-                read -p "Enter MySQL $db_user_id password again: " mysql_passwd_again
+                echo -e "\n\e[36mNotice\e[0m: Please provide the MySQL $db_root_id password again, please try again.\n"
+                read -p "Enter MySQL $db_root_id password again: " mysql_passwd_again
 		export mysql_passwd_again
 	done
 }
@@ -628,7 +627,6 @@ function mysqlRootPwd()
 	if [[ $(mysqladmin -s status) != "" ]]; then
 		if [[ "$mysql_passwd_again" = "" ]] && [[ "$mysqld_exists" != "" ]]; then
 			echo -e "\e[32mMySQL\e[0m: Your root password is blank, this will cause an issue during setup.\n"
-			export db_user_id="root"
 			mysqlPasswd
 			mysqladmin password "$mysql_passwd_again"
 			echo -e "\n"
@@ -649,7 +647,18 @@ function dbAskHost()
 		echo -e "\n\e[36mNotice\e[0m: Please provide a Database Host, please try again.\n"
 		read -p "Database Host: " db_host
 	done
-
+	if [[ "$db_host" != "localhost" ]]; then
+		echo -e "\n\e[31mNotice\e[0m: You have provided a host other than the localhost, please ensure you have correctly setup remote"
+		echo -e "\e[31mNotice\e[0m: access for the MySQL root account or provide an elevated ID with permissions to create new accounts.\n"
+		unset yn
+		read -p "Are you using a MySQL account other than root? (yes/no): " yn
+		while [[ "$yn" = "" ]]; do
+			read -p "Are you using a MySQL account other than root? (yes/no): " yn
+		done
+		if [[ "$yn" = "yes" || "$yn" = "y" ]]; then
+			dbAskElevatedUser
+		fi
+	fi
 	ping -c 1 $db_host > /dev/null 2>&1
 	if [ $? -gt 0 ]; then
 		echo -e "\n\e[31mNotice\e[0m: Inactive host: \e[36m$db_host\e[0m, please try again.\n"
@@ -668,6 +677,17 @@ function dbAskUser()
 	done
 }
 
+function dbAskElevatedUser()
+{
+        echo -e "\nEnter the MySQL Elevated username and password your using to create the database user with.\n"
+        unset db_root_id
+        read -p "Elevated Database ID: " db_root_id
+        while [[ "$db_root_id" = "" ]]; do
+                echo -e "\n\e[36mNotice\e[0m: Please provide a MySQL Elevated User, please try again.\n"
+                read -p "Elevated Database ID: " db_root_id
+        done
+}
+
 function dbAskPass()
 {
 	unset db_pass
@@ -678,6 +698,18 @@ function dbAskPass()
         	read -s -p "Database Pass: " db_pass
 		echo
 	done
+        unset db_pass_again
+        read -s -p "Database Pass again: " db_pass_again
+	echo
+                while [[ "$db_pass_again" = "" ]]; do
+		echo -e "\n\e[36mNotice\e[0m: Please provide a Database Passwordi again, please try again.\n"
+		read -s -p "Database Pass again: " db_pass_again
+		echo
+        done
+	if [[ "$db_pass" != "$db_pass_again" ]]; then
+		echo -e "\n\n\e[36mNotice\e[0m: Database User passwords do not match, please try again.\n"
+		dbAskPass
+	fi
 }
 
 function dbAskName()
@@ -694,7 +726,7 @@ function dbAskName()
 function dbCheck()
 {
 	# check if database exists
-	db_exists=$(mysql --batch -u root -p$db_root_pass --skip-column-names -e "show databases like '"$db_name"';" | grep "$db_name" > /dev/null; echo "$?")
+	db_exists=$(mysql --batch -u $db_user_id -p$db_root_pass -h $db_host --skip-column-names -e "show databases like '"$db_name"';" | grep "$db_name" > /dev/null; echo "$?")
 	if [ $db_exists -eq 0 ];then
 		dbExists=yes
 	else
@@ -705,7 +737,7 @@ function dbCheck()
 function dbConnTest()
 {
         # check connection to db
-        db_connx=$(mysql --batch -u $db_user -p"$db_pass" -e ";" > /dev/null; echo "$?")
+        db_connx=$(mysql --batch -u $db_user -p"$db_pass" -h $db_host -e ";" > /dev/null; echo "$?")
 	if [ $db_connx -eq 0 ];then
                 dbConnx=yes
         else
@@ -717,30 +749,33 @@ function dbRootPasswd()
 {
         unset db_root_pass
 	echo
-        read -s -p "Enter the MySQL root password: " db_root_pass
+        read -s -p "Enter the MySQL $db_root_id password: " db_root_pass
         while [[ "$db_root_pass" = "" ]]; do
-                echo -e "\n\e[36mNotice\e[0m: Please provide the root password, please try again.\n"
-                read -s -p "Enter the MySQL root password: " db_root_pass
+                echo -e "\n\e[36mNotice\e[0m: Please provide the $db_root_id password, please try again.\n"
+                read -s -p "Enter the MySQL $db_root_id password: " db_root_pass
 		echo
         done
-	db_root_connx=$(mysql --batch -u root -p"$db_root_pass" -e ";" > /dev/null; echo "$?"; echo)
+	if [[ "$db_host" != "localhost" ]]; then
+		echo -e "\n"
+	fi
+	db_root_connx=$(mysql --batch -u"$db_root_id" -p"$db_root_pass" -h $db_host -e ";" > /dev/null; echo "$?"; echo)
         while [[ "$db_root_connx" -eq 1 ]]; do
                 echo -e "\n\e[31mNotice\e[0m: Unable to connect to mysql, please try again." 
-		echo -e "\n\e[36mNotice\e[0m: You may run /usr/bin/mysql_secure_installation to secure the MySQL installation and set the root password.\n"
+		echo -e "\n\e[36mNotice\e[0m: You may run /usr/bin/mysql_secure_installation to secure the MySQL installation and set the $db_root_id password.\n"
 		unset yn
-		read -p "Do you want to exit the script or try again? [yes to exit, no to try again] (y/n): " yn
+		read -p "Do you want to try again or exit? [yes to continue, no to exit] (y/n): " yn
 		while [[ "$yn" != "yes" && "$yn" != "no" && "$yn" != "y" && "$yn" != "n" ]]; do
-			read -p "Do you want to exit the script or try again? [yes to exit, no to try again] (y/n): " yn
+			read -p "Do you want to try again or exit? [yes to continue, no to exit] (y/n): " yn
 			echo
 		done
-		if [[ "$yn" = "yes" ]] || [[ "$yn" = "y" ]]; then
+		if [[ "$yn" = "no" ]] || [[ "$yn" = "n" ]]; then
 			echo -e "\n\e[32mExiting Installation as per your response.\n\e[0m"
 			sleep 2
 			exit 0
 		else
 			echo
-			read -s -p "Enter the MySQL root password: " db_root_pass
-			db_root_connx=$(mysql --batch -u root -p"$db_root_pass" -e ";" > /dev/null; echo "$?"; echo)
+			read -s -p "Enter the MySQL $db_root_id password: " db_root_pass
+			db_root_connx=$(mysql --batch -u"$db_root_id" -p"$db_root_pass" -h $db_host -e ";" > /dev/null; echo "$?"; echo)
 		fi
         done
 }
@@ -756,9 +791,9 @@ function dbUserDBCreate()
 
 	if [[ "$db_user" != "$user" ]]; then
 		echo -e "\n\e[32mNotice\e[0m: Creating \e[32m$db_user\e[0m and granting all privileges on \e[36m$db_name\e[0m"
-		mysql -u root -h $db_host -p"$db_root_pass" -e "CREATE USER '$db_user'@'$db_host' IDENTIFIED BY '$db_pass';"
-        	mysql -u root -h $db_host -p"$db_root_pass" -e "GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user'@'$db_host';"
-        	mysql -u root -h $db_host -p"$db_root_pass" -e "FLUSH PRIVILEGES;"
+		mysql -u $db_root_id -h $db_host -p"$db_root_pass" -e "CREATE USER '$db_user'@'$db_host' IDENTIFIED BY '$db_pass';"
+        	mysql -u $db_root_id -h $db_host -p"$db_root_pass" -e "GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user'@'$db_host';"
+        	mysql -u $db_root_id -h $db_host -p"$db_root_pass" -e "FLUSH PRIVILEGES;"
 	fi
 	unset user
 }
@@ -852,7 +887,7 @@ function WebUIInfo()
 
         # Web-UI admin password
 	unset new_web_admin_passwd
-        read -p "Web Admin Password [Default: $web_admin_passwd]: " new_web_admin_passwd
+        read -s -p "Web Admin Password [Default: $web_admin_passwd]: " new_web_admin_passwd
         while [[ "$new_web_admin_passwd" = "" ]]; do
                 echo -e "\e[32mNotice\e[0m: Default Password used: $web_admin_passwd"
                 new_web_admin_passwd=$web_admin_passwd
@@ -879,7 +914,7 @@ function WebUIInfo()
 
         # Web-UI standard password
 	unset new_web_duser_passwd
-        read -p "Web User Password [Default: $web_duser_passwd]: " new_web_duser_passwd
+        read -s -p "Web User Password [Default: $web_duser_passwd]: " new_web_duser_passwd
         while [[ "$new_web_duser_passwd" = "" ]]; do
                 echo -e "\e[32mNotice\e[0m: Default Web User Password used: $web_duser_passwd"
                 new_web_duser_passwd=$web_duser_passwd
