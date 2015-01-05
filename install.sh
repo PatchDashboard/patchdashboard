@@ -726,7 +726,7 @@ function dbAskName()
 function dbCheck()
 {
 	# check if database exists
-	db_exists=$(mysql --batch -u $db_user_id -p$db_root_pass -h $db_host --skip-column-names -e "show databases like '"$db_name"';" | grep "$db_name" > /dev/null; echo "$?")
+	db_exists=$(mysql --batch -u $db_root_id -p$db_root_pass -h $db_host --skip-column-names -e "show databases like '"$db_name"';" | grep "$db_name" > /dev/null; echo "$?")
 	if [ $db_exists -eq 0 ];then
 		dbExists=yes
 	else
@@ -747,6 +747,10 @@ function dbConnTest()
 
 function dbRootPasswd()
 {
+	# set db_host if not set
+	if [[ "$db_host" = "" ]]; then
+		export db_host="localhost"
+	fi
         unset db_root_pass
 	echo
         read -s -p "Enter the MySQL $db_root_id password: " db_root_pass
@@ -758,7 +762,7 @@ function dbRootPasswd()
 	if [[ "$db_host" != "localhost" ]]; then
 		echo -e "\n"
 	fi
-	db_root_connx=$(mysql --batch -u"$db_root_id" -p"$db_root_pass" -h $db_host -e ";" > /dev/null; echo "$?"; echo)
+	db_root_connx=$(mysql --batch -u $db_root_id -h $db_host -p"$db_root_pass" -e ";" > /dev/null; echo "$?"; echo)
         while [[ "$db_root_connx" -eq 1 ]]; do
                 echo -e "\n\e[31mNotice\e[0m: Unable to connect to mysql, please try again." 
 		echo -e "\n\e[36mNotice\e[0m: You may run /usr/bin/mysql_secure_installation to secure the MySQL installation and set the $db_root_id password.\n"
@@ -775,7 +779,7 @@ function dbRootPasswd()
 		else
 			echo
 			read -s -p "Enter the MySQL $db_root_id password: " db_root_pass
-			db_root_connx=$(mysql --batch -u"$db_root_id" -p"$db_root_pass" -h $db_host -e ";" > /dev/null; echo "$?"; echo)
+			db_root_connx=$(mysql --batch -u $db_root_id -h $db_host -p"$db_root_pass" -e ";" > /dev/null; echo "$?"; echo)
 		fi
         done
 }
@@ -787,7 +791,7 @@ function dbUserDBCreate()
 		echo -e "\n\e[31mNotice\e[0m: $user already exists. Skipping."
 		break
 	fi
-	done < <(mysql --batch --skip-column-names -p"$db_root_pass" -e 'use mysql; SELECT `user` FROM `user`;')
+	done < <(mysql --batch --skip-column-names -u $db_root_id -h $db_host -p"$db_root_pass" -e 'use mysql; SELECT `user` FROM `user`;')
 
 	if [[ "$db_user" != "$user" ]]; then
 		echo -e "\n\e[32mNotice\e[0m: Creating \e[32m$db_user\e[0m and granting all privileges on \e[36m$db_name\e[0m"
@@ -800,14 +804,25 @@ function dbUserDBCreate()
 
 function dbCreate()
 {
-	mysql -u $db_user -h $db_host -p"$db_pass" -e "create database $db_name;"
-        mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < database/db_create.sql
-        mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < database/centos_data.sql
+	if [[ "$db_user" = "" ]]; then
+		mysql -u $db_root_id -h $db_host -p"$db_pass" -e "create database $db_name;"
+        	mysql -u $db_root_id -h $db_host -p"$db_pass" -D $db_name < database/db_create.sql
+	        mysql -u $db_root_id -h $db_host -p"$db_pass" -D $db_name < database/centos_data.sql
+	else
+		mysql -u $db_user -h $db_host -p"$db_pass" -e "create database $db_name;"
+                mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < database/db_create.sql
+                mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < database/centos_data.sql
+	fi
 }
 function dbUpdate()
 {
-        mysql -u $db_user -h $db_host -p"$db_pass" -s -D $db_name < database/db_update.sql
-        mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < database/centos_data.sql
+	if [[ "$db_user" = "" ]]; then
+		mysql -u $db_root_id -h $db_host -p"$db_pass" -s -D $db_name < database/db_update.sql
+		mysql -u $db_root_id -h $db_host -p"$db_pass" -D $db_name < database/centos_data.sql
+	else
+        	mysql -u $db_user -h $db_host -p"$db_pass" -s -D $db_name < database/db_update.sql
+        	mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < database/centos_data.sql
+	fi
 }
 
 function WebUIInfo()
