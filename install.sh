@@ -1487,18 +1487,19 @@ function mainMenu()
 
 # show script header
 clear
-echo -e "\n###########################################################################"
-echo -e "#################  Patch Management Dashboard Installer  ##################"
-echo -e "###########################################################################\n"
-echo -e " Github: https://github.com/jonsjava/patchdashboard\n"
+echo -e "\n#################################################################################"
+echo -e "####################  Patch Management Dashboard Installer  #####################"
+echo -e "#################################################################################\n"
+echo -e " HomePage: https://patchdashboard.com"
+echo -e " Forums: http://community.patchdashboard.com/index.php"
+echo -e " Github: https://github.com/PatchDashboard/patchdashboard\n"
 echo -e " Patch Management Dashboard does one thing and does it well:\n"
-echo -e "   - Monitors for needed patches on your nodes *Linux and Windows (soon!)*\n"
-echo -e " In the coming releases of this application you will be given the ability"
-echo -e " to suppress patches on a per-server or a global basis as well as tell the"
-echo -e " system to install a single package or fully update a server all from a"
-echo -e " custom built admin interface. This includes both Linux and Windows hosts.\n"
-echo -e " Stay tuned... :)\n"
-echo -e "###########################################################################\n"
+echo -e "   - Monitors for needed patches on your nodes *Linux (Windows soon!)*\n"
+echo -e " This application gives you the ability to suppress patches on a per-server basis"
+echo -e " This also has the ability to send a command to fully update a server all from a"
+echo -e " custom built admin interface. This includes most Linux Distros (Windows soon!).\n"
+echo -e " Stay tuned and watch to upcoming new features and plugins... :)\n"
+echo -e "#################################################################################\n"
 
 # run OS Detection and package installer
 echo -e "\e[36m# Detecting Operating System Version\n\e[0m"
