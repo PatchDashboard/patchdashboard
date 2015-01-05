@@ -104,8 +104,8 @@ if [[ -f /etc/lsb-release && -f /etc/debian_version ]]; then
         export os=$(lsb_release -s -d|head -1|awk {'print $1'})
         export os_ver=$(lsb_release -s -d|head -1|awk {'print $2'}|cut -d "." -f 1)
 elif [[ -f /etc/debian_version ]]; then
-        export os="Debian $(cat /etc/debian_version)|head -1|awk {'print $1'}"
-        export os_ver="Debian $(cat /etc/debian_version)|head -1|awk {'print $2'}|cut -d "." -f 1"
+        export os="$(cat /etc/issue|head -n 1|awk {'print $1'})"
+        export os_ver="$(cat /etc/debian_version|head -1|awk {'print $1'}|cut -d "." -f 1)"
 elif [[ -f /etc/redhat-release ]]; then
 	if [[ "$os" = "Red" && $(grep -i enterprise /etc/redhat-release) != "" ]]; then
 		export os="Red Hat Enterprise"

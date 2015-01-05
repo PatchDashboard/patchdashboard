@@ -31,7 +31,7 @@ rm -rf /tmp/$client_key > /dev/null 2>&1
 if [[ -f /etc/lsb-release && -f /etc/debian_version ]]; then
         os=$(lsb_release -s -d|head -1|awk {'print $1'})
 elif [[ -f /etc/debian_version ]]; then
-        os="Debian"
+        os="$(cat /etc/issue|head -n 1|awk {'print $1'})"
 elif [[ -f /etc/redhat-release ]]; then
         os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
         if [[ "$os" = "Red" && $(grep -i enterprise /etc/redhat-release) != "" ]]; then
