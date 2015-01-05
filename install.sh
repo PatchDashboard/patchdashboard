@@ -122,6 +122,13 @@ else
         export os_ver=$(uname -s -r|head -1|awk {'print $2'}|cut -d "." -f 1)
 fi
 
+# get DocumentRoot for error checking (not checked on all distros yet)
+if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
+        export doc_root=$(grep -s DocumentRoot /etc/apache2/sites-enabled/*|head -n 1|awk {'print $3'})
+elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]] || [[ "$os" = "Red Hat Enterprise" ]]; then
+        export doc_root=$(grep -s DocumentRoot /etc/httpd/conf/*|grep -v "#"|head -n 1|awk -F\" {'print $2'})
+fi
+
 ## begin main functions of installer
 function OSInstall()
 {
@@ -773,6 +780,11 @@ function WebUIInfo()
         	new_web_dir=$web_dir
 		EXTERNAL_WEB_URI="http://${SERVER_IP}${new_web_dir}"
 	done
+	echo $new_web_dir|grep --word-regexp "$doc_root" > /dev/null 2>&1
+        if [[ "$?" = 1 ]]; then
+                echo -e "\n\e[31mNotice\e[0m: $new_web_dir is not within the DocumentRoot: $doc_root\n\e[31mNotice\e[0m: Please try again.\n"
+                WebUIInfo
+        fi
 	echo
 	unset new_relative_path
 	read -p "Please enter the relative path [Default: $relative_path]: " new_relative_path
@@ -881,6 +893,11 @@ function WebUIInfoUpdate()
                 new_web_dir=$web_dir
                 EXTERNAL_WEB_URI="http://${SERVER_IP}${new_web_dir}"
         done
+	echo $new_web_dir|grep --word-regexp "$doc_root" > /dev/null 2>&1
+        if [[ "$?" = 1 ]]; then
+                echo -e "\n\e[31mNotice\e[0m: $new_web_dir is not within the DocumentRoot: $doc_root\n\e[31mNotice\e[0m: Please try again.\n"
+                WebUIInfo
+        fi
         echo
         unset new_relative_path
         read -p "Please enter the relative path [Default: $relative_path]: " new_relative_path
