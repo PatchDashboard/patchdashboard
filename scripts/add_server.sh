@@ -72,7 +72,7 @@ echo -e "###################################################\n"
 
 function ShowHelp()
 {
-	echo -e " Available Arguments: -h [host] -ip [ip address] -or- -l ./hosts.txt\n"
+	echo -e " Available Arguments: -s [host] -ip [ip address] -or- -l ./hosts.txt\n"
 	echo -e " $0 -s hostname -ip 192.168.0.10"
 	echo -e " $0 -l ./hosts.txt (list format: host ip)"
 	echo -e "\n####################################################"

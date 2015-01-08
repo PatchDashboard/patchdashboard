@@ -34,6 +34,7 @@
 ##                - This is a release ready version :)
 ##
 ##            RC1 - Updated the installer to handle new changes for RC1
+##.           1.1 - Added EnableSSL function to setup SSL and certificates
 ##
 #################################################################################
 
@@ -85,6 +86,9 @@ relative_path="/patchmgr/"
 # get user running installer
 user=`whoami`
 
+# default elevated mysql id
+export db_root_id="root"
+
 # if user is not root, exit
 if [ "$user" != "root" ]; then
 	echo -e "\e[31Error\e[0m: You must be root to install this!"
@@ -99,24 +103,39 @@ if [ ! -f /root/.ssh/id_rsa ]; then
 fi
 
 # get OS information and run applicable function
-if [[ -f /etc/lsb-release ]]; then
-	export os=$(lsb_release -s -d|head -1|awk {'print $1'})
+if [[ -f /etc/lsb-release && -f /etc/debian_version ]]; then
+        export os=$(lsb_release -s -d|head -1|awk {'print $1'})
+        export os_ver=$(lsb_release -s -d|head -1|awk {'print $2'}|cut -d "." -f 1)
 elif [[ -f /etc/debian_version ]]; then
-	export os="Debian $(cat /etc/debian_version)|head -1|awk {'print $1'}"
+        export os="$(cat /etc/issue|head -n 1|awk {'print $1'})"
+        export os_ver="$(cat /etc/debian_version|head -1|awk {'print $1'}|cut -d "." -f 1)"
 elif [[ -f /etc/redhat-release ]]; then
-	export os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
+	if [[ "$os" = "Red" && $(grep -i enterprise /etc/redhat-release) != "" ]]; then
+		export os="Red Hat Enterprise"
+		export os_ver=$(cat /etc/redhat-release|head -1|awk {'print $7'}|cut -d "." -f 1)
+	elif [[ "$os" = "Red" ]]; then
+		export os="Red Hat"
+		export os_ver=$(cat /etc/redhat-release|head -1|awk {'print $6'}|cut -d "." -f 1)
+	else
+		export os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
+		export os_ver=$(cat /etc/redhat-release|head -1|awk {'print $3'}|cut -d "." -f 1)
+	fi
 else
-	export os="$(uname -s) $(uname -r)|head -1|awk {'print $1'}"
+        export os=$(uname -s -r|head -1|awk {'print $1'})
+        export os_ver=$(uname -s -r|head -1|awk {'print $2'}|cut -d "." -f 1)
+fi
+
+# get DocumentRoot for error checking (not checked on all distros yet)
+if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
+        export doc_root=$(grep -s DocumentRoot /etc/apache2/sites-enabled/*|head -n 1|awk {'print $3'})
+elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]] || [[ "$os" = "Red Hat Enterprise" ]]; then
+        export doc_root=$(grep -s DocumentRoot /etc/httpd/conf/*|grep -v "#"|head -n 1|awk -F\" {'print $2'})
 fi
 
 ## begin main functions of installer
-
 function OSInstall()
 {
-	if [[ "$os" = "Red" ]]; then
-		os="Red Hat"
-	fi
-	echo -e "Running install for: \e[32m$os\e[0m\n"
+	echo -e "Running install for: \e[32m$os $os_ver\e[0m\n"
 
 	if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
 		apache_exists=$(which apache2)
@@ -153,7 +172,6 @@ function OSInstall()
 			echo -e "\e[31mNotice\e[0m: MySQL does not seem to be installed."
                         unset wait
 			echo -e "\e[32m";read -p "Press enter to continue install" wait;echo -e "\e[0m"
-			db_user_id="root"
 			mysqlPasswd
 			if [[ "$mysql_passwd" != "$mysql_passwd_again" ]]; then
 				echo -e "\n\n\e[31mNotice\e[0m: Passwords do not match, please try again.\n"
@@ -171,7 +189,6 @@ function OSInstall()
 			echo -e "Filling help tables...\nOK"
 			echo -e "\n\e[36mNotice\e[0m: You may run /usr/bin/mysql_secure_installation to secure the MySQL installation once this application setup has been completed."
 			echo -e "\n\e[32mNotice\e[0m: MySQL Installation Complete\n"
-			unset db_user_id
 		fi
 		web_dir="/var/www/patch_manager/"
 		web_user="www-data"
@@ -199,7 +216,7 @@ function OSInstall()
 		PackageCheck
 		checkIPtables
 
-	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
+	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]] || [[ "$os" = "Red Hat Enterprise" ]]; then
 		httpd_exists=$(rpm -qa | grep "httpd")
 		php_exists=$(rpm -qa | grep "php")
 		mysqld_exists=$(rpm -qa | grep "mysql-server")
@@ -208,7 +225,7 @@ function OSInstall()
                         unset wait
                         echo -e "\e[32m";read -p "Press enter to continue install" wait;echo -e "\e[0m"
                         echo -e "\e[31mNotice\e[0m: Please wait while prerequisites are installed...\n\n\e[31mNotice\e[0m: Installing Apache..."
-			if [[ "$CentOSVer" = "5" ]]; then
+			if [[ "$os_ver" = "5" ]]; then
 				while true;
                         	do echo -n .;sleep 1;done &
 				yum install --disablerepo=webtatic -y httpd httpd-devel httpd-tools curl > /dev/null 2>&1
@@ -245,7 +262,6 @@ function OSInstall()
                         echo -e "\e[31mNotice\e[0m: MySQL does not seem to be installed."
                         unset wait
                         echo -e "\e[32m";read -p "Press enter to continue install" wait;echo -e "\e[0m"
-                        db_user_id="root"
                         mysqlPasswd
 			echo -e "\n\n\e[32m\e[4mMySQL Database Install and Setup\n\e[0m"
                         if [[ "$mysql_passwd" != "$mysql_passwd_again" ]]; then
@@ -263,7 +279,6 @@ function OSInstall()
                         echo -e "Filling help tables...\nOK"
                         echo -e "\n\e[36mNotice\e[0m: You may run /usr/bin/mysql_secure_installation to secure the MySQL installation once this application setup has been completed."
                         echo -e "\n\e[32mNotice\e[0m: MySQL Installation Complete\n"
-                        unset db_user_id
 			echo -e "\e[32mChecking mysqld start up config\n\e[0m"
                 	if [[ -z $(chkconfig --list mysqld|grep "2:on\|3:on\|5:on") ]]; then
                         	# enable mysqld at startup 235
@@ -298,6 +313,7 @@ function OSInstall()
 function PackageCheck()
 {
 	echo -e "\e[32mChecking for dependencies and missing packages\n\e[0m"
+	echo -e "\e[31mWARNING\e[0m: Please keep in mind this is not a fool proof process, if you have 3rd party repo's, the automated package installer may fail.\n"
         if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
 	pkgList="apache2 apache2-threaded-dev apache2-utils php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc mysql-client mysql-server php5-mysql php5-sybase libapache2-mod-auth-mysql libmysqlclient-dev curl"
 	for package in $pkgList; do
@@ -311,9 +327,12 @@ function PackageCheck()
                         echo -e "\n\e[32mPackage\e[0m: \e[36m$package\e[0m install complete\n"
                 fi
         done
-	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
-		if [[ $(grep "exclude=.at" /etc/yum/pluginconf.d/fastestmirror.conf) = "" ]]; then 
-			echo "exclude=.at" >> /etc/yum/pluginconf.d/fastestmirror.conf
+	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]] || [[ "$os" = "Red Hat Enterprise" ]]; then
+		ls /etc/yum/pluginconf.d/fastestmirror.conf > /dev/null 2>&1
+		if [[ "$?" = 0 ]]; then
+			if [[ $(grep "exclude=.at" /etc/yum/pluginconf.d/fastestmirror.conf) = "" ]]; then 
+				echo "exclude=.at" >> /etc/yum/pluginconf.d/fastestmirror.conf
+			fi
 		fi
 	pkgList="php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli php-pdo php-mssql mysql mysql-server mysql-devel httpd httpd-devel httpd-tools curl"
 	for package in $pkgList; do
@@ -343,7 +362,7 @@ function EnableSSL()
 		a2ensite default-ssl
 		echo
 
-	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
+	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]] || [[ "$os" = "Red Hat Enterprise" ]]; then
 		# set ssl key path
 		ssl_path="/etc/pki/tls"
 		# install SSL
@@ -436,6 +455,11 @@ function EnableSSL()
                 echo -e "\e[32mNotice\e[0m: Default Location Used: $web_dir"
                 new_web_dir=$web_dir
         done
+	echo $new_web_dir|grep --word-regexp "${doc_root%%/html}" > /dev/null 2>&1
+        if [[ "$?" = 1 ]]; then
+                echo -e "\n\e[31mNotice\e[0m: $new_web_dir is not within the DocumentRoot: $doc_root\n\e[31mNotice\e[0m: Please try again.\n"
+                WebUIInfo
+        fi
         echo
         unset new_relative_path
         read -p "Please enter the relative path [Default: $relative_path]: " new_relative_path
@@ -497,7 +521,7 @@ function phpversion()
 
 function phpverCheck()
 {
-	phpver=$(php -version|grep "PHP 5"|awk {'print $2'})
+	phpver=$(php --version|grep "PHP 5"|awk {'print $2'})
 
 	if [[ $(phpversion $phpver) < $(phpversion 5.2.0) ]]; then
 		echo -e "\e[0mYou are running PHP Version: \e[031m$phpver\e[0m which is incompatible with this application.\n"
@@ -507,7 +531,7 @@ function phpverCheck()
 
 function phpExtraInst()
 {
-	export CentOSVer="5"
+	#export CentOSVer="5"
 	echo -e "\e[32mPHP Install\e[0m: Installing PHP 5.3/5.4 depending on your distro\n"
 	echo -e "\e[32mPHP Install\e[0m: Adding EPEL and WebTatic Repos"
 	rpm -Uvh "http://dl.fedoraproject.org/pub/epel/5/x86_64/epel-release-5-4.noarch.rpm" > /dev/null 2>&1
@@ -535,7 +559,7 @@ function checkIPtables()
 		if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
 			if [[ $(dpkg -s iptables-persistent|grep "Status:"|cut -d " " -f2-4) != "install ok installed" ]]; then
 				# install iptables-persistent
-	                        echo -e "\e[32mIptables\e[0m: $os detected, installing iptables-persistent\n"
+	                        echo -e "\n\e[32mIptables\e[0m: $os detected, installing iptables-persistent\n"
 	                        debconf-set-selections <<< "iptables-persistent iptables-persistent/autosave_v4 boolean true"
 	                        debconf-set-selections <<< "iptables-persistent iptables-persistent/autosave_v6 boolean true"
                         	apt-get install -y iptables-persistent > /dev/null 2>&1
@@ -545,7 +569,7 @@ function checkIPtables()
 			iptables -I INPUT -p tcp -m tcp --dport 443 -j ACCEPT
 			service iptables-persistent save
 			echo
-		elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
+		elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]] || [[ "$os" = "Red Hat Enterprise" ]]; then
 			# add rules and save
 			iptables -I INPUT -p tcp -m tcp --dport 80 -j ACCEPT
 			iptables -I INPUT -p tcp -m tcp --dport 443 -j ACCEPT
@@ -583,17 +607,17 @@ function mysqlPasswd()
 {
 	echo -e "Create a new password for the root MySQL account\n"
 	unset mysql_passwd
-        read -s -p "Enter MySQL $db_user_id password: " mysql_passwd
+        read -s -p "Enter MySQL $db_root_id password: " mysql_passwd
         while [[ "$mysql_passwd" = "" ]]; do
-        	echo -e "\n\e[36mNotice\e[0m: Please provide the MySQL $db_user_id password, please try again.\n"
-                read -p "Enter MySQL $db_user_id password: " mysql_passwd
+        	echo -e "\n\e[36mNotice\e[0m: Please provide the MySQL $db_root_id password, please try again.\n"
+                read -p "Enter MySQL $db_root_id password: " mysql_passwd
         done
 	echo
         unset mysql_passwd_again
-        read -s -p "Enter MySQL $db_user_id password again: " mysql_passwd_again
+        read -s -p "Enter MySQL $db_root_id password again: " mysql_passwd_again
         	while [[ "$mysql_passwd_again" = "" ]]; do
-                echo -e "\n\e[36mNotice\e[0m: Please provide the MySQL $db_user_id password again, please try again.\n"
-                read -p "Enter MySQL $db_user_id password again: " mysql_passwd_again
+                echo -e "\n\e[36mNotice\e[0m: Please provide the MySQL $db_root_id password again, please try again.\n"
+                read -p "Enter MySQL $db_root_id password again: " mysql_passwd_again
 		export mysql_passwd_again
 	done
 }
@@ -603,7 +627,6 @@ function mysqlRootPwd()
 	if [[ $(mysqladmin -s status) != "" ]]; then
 		if [[ "$mysql_passwd_again" = "" ]] && [[ "$mysqld_exists" != "" ]]; then
 			echo -e "\e[32mMySQL\e[0m: Your root password is blank, this will cause an issue during setup.\n"
-			export db_user_id="root"
 			mysqlPasswd
 			mysqladmin password "$mysql_passwd_again"
 			echo -e "\n"
@@ -624,7 +647,18 @@ function dbAskHost()
 		echo -e "\n\e[36mNotice\e[0m: Please provide a Database Host, please try again.\n"
 		read -p "Database Host: " db_host
 	done
-
+	if [[ "$db_host" != "localhost" ]]; then
+		echo -e "\n\e[31mNotice\e[0m: You have provided a host other than the localhost, please ensure you have correctly setup remote"
+		echo -e "\e[31mNotice\e[0m: access for the MySQL root account or provide an elevated ID with permissions to create new accounts.\n"
+		unset yn
+		read -p "Are you using a MySQL account other than root? (yes/no): " yn
+		while [[ "$yn" = "" ]]; do
+			read -p "Are you using a MySQL account other than root? (yes/no): " yn
+		done
+		if [[ "$yn" = "yes" || "$yn" = "y" ]]; then
+			dbAskElevatedUser
+		fi
+	fi
 	ping -c 1 $db_host > /dev/null 2>&1
 	if [ $? -gt 0 ]; then
 		echo -e "\n\e[31mNotice\e[0m: Inactive host: \e[36m$db_host\e[0m, please try again.\n"
@@ -643,6 +677,17 @@ function dbAskUser()
 	done
 }
 
+function dbAskElevatedUser()
+{
+        echo -e "\nEnter the MySQL Elevated username and password your using to create the database user with.\n"
+        unset db_root_id
+        read -p "Elevated Database ID: " db_root_id
+        while [[ "$db_root_id" = "" ]]; do
+                echo -e "\n\e[36mNotice\e[0m: Please provide a MySQL Elevated User, please try again.\n"
+                read -p "Elevated Database ID: " db_root_id
+        done
+}
+
 function dbAskPass()
 {
 	unset db_pass
@@ -653,6 +698,18 @@ function dbAskPass()
         	read -s -p "Database Pass: " db_pass
 		echo
 	done
+        unset db_pass_again
+        read -s -p "Database Pass again: " db_pass_again
+	echo
+                while [[ "$db_pass_again" = "" ]]; do
+		echo -e "\n\e[36mNotice\e[0m: Please provide a Database Passwordi again, please try again.\n"
+		read -s -p "Database Pass again: " db_pass_again
+		echo
+        done
+	if [[ "$db_pass" != "$db_pass_again" ]]; then
+		echo -e "\n\n\e[36mNotice\e[0m: Database User passwords do not match, please try again.\n"
+		dbAskPass
+	fi
 }
 
 function dbAskName()
@@ -669,7 +726,7 @@ function dbAskName()
 function dbCheck()
 {
 	# check if database exists
-	db_exists=$(mysql --batch -u root -p$db_root_pass --skip-column-names -e "show databases like '"$db_name"';" | grep "$db_name" > /dev/null; echo "$?")
+	db_exists=$(mysql --batch -u $db_root_id -p$db_root_pass -h $db_host --skip-column-names -e "show databases like '"$db_name"';" | grep "$db_name" > /dev/null; echo "$?")
 	if [ $db_exists -eq 0 ];then
 		dbExists=yes
 	else
@@ -680,7 +737,7 @@ function dbCheck()
 function dbConnTest()
 {
         # check connection to db
-        db_connx=$(mysql --batch -u $db_user -p"$db_pass" -e ";" > /dev/null; echo "$?")
+        db_connx=$(mysql --batch -u $db_user -p"$db_pass" -h $db_host -e ";" > /dev/null; echo "$?")
 	if [ $db_connx -eq 0 ];then
                 dbConnx=yes
         else
@@ -690,32 +747,39 @@ function dbConnTest()
 
 function dbRootPasswd()
 {
+	# set db_host if not set
+	if [[ "$db_host" = "" ]]; then
+		export db_host="localhost"
+	fi
         unset db_root_pass
 	echo
-        read -s -p "Enter the MySQL root password: " db_root_pass
+        read -s -p "Enter the MySQL $db_root_id password: " db_root_pass
         while [[ "$db_root_pass" = "" ]]; do
-                echo -e "\n\e[36mNotice\e[0m: Please provide the root password, please try again.\n"
-                read -s -p "Enter the MySQL root password: " db_root_pass
+                echo -e "\n\e[36mNotice\e[0m: Please provide the $db_root_id password, please try again.\n"
+                read -s -p "Enter the MySQL $db_root_id password: " db_root_pass
 		echo
         done
-	db_root_connx=$(mysql --batch -u root -p"$db_root_pass" -e ";" > /dev/null; echo "$?"; echo)
+	if [[ "$db_host" != "localhost" ]]; then
+		echo -e "\n"
+	fi
+	db_root_connx=$(mysql --batch -u $db_root_id -h $db_host -p"$db_root_pass" -e ";" > /dev/null; echo "$?"; echo)
         while [[ "$db_root_connx" -eq 1 ]]; do
                 echo -e "\n\e[31mNotice\e[0m: Unable to connect to mysql, please try again." 
-		echo -e "\n\e[36mNotice\e[0m: You may run /usr/bin/mysql_secure_installation to secure the MySQL installation and set the root password.\n"
+		echo -e "\n\e[36mNotice\e[0m: You may run /usr/bin/mysql_secure_installation to secure the MySQL installation and set the $db_root_id password.\n"
 		unset yn
-		read -p "Do you want to exit the script or try again? [yes to exit, no to try again] (y/n): " yn
+		read -p "Do you want to try again or exit? [yes to continue, no to exit] (y/n): " yn
 		while [[ "$yn" != "yes" && "$yn" != "no" && "$yn" != "y" && "$yn" != "n" ]]; do
-			read -p "Do you want to exit the script or try again? [yes to exit, no to try again] (y/n): " yn
+			read -p "Do you want to try again or exit? [yes to continue, no to exit] (y/n): " yn
 			echo
 		done
-		if [[ "$yn" = "yes" ]] || [[ "$yn" = "y" ]]; then
+		if [[ "$yn" = "no" ]] || [[ "$yn" = "n" ]]; then
 			echo -e "\n\e[32mExiting Installation as per your response.\n\e[0m"
 			sleep 2
 			exit 0
 		else
 			echo
-			read -s -p "Enter the MySQL root password: " db_root_pass
-			db_root_connx=$(mysql --batch -u root -p"$db_root_pass" -e ";" > /dev/null; echo "$?"; echo)
+			read -s -p "Enter the MySQL $db_root_id password: " db_root_pass
+			db_root_connx=$(mysql --batch -u $db_root_id -h $db_host -p"$db_root_pass" -e ";" > /dev/null; echo "$?"; echo)
 		fi
         done
 }
@@ -727,27 +791,38 @@ function dbUserDBCreate()
 		echo -e "\n\e[31mNotice\e[0m: $user already exists. Skipping."
 		break
 	fi
-	done < <(mysql --batch --skip-column-names -p"$db_root_pass" -e 'use mysql; SELECT `user` FROM `user`;')
+	done < <(mysql --batch --skip-column-names -u $db_root_id -h $db_host -p"$db_root_pass" -e 'use mysql; SELECT `user` FROM `user`;')
 
 	if [[ "$db_user" != "$user" ]]; then
 		echo -e "\n\e[32mNotice\e[0m: Creating \e[32m$db_user\e[0m and granting all privileges on \e[36m$db_name\e[0m"
-		mysql -u root -h $db_host -p"$db_root_pass" -e "CREATE USER '$db_user'@'$db_host' IDENTIFIED BY '$db_pass';"
-        	mysql -u root -h $db_host -p"$db_root_pass" -e "GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user'@'$db_host';"
-        	mysql -u root -h $db_host -p"$db_root_pass" -e "FLUSH PRIVILEGES;"
+		mysql -u $db_root_id -h $db_host -p"$db_root_pass" -e "CREATE USER '$db_user'@'$db_host' IDENTIFIED BY '$db_pass';"
+        	mysql -u $db_root_id -h $db_host -p"$db_root_pass" -e "GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user'@'$db_host';"
+        	mysql -u $db_root_id -h $db_host -p"$db_root_pass" -e "FLUSH PRIVILEGES;"
 	fi
 	unset user
 }
 
 function dbCreate()
 {
-	mysql -u $db_user -h $db_host -p"$db_pass" -e "create database $db_name;"
-        mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < database/db_create.sql
-        mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < database/centos_data.sql
+	if [[ "$db_user" = "" ]]; then
+		mysql -u $db_root_id -h $db_host -p"$db_pass" -e "create database $db_name;"
+        	mysql -u $db_root_id -h $db_host -p"$db_pass" -D $db_name < database/db_create.sql
+	        mysql -u $db_root_id -h $db_host -p"$db_pass" -D $db_name < database/centos_data.sql
+	else
+		mysql -u $db_user -h $db_host -p"$db_pass" -e "create database $db_name;"
+                mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < database/db_create.sql
+                mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < database/centos_data.sql
+	fi
 }
 function dbUpdate()
 {
-        mysql -u $db_user -h $db_host -p"$db_pass" -s -D $db_name < database/db_update.sql
-        mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < database/centos_data.sql
+	if [[ "$db_user" = "" ]]; then
+		mysql -u $db_root_id -h $db_host -p"$db_pass" -s -D $db_name < database/db_update.sql
+		mysql -u $db_root_id -h $db_host -p"$db_pass" -D $db_name < database/centos_data.sql
+	else
+        	mysql -u $db_user -h $db_host -p"$db_pass" -s -D $db_name < database/db_update.sql
+        	mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < database/centos_data.sql
+	fi
 }
 
 function WebUIInfo()
@@ -760,6 +835,11 @@ function WebUIInfo()
         	new_web_dir=$web_dir
 		EXTERNAL_WEB_URI="http://${SERVER_IP}${new_web_dir}"
 	done
+	echo $new_web_dir|grep --word-regexp "${doc_root%%/html}" > /dev/null 2>&1
+        if [[ "$?" = 1 ]]; then
+                echo -e "\n\e[31mNotice\e[0m: $new_web_dir is not within the DocumentRoot: $doc_root\n\e[31mNotice\e[0m: Please try again.\n"
+                WebUIInfo
+        fi
 	echo
 	unset new_relative_path
 	read -p "Please enter the relative path [Default: $relative_path]: " new_relative_path
@@ -822,7 +902,7 @@ function WebUIInfo()
 
         # Web-UI admin password
 	unset new_web_admin_passwd
-        read -p "Web Admin Password [Default: $web_admin_passwd]: " new_web_admin_passwd
+        read -s -p "Web Admin Password [Default: $web_admin_passwd]: " new_web_admin_passwd
         while [[ "$new_web_admin_passwd" = "" ]]; do
                 echo -e "\e[32mNotice\e[0m: Default Password used: $web_admin_passwd"
                 new_web_admin_passwd=$web_admin_passwd
@@ -849,7 +929,7 @@ function WebUIInfo()
 
         # Web-UI standard password
 	unset new_web_duser_passwd
-        read -p "Web User Password [Default: $web_duser_passwd]: " new_web_duser_passwd
+        read -s -p "Web User Password [Default: $web_duser_passwd]: " new_web_duser_passwd
         while [[ "$new_web_duser_passwd" = "" ]]; do
                 echo -e "\e[32mNotice\e[0m: Default Web User Password used: $web_duser_passwd"
                 new_web_duser_passwd=$web_duser_passwd
@@ -868,6 +948,11 @@ function WebUIInfoUpdate()
                 new_web_dir=$web_dir
                 EXTERNAL_WEB_URI="http://${SERVER_IP}${new_web_dir}"
         done
+	echo $new_web_dir|grep --word-regexp "${doc_root%%/html}" > /dev/null 2>&1
+        if [[ "$?" = 1 ]]; then
+                echo -e "\n\e[31mNotice\e[0m: $new_web_dir is not within the DocumentRoot: $doc_root\n\e[31mNotice\e[0m: Please try again.\n"
+                WebUIInfo
+        fi
         echo
         unset new_relative_path
         read -p "Please enter the relative path [Default: $relative_path]: " new_relative_path
@@ -1129,7 +1214,7 @@ ErrorLog /var/log/apache2/patch_manager/${host_node}_error.log
 </Directory>
 EOA
 
-elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]; then
+elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]] || [[ "$os" = "Red Hat Enterprise" ]]; then
 # create log dir and set perms
 mkdir -p /var/log/httpd/patch_manager/
 chown $web_user:$web_user /var/log/httpd/patch_manager/ -R
@@ -1178,10 +1263,20 @@ elif [[ "$ModeType" = "Update" ]]; then
 	rsync -aq --exclude='db.conf' --exclude='db_config.php' scripts/ /opt/patch_manager/
 
 fi
-###### THIS NEEDS FIXING to remove duplicate file copy efforts
 # check if new_web_dir exists
 if [[ -d $new_web_dir ]]; then
 	echo -e "\e[32mNotice\e[0m: $target_web_dir already exists.\n"
+	# get authkey,uri from existing files
+	ls ${new_web_dir}client/*sh > /dev/null 2>&1
+	if [[ "$?" = 0 ]]; then	
+		auth_key=$(grep auth_key=\" ${new_web_dir}client/*.sh|awk -F\" {'print $2'}|head -n 1)
+		server_uri=$(grep server_uri=\" ${new_web_dir}client/*.sh|awk -F\" {'print $2'}|head -n 1)
+	else
+		echo -e "\e[31mError\e[0m: The client shell files do not exist, we recommend you run a new install.\n"
+		unset wait
+		read -p "Press 'Enter' to return to the Main Menu." wait
+		mainMenu
+	fi
 	unset yn
 	read -p "Do you want to overwrite the existing contents? (y/n) " yn
 	echo
@@ -1190,7 +1285,7 @@ if [[ -d $new_web_dir ]]; then
 		echo
 	done
 	if [[ "$yn" = "yes" ]] || [[ "$yn" = "y" ]]; then
-		rsync -aq --exclude='patch_checker.sh' --exclude='run_commands.sh' --exclude='.htaccess' --exclude='db_config.php' html/ $new_web_dir
+		rsync -aq --exclude='.htaccess' --exclude='db_config.php' html/ $new_web_dir
 		if [[ ! -f /opt/patch_manager/db.conf ]]; then
 			echo "$bash_config" > /opt/patch_manager/db.conf
 		fi
@@ -1239,6 +1334,9 @@ fi
 # change perms 
 find $new_web_dir -type d -print0|xargs -0 chmod 755
 find $new_web_dir -type f -print0|xargs -0 chmod 644
+chmod 640 /opt/patch_manager/db_config.php
+chmod 640 $new_web_dir/lib/db_config.php
+chmod 640 /opt/patch_manager/db.conf
 chown $web_user:$web_user $new_web_dir -R
 # restart web service
 service $web_service restart
@@ -1266,8 +1364,8 @@ function AddCrontab()
 {
 	if [[ ! -f /etc/cron.d/patch-manager ]]; then
 		echo -e "\e[36m# Adding Crontab entries to /etc/cron.d/patch-manager\e[0m\n"
-		echo "0 */2 * * * /opt/patch_manager/start_get_package_list.sh > /dev/null 2>&1" > /etc/cron.d/patch-manager
-		echo "1 */2 * * * /opt/patch_manager/start_patch_check.sh > /dev/null 2>&1" >> /etc/cron.d/patch-manager
+		echo "0 */2 * * * root /opt/patch_manager/start_get_package_list.sh > /dev/null 2>&1" > /etc/cron.d/patch-manager
+		echo "1 */2 * * * root /opt/patch_manager/start_patch_check.sh > /dev/null 2>&1" >> /etc/cron.d/patch-manager
 		echo -e "\e[32mNotice\e[0m: Added Crontab entries for 2 hour runs\e[0m\n"
 	fi
 }
@@ -1389,18 +1487,19 @@ function mainMenu()
 
 # show script header
 clear
-echo -e "\n###########################################################################"
-echo -e "#################  Patch Management Dashboard Installer  ##################"
-echo -e "###########################################################################\n"
-echo -e " Github: https://github.com/jonsjava/patchdashboard\n"
+echo -e "\n#################################################################################"
+echo -e "####################  Patch Management Dashboard Installer  #####################"
+echo -e "#################################################################################\n"
+echo -e " HomePage: https://patchdashboard.com"
+echo -e " Forums: http://community.patchdashboard.com/index.php"
+echo -e " Github: https://github.com/PatchDashboard/patchdashboard\n"
 echo -e " Patch Management Dashboard does one thing and does it well:\n"
-echo -e "   - Monitors for needed patches on your nodes *Linux and Windows (soon!)*\n"
-echo -e " In the coming releases of this application you will be given the ability"
-echo -e " to suppress patches on a per-server or a global basis as well as tell the"
-echo -e " system to install a single package or fully update a server all from a"
-echo -e " custom built admin interface. This includes both Linux and Windows hosts.\n"
-echo -e " Stay tuned... :)\n"
-echo -e "###########################################################################\n"
+echo -e "   - Monitors for needed patches on your nodes *Linux (Windows soon!)*\n"
+echo -e " This application gives you the ability to suppress patches on a per-server basis"
+echo -e " This also has the ability to send a command to fully update a server all from a"
+echo -e " custom built admin interface. This includes most Linux Distros (Windows soon!).\n"
+echo -e " Stay tuned and watch to upcoming new features and plugins... :)\n"
+echo -e "#################################################################################\n"
 
 # run OS Detection and package installer
 echo -e "\e[36m# Detecting Operating System Version\n\e[0m"

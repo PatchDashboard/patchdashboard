@@ -26,6 +26,7 @@ if (!isset($index_check) || $index_check != "active"){
  while ($row1 = mysql_fetch_assoc($res1)){
      $server_count++;
      $server_name = $row1['server_name'];
+     $server_alias = $row1['server_alias'];
 	 $distro_id = $row1['distro_id'];
 	 $dist_sql = "SELECT * FROM distro WHERE id='$distro_id';";
 	 $dist_res = mysql_query($dist_sql);
@@ -37,7 +38,7 @@ if (!isset($index_check) || $index_check != "active"){
      $count = $row2['total'];
      $total_count = $total_count + $count;
      $table .= "                <tr>
-                  <td><a href='{$base_path}patches/server/$server_name'><img src='$dist_img' height='32' width='32' border='0'>&nbsp;$server_name</a></td>
+                  <td><a href='{$base_path}patches/server/$server_name'><img src='$dist_img' height='32' width='32' border='0'>&nbsp;$server_alias</a></td>
                   <td>$count</td>
                 </tr>
 ";

@@ -17,6 +17,7 @@ if (!isset($index_check) || $index_check != "active"){
  $distro_sql1 = "SELECT * from servers where server_name='$server_name';";
  $distro_res1 = mysql_query($distro_sql1);
  $distro_row1 = mysql_fetch_array($distro_res1);
+ $server_alias = $distro_row1['server_alias'];
  $distro_id = $distro_row1['distro_id'];
  $id = $distro_row1['id'];
  $distro_sql2 = "SELECT * from distro where id=$distro_id limit 1;";
@@ -80,8 +81,8 @@ else{
         $apt_cmd = "<code>$apt_cmd</code>";
 }
 ?>
-          <div class="col-sm-9 col-md-9"><h1 class="page-header">List Packages to Install</h1>
-          <h2 class="sub-header"><?php echo $server_name;?>(<a href="<?php echo BASE_PATH;?>packages/server/<?php echo $server_name;?>">List all installed packages</a>)</h2><br /><p><h3 class="sub-header">(<a href="<?php echo BASE_PATH;?>plugins/main/install_all.inc.php?id=<?php echo $id;?>">Install all patches not suppressed</a> | <a href="<?php echo BASE_PATH;?>plugins/main/install_all.inc.php?reboot=1&id=<?php echo $id;?>">Install all patches not suppressed and reboot</a>)</h3></p>
+          <h1 class="page-header">List Packages to Install</h1>
+          <h2 class="sub-header"><?php echo $server_alias;?>(<a href="<?php echo BASE_PATH;?>packages/server/<?php echo $server_name;?>">List all installed packages</a>)</h2><br /><p>(<a href="<?php echo BASE_PATH;?>plugins/main/install_all.inc.php?id=<?php echo $id;?>" style="color:green;">Install all patches not suppressed</a> | <a href="<?php echo BASE_PATH;?>plugins/main/install_all.inc.php?reboot=1&id=<?php echo $id;?>" style="color:red;">Install all patches not suppressed and reboot</a>)</p>
         <div class="container">
           <div class="table-responsive">
             <table class="table table-striped">

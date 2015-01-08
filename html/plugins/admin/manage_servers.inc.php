@@ -19,6 +19,8 @@ while ($distro_map_row = mysql_fetch_assoc($distro_map_res)){
 while ($row = mysql_fetch_assoc($res)){
     $id = $row['id'];
     $server_name = $row['server_name'];
+    $server_alias = $row['server_alias'];
+    $server_group = $row['server_group'];
     $distro_id = $row['distro_id'];
     $server_ip = $row['server_ip'];
     $distro_version = $row['distro_version'];
@@ -43,7 +45,8 @@ while ($row = mysql_fetch_assoc($res)){
                 $active_action = "<a href='".BASE_PATH."plugins/admin/activate_server.inc.php?id=$id'>Reactivate/Trust</a>";
         }
     $table .="                          <tr>
-                                        <td>$server_name</td>
+					<td><span title=$server_name>$server_alias</span></td>
+					<td>$server_group</td>
                                         <td>$distro_name</td>
                                         <td>$server_ip</td>
                                         <td>$trust</td>
@@ -59,7 +62,8 @@ while ($row = mysql_fetch_assoc($res)){
             <table class="table table-striped">
               <thead>
                 <tr>
-                  <th>Sever Name</th>
+                  <th>Sever Name (Alias)</th>
+                  <th>Sever Group</th>
                   <th>Distro</th>
                   <th>Server IP</th>
                   <th>Trusted?</th>

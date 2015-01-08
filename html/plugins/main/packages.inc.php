@@ -10,6 +10,10 @@ include 'inc/supressed_patches.inc.php';
  mysql_select_db(DB_NAME,$link);
  $server_name = filter_var($_GET['server'],FILTER_SANITIZE_MAGIC_QUOTES);
  $table = "";
+ $sql0 = "SELECT * from servers where server_name='$server_name';";
+ $res0 = mysql_query($sql0);
+ $row0 = mysql_fetch_array($res0);
+ $server_alias = $row0['server_alias'];
  $sql1 = "select * from patch_allpackages where server_name='$server_name';";
  $res1 = mysql_query($sql1);
  $base_path = BASE_PATH;
@@ -24,7 +28,7 @@ include 'inc/supressed_patches.inc.php';
 }
 ?>
           <h1 class="page-header">Full Package List</h1>
-          <h3 class="sub-header"><?php echo $server_name;?></h3>
+          <h3 class="sub-header"><?php echo $server_alias;?></h3>
         <div class="container">
           <div class="table-responsive">
             <table class="table table-striped">

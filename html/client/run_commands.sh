@@ -2,12 +2,18 @@
 auth_key="__SERVER_AUTHKEY_SET_ME__"
 server_uri="__SERVER_URI_SET_ME__"
 get_cmd_uri="${server_uri}client/get_commands.php"
-#Force a run of check-in.sh if .patchrc is missing.
-if [[ ! -f "/opt/patch_manager/.patchrc" ]]; then
-        echo "Please run /opt/patch_manager/check-in.sh as root (sudo) before trying to run this manually"
+# set client_path
+if [[ -d /opt/patch_client ]]; then
+        client_path="/opt/patch_client/"
+else
+        client_path="/opt/patch_manager/"
+fi
+# force a run of check-in.sh if .patchrc is missing.
+if [[ ! -f "${client_path}.patchrc" ]]; then
+        echo "Please run ${client_path}check-in.sh as root (sudo) before trying to run this manually"
         exit 0
 fi
-. /opt/patch_manager/.patchrc
+. ${client_path}.patchrc
 rm -rf /tmp/cmds_$client_key > /dev/null 2>&1
 curl -k -s -H "X-CLIENT-KEY: $client_key" $get_cmd_uri > /tmp/cmds_$client_key
 cmds_line_count=$(cat /tmp/cmds_$client_key|wc -l)

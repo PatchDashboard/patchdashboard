@@ -4,7 +4,7 @@ INSERT INTO patch_allpackages_old SELECT * FROM patch_allpackages;
 DROP TABLE patch_allpackages;
 CREATE TABLE `patch_allpackages` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
-  `server_name` varchar(20) NOT NULL,
+  `server_name` varchar(512) NOT NULL,
   `package_name` varchar(60) NOT NULL,
   `package_version` varchar(60) NOT NULL,
   PRIMARY KEY (`id`),
@@ -20,17 +20,21 @@ INSERT INTO servers_old SELECT * FROM servers;
 DROP TABLE servers;
 CREATE TABLE `servers` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
-  `server_name` varchar(20) NOT NULL,
+  `server_name` varchar(512) NOT NULL,
+  `server_alias` varchar(512) NOT NULL,
+  `server_group` varchar(512) DEFAULT NULL,
   `distro_id` mediumint(8) NOT NULL,
   `server_ip` varchar(60) NOT NULL,
   `distro_version` mediumint(8) NOT NULL,
   `client_key` varchar(255),
   `trusted` tinyint(1) NOT NULL DEFAULT 0,
   `last_seen` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `last_checked` datetime NOT NULL DEFAULT '2001-01-01 00:00:00',
   `reboot_cmd_sent` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE INDEX (`client_key`),
   KEY `ix_server_name` (`server_name`),
+  KEY `ix_server_alias` (`server_alias`),
   KEY `ix_server_ip` (`server_ip`),
   KEY `ix_client_key` (`client_key`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
@@ -44,7 +48,7 @@ DROP TABLE supressed;
 CREATE TABLE IF NOT EXISTS `supressed` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
   `package_name` varchar(40) NOT NULL,
-  `server_name` varchar(20) NOT NULL, /* 0 for global */
+  `server_name` varchar(512) NOT NULL, /* 0 for global */
   PRIMARY KEY (`id`),
   KEY `ix_package_name` (`package_name`),
   KEY `ix_server_name` (`server_name`)
@@ -120,7 +124,7 @@ INSERT INTO patches_old SELECT * FROM patches;
 DROP TABLE patches;
 CREATE TABLE `patches` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
-  `server_name` varchar(40) NOT NULL,
+  `server_name` varchar(512) NOT NULL,
   `package_name` varchar(60) NOT NULL,
   `current` varchar(60) NOT NULL,
   `new` varchar(60) NOT NULL,

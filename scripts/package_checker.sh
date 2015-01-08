@@ -1,18 +1,26 @@
 #!/bin/bash
-if [[ -f /etc/lsb-release ]]; then
-        export os=$(lsb_release -s -d|head -1|awk {'print $1'})
+if [[ -f /etc/lsb-release && -f /etc/debian_version ]]; then
+        os=$(lsb_release -s -d|head -1|awk {'print $1'})
 elif [[ -f /etc/debian_version ]]; then
-        export os="Debian $(cat /etc/debian_version)|head -1|awk {'print $1'}"
+        os="$(cat /etc/issue|head -n 1|awk {'print $1'})"
 elif [[ -f /etc/redhat-release ]]; then
-        export os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
+        os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
+        if [[ "$os" = "Red" && $(grep -i enterprise /etc/redhat-release) != "" ]]; then
+                os="RHEL"
+        elif [[ "$os" = "Red" ]]; then
+                os="RHEL"
+        fi
 else
-        export os="$(uname -s) $(uname -r)|head -1|awk {'print $1'}"
+        os=$(uname -s -r|head -1|awk {'print $1'})
 fi
-if [ "$os" = "CentOS" ] || [ "$os" = "Fedora" ] || [ "$os" = "Red" ]; then
+# remove any special characters
+os=$(echo $os|sed -e 's/[^a-zA-Z0-9]//g')
+# begin update checks
+if [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red" ]]; then
         rpm -qa --qf '%{NAME}:::%{VERSION}\n'
-elif [ "$os" = "Ubuntu" ] || [ "$os" = "Debian" ]; then
+elif [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]]; then
 	dpkg -l|grep "ii"|awk '{print $2":::"$3}'
-elif [ "$os" = "Linux" ]; then
+elif [[ "$os" = "Linux" ]]; then
 	echo "unspecified $os not supported"
 	exit 0
 fi
