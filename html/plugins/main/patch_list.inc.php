@@ -6,6 +6,9 @@ if (!isset($index_check) || $index_check != "active"){
     exit();
 }
  include 'inc/supressed_patches.inc.php';
+ if (!isset($supressed)){
+        $supressed = array();
+ }
  $link = mysql_connect(DB_HOST,DB_USER,DB_PASS);
  $package_count = 0;
  $base_path=BASE_PATH;
@@ -22,6 +25,7 @@ if (!isset($index_check) || $index_check != "active"){
  $apt_cmd = $distro_row2['upgrade_command'];
  $sql1 = "select * from patches where server_name='$server_name';";
  $res1 = mysql_query($sql1);
+ $table = "";
  while ($row1 = mysql_fetch_assoc($res1)){
      $package_name = $row1['package_name'];
      $package_name_orig = $package_name;
@@ -76,8 +80,8 @@ else{
         $apt_cmd = "<code>$apt_cmd</code>";
 }
 ?>
-          <h1 class="page-header">List Packages to Install</h1>
-          <h2 class="sub-header"><?php echo $server_name;?>(<a href="<?php echo BASE_PATH;?>packages/server/<?php echo $server_name;?>">List all installed packages</a>)</h2><br /><p><h3>(<a href="<?php echo BASE_PATH;?>plugins/main/install_all.inc.php?id=<?php echo $id;?>">Install all patches not suppressed</a> | <a href="<?php echo BASE_PATH;?>plugins/main/install_all.inc.php?reboot=1&id=<?php echo $id;?>">Install all patches not suppressed and reboot</a>)</h3></p>
+          <div class="col-sm-9 col-md-9"><h1 class="page-header">List Packages to Install</h1>
+          <h2 class="sub-header"><?php echo $server_name;?>(<a href="<?php echo BASE_PATH;?>packages/server/<?php echo $server_name;?>">List all installed packages</a>)</h2><br /><p><h3 class="sub-header">(<a href="<?php echo BASE_PATH;?>plugins/main/install_all.inc.php?id=<?php echo $id;?>">Install all patches not suppressed</a> | <a href="<?php echo BASE_PATH;?>plugins/main/install_all.inc.php?reboot=1&id=<?php echo $id;?>">Install all patches not suppressed and reboot</a>)</h3></p>
         <div class="container">
           <div class="table-responsive">
             <table class="table table-striped">
@@ -93,7 +97,7 @@ else{
               <tbody>
 <?php echo $table;?>
               </tbody>
-            </table>
+            </table></div>
 <?php echo $apt_cmd;?>
           </div>
-        </div>
+        </div></div>
