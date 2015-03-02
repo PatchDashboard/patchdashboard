@@ -1057,7 +1057,6 @@ function WebUIInfoUpdate()
         if [ "${web_dir:LEN}" != "/" ]; then
                 web_dir=$web_dir"/"
         fi
-
 }
 
 function dbUserCreate()
