@@ -338,11 +338,23 @@ function PackageCheck()
 	for package in $pkgList; do
 		if [[ $(yum list installed|grep "$package[.]") = "" ]]; then
 			echo -e "\e[32mPackage\e[0m: \e[36m$package\e[0m not installed, installing missing package"
-			while true;
-		        do echo -n .;sleep 1;done &
-			yum install -y --skip-broken $package > /dev/null 2>&1
-			kill $!; trap 'kill $!' SIGTERM;
-			echo -e "\n\e[32mPackage\e[0m: \e[36m$package\e[0m install complete\n"
+			# check for additional repos
+                	extraRepo=$(ls /etc/yum.repos.d/|grep 'remi\|webtatic')
+                	if [[ $? = 0 ]]; then
+                        	repoName=$(echo $extraRepo|cut -d'.' -f 1|sed -e 's/ /,/g')
+                        	echo -e "\n\e[32m3rd Party Repos Exist\e[0m: $repoName, attempting to enable the specific repos before installing dependancies.\n"
+				while true;
+	                        do echo -n .;sleep 1;done &
+				yum install -y --enablerepo=$repoName $package > /dev/null 2>&1
+	                        kill $!; trap 'kill $!' SIGTERM;
+        	                echo -e "\n\e[32mPackage\e[0m: \e[36m$package\e[0m install complete\n"
+			else
+				while true;
+		        	do echo -n .;sleep 1;done &
+				yum install -y --skip-broken $package > /dev/null 2>&1
+				kill $!; trap 'kill $!' SIGTERM;
+				echo -e "\n\e[32mPackage\e[0m: \e[36m$package\e[0m install complete\n"
+			fi
 		fi
 	done
 	fi
@@ -824,7 +836,91 @@ function dbUpdate()
         	mysql -u $db_user -h $db_host -p"$db_pass" -D $db_name < database/centos_data.sql
 	fi
 }
-
+function WebDaemonUser()
+{
+        unset new_web_user
+        read -p "Please enter the web user [Default: $web_user]: " new_web_user
+        echo $new_web_user|grep -P '[^\w\xC0-\xFF]' > /dev/null 2>&1
+        if [[ "$?" = 0 ]]; then
+                echo -e "\n\e[31mError:\e[0m Invalid name, non-alphanumeric characters are not allowed.\n"
+                WebDaemonUser
+        fi
+        while [[ "$new_web_user" = "" ]]; do
+                echo -e "\e[32mNotice\e[0m: Using Default WebUser $web_user"
+                new_web_user=$web_user
+        done
+        echo
+		if [ "$new_web_user" != "$web_user" ] && [ "$new_web_user" != "" ]; then
+                web_user="$new_web_user"
+        fi
+}
+function WebiUIAdmin()
+{
+        # Web-UI admin username
+        unset new_web_admin
+        read -p "Web Interface Admin [Default: $web_admin]: " new_web_admin
+	echo $new_web_admin|grep -P '[^\w\xC0-\xFF]' > /dev/null 2>&1
+        if [[ "$?" = 0 ]]; then
+                echo -e "\n\e[31mError:\e[0m Invalid name, non-alphanumeric characters are not allowed.\n"
+                WebiUIAdmin
+        fi
+        while [[ "$new_web_admin" = "" ]]; do
+                echo -e "\e[32mNotice\e[0m: Default Web Admin used: $web_admin"
+                new_web_admin=$web_admin
+        done
+        echo
+}
+function WebUIDUser()
+{
+	unset new_web_duser
+        read -p "Web Interface User [Default: $web_duser]: " new_web_duser
+	echo $new_web_duser|grep -P '[^\w\xC0-\xFF]' > /dev/null 2>&1
+        if [[ "$?" = 0 ]]; then
+                echo -e "\n\e[31mError:\e[0m Invalid name, non-alphanumeric characters are not allowed.\n"
+                WebUIDUser
+        fi
+        while [[ "$new_web_duser" = "" ]]; do
+                echo -e "\e[32mNotice\e[0m: Default User used: $web_duser."
+                new_web_duser=$web_duser
+        done
+        echo
+}
+function WebUIAPWConfirm()
+{
+	if [[ "$new_web_admin_passwd" = "" ]]; then
+		read -s -p "Web Admin Password [Default: $web_admin_passwd]: " new_web_admin_passwd
+		echo
+		read -s -p "Web Admin Password Confirm: " new_web_admin_passwd_confirm
+		echo
+	else
+		echo
+		read -s -p "Web Admin Password Confirm: " new_web_admin_passwd_confirm
+		echo
+	fi
+	# check to make sure passwords match
+	if [[ "$new_web_admin_passwd" != "$new_web_admin_passwd_confirm" ]]; then
+		echo -e "\e[31mError\e[0m: Passwords do not match, try again."
+		WebUIAPWConfirm
+	fi
+}
+function WebUIUPWConfirm()
+{
+        if [[ "$new_web_duser_passwd" = "" ]]; then
+		read -s -p "Web User Password [Default: $web_duser_passwd]: " new_web_duser_passwd
+                echo
+                read -s -p "Web User Password Confirm: " new_web_duser_passwd_confirm
+                echo
+        else
+                echo
+                read -s -p "Web User Password Confirm: " new_web_duser_passwd_confirm
+                echo
+        fi
+        # check to make sure passwords match
+        if [[ "$new_web_duser_passwd" != "$new_web_duser_passwd_confirm" ]]; then
+                echo -e "\e[31mError\e[0m: Passwords do not match, try again."
+                WebUIUPWConfirm
+        fi
+}
 function WebUIInfo()
 {
 	echo -e "\e[32m\e[4mWebpage Location Setup\e[0m\n"
@@ -861,17 +957,9 @@ function WebUIInfo()
 	if [ "${web_dir:LEN}" != "/" ]; then
         	web_dir=$web_dir"/"
 	fi
-	unset new_web_user
-	read -p "Please enter the web user [Default: $web_user]: " new_web_user
-	while [[ "$new_web_user" = "" ]]; do
-        	echo -e "\e[32mNotice\e[0m: Using Default WebUser $web_user"
-        	new_web_user=$web_user
-	done
-	echo
-	if [ "$new_web_user" != "$web_user" ] && [ "$new_web_user" != "" ]; then
-        	web_user="$new_web_user"
-	fi
-	
+	# Get apache daemon ID
+	WebDaemonUser
+
 	unset your_company
         read -p "Please enter the name you want this copyrighted to ['YOUR COMPANY']: " your_company
         while [ "$your_company" = "" ]; do
@@ -883,13 +971,7 @@ function WebUIInfo()
 	comp_id=$(echo $your_company|awk '{print tolower($0)}'|sed 's/[^a-zA-Z 0-9]//g'|sed -e 's/ /-/g')
 
         # Web-UI admin username
-	unset new_web_admin
-        read -p "Web Interface Admin [Default: $web_admin]: " new_web_admin
-        while [[ "$new_web_admin" = "" ]]; do
-                echo -e "\e[32mNotice\e[0m: Default Web Admin used: $web_admin"
-                new_web_admin=$web_admin
-        done
-	echo
+	WebiUIAdmin
 
         # Web-UI admin e-mail address (for alerts)
 	unset new_web_admin_email
@@ -903,20 +985,18 @@ function WebUIInfo()
         # Web-UI admin password
 	unset new_web_admin_passwd
         read -s -p "Web Admin Password [Default: $web_admin_passwd]: " new_web_admin_passwd
+	if [[ "$new_web_admin_passwd" != "" ]]; then
+		export $new_web_admin_passwd
+		WebUIAPWConfirm
+	fi
         while [[ "$new_web_admin_passwd" = "" ]]; do
-                echo -e "\e[32mNotice\e[0m: Default Password used: $web_admin_passwd"
+                echo -e "\n\e[32mNotice\e[0m: Default Password used: $web_admin_passwd"
                 new_web_admin_passwd=$web_admin_passwd
         done
 	echo
 
         # Web-UI standard username
-	unset new_web_duser
-        read -p "Web Interface User [Default: $web_duser]: " new_web_duser
-        while [[ "$new_web_duser" = "" ]]; do
-                echo -e "\e[32mNotice\e[0m: Default User used: $web_duser."
-                new_web_duser=$web_duser
-        done
-	echo
+	WebUIDUser
 
         # Web-UI standard e-mail address (for patch-based alerts)
         unset new_web_duser_email
@@ -930,12 +1010,15 @@ function WebUIInfo()
         # Web-UI standard password
 	unset new_web_duser_passwd
         read -s -p "Web User Password [Default: $web_duser_passwd]: " new_web_duser_passwd
+	if [[ "$new_web_duser_passwd" != "" ]]; then
+                export $new_web_duser_passwd
+                WebUIUPWConfirm
+        fi
         while [[ "$new_web_duser_passwd" = "" ]]; do
-                echo -e "\e[32mNotice\e[0m: Default Web User Password used: $web_duser_passwd"
+                echo -e "\n\e[32mNotice\e[0m: Default Web User Password used: $web_duser_passwd"
                 new_web_duser_passwd=$web_duser_passwd
         done
 	echo
-
 }
 
 function WebUIInfoUpdate()
