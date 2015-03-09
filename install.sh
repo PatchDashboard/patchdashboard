@@ -313,9 +313,9 @@ function OSInstall()
 function PackageCheck()
 {
 	echo -e "\e[32mChecking for dependencies and missing packages\n\e[0m"
-	echo -e "\e[31mWARNING\e[0m: Please keep in mind this is not a fool proof process, if you have 3rd party repo's, the automated package installer may fail.\n"
         if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
 	pkgList="apache2 apache2-threaded-dev apache2-utils php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc mysql-client mysql-server php5-mysql php5-sybase libapache2-mod-auth-mysql libmysqlclient-dev curl"
+	echo -e "\e[31mWARNING\e[0m: Please keep in mind this is not a fool proof process, if you have 3rd party repo's, the automated package installer may fail.\n"
 	for package in $pkgList; do
                 dpkg-query -l $package > /dev/null 2>&1
                 if [[ "$?" = "1" ]]; then
@@ -353,11 +353,10 @@ function PackageCheck()
 	fi
 	for package in $pkgList; do
 		if [[ $(yum list installed|grep "$package[.]") = "" ]]; then
+			repoName=$(echo $extraRepo|cut -d'.' -f 1|sed -e 's/ /,/g')
 			echo -e "\e[32mPackage\e[0m: \e[36m$package\e[0m not installed, installing missing package"
-			# check for additional repos
-                	extraRepo=$(ls /etc/yum.repos.d/|grep 'remi\|webtatic')
+			echo -e "\e[31mWARNING\e[0m: Detected 3rd party repos> $repoName - Please keep in mind this is not a fool proof process... but we try :)\n"
                 	if [[ $? = 0 ]]; then
-                        	repoName=$(echo $extraRepo|cut -d'.' -f 1|sed -e 's/ /,/g')
                         	echo -e "\n\e[32m3rd Party Repos Exist\e[0m: $repoName, attempting to enable the specific repos before installing dependancies.\n"
 				while true;
 	                        do echo -n .;sleep 1;done &
