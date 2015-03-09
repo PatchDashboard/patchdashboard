@@ -334,7 +334,23 @@ function PackageCheck()
 				echo "exclude=.at" >> /etc/yum/pluginconf.d/fastestmirror.conf
 			fi
 		fi
-	pkgList="php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli php-pdo php-mssql mysql mysql-server mysql-devel httpd httpd-devel httpd-tools curl"
+	# check for extra repos
+	extraRepo=$(ls /etc/yum.repos.d/|grep 'remi\|webtatic')
+	if [[ "$?" = 0 ]]; then
+		if [[ $(yum list installed|grep -i "56") != "" ]]; then
+			pVer="56"
+		elif [[ $(yum list installed|grep -i "55") != "" ]]; then
+			pVer="55"
+		elif [[ $(yum list installed|grep -i "54") != "" ]]; then
+			pVer="54"
+		else
+			pVer=""
+		fi
+		pkgList="php php${pVer}-php-mysqlnd php${pVer}-php-common php${pVer}-php-gd php${pVer}-php-mbstring php${pVer}-php-mcrypt php${pVer}-php-devel php${pVer}-php-xml php${pVer}-php-cli php${pVer}-php-pdo php${pVer}-php-mssql mysql mysql-server mysql-devel httpd httpd-devel httpd-tools curl"
+	else
+
+		pkgList="php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli php-pdo php-mssql mysql mysql-server mysql-devel httpd httpd-devel httpd-tools curl"
+	fi
 	for package in $pkgList; do
 		if [[ $(yum list installed|grep "$package[.]") = "" ]]; then
 			echo -e "\e[32mPackage\e[0m: \e[36m$package\e[0m not installed, installing missing package"
