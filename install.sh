@@ -1442,7 +1442,7 @@ if [ "$rewrite_check" = "1" ]; then
 	echo -e "\n\e[31mError\e[0m: Apache Mod_rewrite or .htaccess is not working.  Please ensure you have mod_rewrite installed and enabled.  If it is, please make sure you change 'AllowOverride None' to 'AllowOverride All'"
 	echo -e "\e[31mError\e[0m: If you don't, this site won't work. \e[31mYou've been warned\e[0m."
 fi
-echo -e "\n\e[32mNotice\e[0m: Basic Installation is now complete. You can now go to http://${host_node}${relative_path} and begin working with this tool.  To add servers, use the following command:
+echo -e "\n\e[32mNotice\e[0m: Basic Installation is now complete. You can now go to http(s)://${host_node}${relative_path} and begin working with this tool.  To add servers, use the following command:
 	/opt/patch_manager/add_server.sh -s server_name -ip ip_address
 	It will ask you some questions regarding the user, password, and some other things.  Just follow the prompts.
 	
@@ -1452,9 +1452,8 @@ echo -e "\n\e[32mNotice\e[0m: Basic Installation is now complete. You can now go
 	* make sure /root/.ssh has 700 permissions on each node
 	* make sure /root/.ssh/authorized_keys has 600 permissions on each node
 	* go to the web UI, and click 'Manually add server'
-	* Tell the UI the server name, the IP, and the distro.  The distro is not required (defaults to Ubuntu), but it will give the incorrect install command if the distro isn't apt-based
-	
-	Have fun!"
+	* Tell the UI the server name, the IP, and the distro. The distro is not required, it will be detected by the client agent script.	
+	Have fun!\n"
 }
 
 function AddCrontab()

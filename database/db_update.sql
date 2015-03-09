@@ -110,6 +110,7 @@ INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('19',3,
 INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('20',3,'2015-01-26');
 INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('5',4,'2017-03-31');
 INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('6',4,'2020-11-30');
+INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('7',4,'2024-06-30');
 INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('5',5,'2017-03-31');
 INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('6',5,'2020-11-30');
 INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('7',5,'2024-06-30');
