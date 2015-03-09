@@ -64,29 +64,29 @@ CREATE TABLE `distro_version` (
   KEY `ix_distro_id` (`distro_id`),
   KEY `ix_eol_date` (`eol_date`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('10.04_Desktop',1,'2013-05-31');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('10.04_Server',1,'2015-04-30');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('12.04_Desktop',1,'2017-04-30');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('12.04_Server',1,'2017-04-30');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('14.04_Desktop',1,'2019-04-30');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('14.04_Server',1,'2019-04-30');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('6',2,'2016-02-28');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('7',2,'2024-07-26');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('15',3,'2012-06-26');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('16',3,'2013-02-12');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('17',3,'2013-07-30');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('18',3,'2014-01-14');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('19',3,'2014-07-26');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('20',3,'2015-01-26');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('5',4,'2017-03-31');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('6',4,'2020-11-30');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('7',4,'2024-06-30');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('5',5,'2017-03-31');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('6',5,'2020-11-30');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('7',5,'2024-06-30');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('5',6,'2017-03-31');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('6',6,'2020-11-30');
-INSERT IGNORE INTO distro_version(version_num,distro_id,eol_date) VALUES('7',6,'2024-06-30');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('1','10.04_Desktop',1,'2013-05-31');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('2','10.04_Server',1,'2015-04-30');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('3','12.04_Desktop',1,'2017-04-30');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('4','12.04_Server',1,'2017-04-30');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('5','14.04_Desktop',1,'2019-04-30');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('6','14.04_Server',1,'2019-04-30');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('7','6',2,'2016-02-28');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('8','7',2,'2024-07-26');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('9','15',3,'2012-06-26');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('10','16',3,'2013-02-12');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('11','17',3,'2013-07-30');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('12','18',3,'2014-01-14');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('13','19',3,'2014-07-26');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('14','20',3,'2015-01-26');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('15','5',4,'2017-03-31');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('16','6',4,'2020-11-30');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('17','7',4,'2024-06-30');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('18','5',5,'2017-03-31');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('19','6',5,'2020-11-30');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('20','7',5,'2024-06-30');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('21','5',6,'2017-03-31');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('22','6',6,'2020-11-30');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('23','7',6,'2024-06-30');
 
 CREATE TABLE `patches` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
