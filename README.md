@@ -95,7 +95,7 @@ ROADMAP:
   * Admin of servers and users is complete in this build
   * Installing via the web UI will be fully implemented by RC1
 
-* v1.0 RC2 -- ETC 2015-01-16
+* v1.0 RC2 -- ETC 2015-05-15
   * All the things we have done in v1.0 RC1, but with QA blessing
 
 * v1.0 -- ETC 2015-02-01
