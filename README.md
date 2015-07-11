@@ -123,7 +123,7 @@ DEVELOPERS:
 ===============
 * jonsjava (Creator/Project guide/Underpinning Developer/PHP & BASH Developer/DBA) https://github.com/jonsjava
 * metalcated (BASH Developer) https://github.com/metalcated
-* tycodym (Security Engineer) https://github.com/tycodym
+* gniltaws (Back-end/Front-end developer) https://github.com/gniltaws
 * wilsonma08 (DBA/BASH Developer) https://github.com/wilsonma08
 
 >If you like what we're doing, we could always use some donations to help with hosting costs.
