@@ -26,6 +26,13 @@ Compatible with: Debian Wheezy+/Ubuntu 10.04+/CentOS 5.x+/Red Hat EL5+/Fedora FC
 
 News
 ===============
+2015-07-11
+
+We are now back under active development.  We apologize for the long hiatus, but when life
+happens, some times other things take back burner.
+
+Look for more frequent releases!
+
 
 v1.0-RC1 is now available.  You can grab a copy [here](https://github.com/PatchDashboard/patchdashboard/releases/tag/v1.0-RC1) or by clicking on the one you want below:
 
@@ -77,34 +84,30 @@ To keep up-to-date on the direction of this project, you are free to stop by the
 TODO: NOT MUCH!
 ===============
 
+* Move everything to PDO, with prepared statements
+* Move to bcrypt for passwords
 * Complete installer script (WIP - please report errors and suggest improvements) **Done for Ubuntu/Debian/Fedora/RHEL/CentOS**
 * Add more distros (This one will be a continual one)
-* ~~make everything database-driven~~
-* ~~Configure patch suppression~~
 * Configure Patch Suppression via the web UI. Back-end and DB are fully capable now. **In Progress -V1.0.1**
 * configure ability to install patches from the web interface **In Testing Phase**
 * configure ability to patch windows hosts **On roadmap for v1.5**
-* ~~configure logins~~
 
 ===============
 
 ROADMAP:
 ===============
-* v1.0 RC1 -- ETC 2014-12-24
+* v1.0 RC1 -- ~~ETC 2014-12-24~~ Released
   * Will be able to use Push or Pull methods to manage servers.  Pull is by far the easiest method
   * Admin of servers and users is complete in this build
   * Installing via the web UI will be fully implemented by RC1
 
-* v1.0 RC2 -- ETC 2015-05-15
+* v1.0 -- ETC ~~2015-05-15~~ 2015-09-01
   * All the things we have done in v1.0 RC1, but with QA blessing
 
-* v1.0 -- ETC 2015-02-01
-  * All things in the previous releases, but with Security Engineering approval
-
-* v1.0.1 -- ETC 2015-02-15
+* v1.0.1 -- ETC ~~2015-02-15~~ 2015-09-20
   * Suppression implemented
 
-* v1.1
+* v1.1 
   * First integration with off-site CVE database
 
 * v1.2
