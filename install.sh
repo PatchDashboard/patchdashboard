@@ -1374,17 +1374,22 @@ if [[ -d $new_web_dir ]]; then
 		server_uri=$(grep server_uri=\" ${new_web_dir}client/*.sh|awk -F\" {'print $2'}|head -n 1)
 	else
 		echo -e "\e[31mError\e[0m: The client shell files do not exist, we recommend you run a new install.\n"
+		[[ "$UNATTENDED" == "YES" ]] && exit 1
 		unset wait
 		read -p "Press 'Enter' to return to the Main Menu." wait
 		mainMenu
 	fi
-	unset yn
-	read -p "Do you want to overwrite the existing contents? (y/n) " yn
-	echo
-	while [[ "$yn" = "" ]]; do
+	if [[ "$UNATTENDED" == "YES" ]]; then
+		yn="$FORCE"
+	else
+		unset yn
 		read -p "Do you want to overwrite the existing contents? (y/n) " yn
 		echo
-	done
+		while [[ "$yn" = "" ]]; do
+			read -p "Do you want to overwrite the existing contents? (y/n) " yn
+			echo
+		done
+	fi
 	if [[ "$yn" = "yes" ]] || [[ "$yn" = "y" ]]; then
 		rsync -aq --exclude='.htaccess' --exclude='db_config.php' html/ $new_web_dir
 		if [[ ! -f /opt/patch_manager/db.conf ]]; then
@@ -1474,24 +1479,19 @@ function NewInstall()
 {
 	# run new install
 	echo -e "\n\e[32mMode\e[0m: Running new install\n"
-
 	# run DB functions
-	if [[ "$UNATTENDED" != "YES" ]]; then
-		echo -e "\e[36m# Database Setup information\n\e[0m"
-		dbAskHost
-		dbRootPasswd
-		dbAskUser
-		dbAskPass
-		dbAskName
-	fi
+	echo -e "\e[36m# Database Setup information\n\e[0m"
+	dbAskHost
+	dbRootPasswd
+	dbAskUser
+	dbAskPass
+	dbAskName
 	dbUserDBCreate
 	dbConnTest
 	dbCheck
-
 	# check database connection from user provided details
 	if [[ "$dbConnx" = "no" ]]; then
-		[[ "$UNATTENDED" == "YES" ]] && { echo "Unable to connect to database with normal user. Aborting"; exit 1; }
-		echo -e "\n\e[31mError\e[0m: Unable to connect to: \e[36m$db_host\e[0m, please try again.\n"
+        	echo -e "\n\e[31mError\e[0m: Unable to connect to: \e[36m$db_host\e[0m, please try again.\n"
 		dbAskHost
 		dbRootPasswd
 		dbAskUser
@@ -1501,7 +1501,6 @@ function NewInstall()
 		dbConnTest
 	        dbCheck
 	fi
-
 	if [[ "$dbExists" = "yes" ]]; then
 		echo -e "\n\e[32mNotice\e[0m: \e[36m$db_name\e[0m already exists, updating tables."
 	        dbUpdate
@@ -1509,7 +1508,6 @@ function NewInstall()
 		echo -e "\n\e[32mNotice\e[0m: \e[36m$db_name\e[0m does not exist, creating as new."
 		dbCreate
 	fi
-
 	# Ask web information
 	echo -e "\n\e[36m# Webpage Location, User and Admin information.\e[0m\n"
 	WebUIInfo
@@ -1527,6 +1525,7 @@ function NewInstall()
 	# end install
         exit 0
 }
+
 
 function UpdateUpgrade()
 {
@@ -1680,6 +1679,7 @@ function OSCheckUnattended() {
 		for package in $pkgList; do
 			dpkg-query -l "$package" > /dev/null 2>&1 || missingPackage "$package"
 		done
+		web_service="apache2"
 	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]] || [[ "$os" = "Red Hat Enterprise" ]]; then
 		# check for LAMP
 		rpm -qa | grep -q "httpd"		|| missingPackage Apache
@@ -1707,6 +1707,7 @@ function OSCheckUnattended() {
 		for package in $pkgList; do
 			yum list installed | grep -q "$package[.]" || missingPackage "$package"
 		done
+		web_service="httpd"
 	fi
 	# check for php > 5.2.0
 	[[ $(phpversion "$(php --version|grep "PHP 5"|awk {'print $2'})") < $(phpversion 5.2.0) ]] && { echo "Installed PHP version is below 5.2.0. Aborting."; exit 1; }
@@ -1717,6 +1718,9 @@ function OSCheckUnattended() {
 
 
 # parse command line parameters
+
+config_keys = "db_host db_root_id db_root_pass db_user db_pass db_name new_web_admin new_web_admin_email adm_passwd new_web_duser new_web_duser_email usr_passwd comp_id your_company installation_key relative_path new_web_dir web_user";
+
 while [[ $# -gt 0 ]]; do
 	key="$1"
 	shift
@@ -1726,34 +1730,17 @@ while [[ $# -gt 0 ]]; do
 			UNATTENDED="YES"
 			ACTION="INSTALL"
 			;;
-		--db-host)
-			db_host="$1"
-			shift
-			;;
-		--db-root-id)
-			db_root_id="$1"
-			shift
-			;;
-		--db-root-pass)
-			db_root_pass="$1"
-			shift
-			;;
-		# db user. will be created
-		--db-user)
-			db_user="$1"
-			shift
-			;;
-		# password for db user.
-		--db-pass)
-			db_pass="$1"
-			shift
-			;;
-		# db name. will be created
-		--db-name)
-			db_name="$1"
-			shift
+		--force)
+			FORCE="yes"
 			;;
 		*)
+			for var in $config_keys; do
+				if [[ "$var" == "$key" ]]; then
+					eval $var=\"$1\"
+					shift
+					break
+				fi
+			done
 			;;
 	esac
 done
@@ -1764,7 +1751,34 @@ if [ "$UNATTENDED" = "YES" ]; then
 	[[ "$dbConnx" == "yes" ]] || { echo "Could not connect to the database."; exit 1; }
 	case $ACTION in
 		INSTALL)
-			NewInstall
+			for var in $config_keys; do
+				[[ -z ${$var} ]] && { echo "Parameter --$(echo $var | sed 's,_,-,') was required but not set"; exit 1; }
+			done
+		
+			dbUserDBCreate
+			dbConnTest
+			dbCheck
+			if [[ "$dbExists" = "yes" ]]; then
+				echo -e "\n\e[32mNotice\e[0m: \e[36m$db_name\e[0m already exists, updating tables."
+				dbUpdate
+			else
+				echo -e "\n\e[32mNotice\e[0m: \e[36m$db_name\e[0m does not exist, creating as new."
+				dbCreate
+			fi			
+
+			dbUserCreate
+			
+			# Create Company entries in database
+			dbCompCreate
+			# Add crontab entry for every 2 hours
+			AddCrontab
+			# Finalize the install
+			echo -e "\e[36m# Installing Apache related configurations\e[0m\n"
+			ModeType="Install"
+			InstallApp
+		#read in 1378
+			# end install
+			exit 0
 			;;
 		*)
 			#TODO: display help
