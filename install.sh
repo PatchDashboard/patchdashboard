@@ -1735,7 +1735,7 @@ while [[ $# -gt 0 ]]; do
 			;;
 		*)
 			for var in $config_keys; do
-				if [[ "$var" == "$key" ]]; then
+				if [[ "--$(echo $var | sed 's,_,-,')" == "$key" ]]; then
 					eval $var=\"$1\"
 					shift
 					break
