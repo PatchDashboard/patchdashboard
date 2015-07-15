@@ -763,8 +763,12 @@ function dbCheck()
 
 function dbConnTest()
 {
-        # check connection to db
+    # check connection to db
+	if [[ "$1" == "root" ]]; then
+        db_connx=$(mysql --batch -u $db_root_id -p"$db_root_pass" -h $db_host -e ";" > /dev/null; echo "$?")
+	else
         db_connx=$(mysql --batch -u $db_user -p"$db_pass" -h $db_host -e ";" > /dev/null; echo "$?")
+	fi
 	if [ $db_connx -eq 0 ];then
                 dbConnx=yes
         else
@@ -1472,19 +1476,22 @@ function NewInstall()
 	echo -e "\n\e[32mMode\e[0m: Running new install\n"
 
 	# run DB functions
-	echo -e "\e[36m# Database Setup information\n\e[0m"
-	dbAskHost
-	dbRootPasswd
-	dbAskUser
-	dbAskPass
-	dbAskName
+	if [[ "$UNATTENDED" != "YES" ]]; then
+		echo -e "\e[36m# Database Setup information\n\e[0m"
+		dbAskHost
+		dbRootPasswd
+		dbAskUser
+		dbAskPass
+		dbAskName
+	fi
 	dbUserDBCreate
 	dbConnTest
 	dbCheck
 
 	# check database connection from user provided details
 	if [[ "$dbConnx" = "no" ]]; then
-        	echo -e "\n\e[31mError\e[0m: Unable to connect to: \e[36m$db_host\e[0m, please try again.\n"
+		[[ "$UNATTENDED" == "YES" ]] && { echo "Unable to connect to database with normal user. Aborting"; exit 1; }
+		echo -e "\n\e[31mError\e[0m: Unable to connect to: \e[36m$db_host\e[0m, please try again.\n"
 		dbAskHost
 		dbRootPasswd
 		dbAskUser
@@ -1650,5 +1657,123 @@ EOF
         fi
 }
 
-# run ask menu for update or install
-mainMenu
+function OSCheckUnattended() {
+
+	function missingPackage() {
+		echo >&2 "$1 does not seem to be installed. Exiting unattended installation."
+		exit 1
+	}
+
+	if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
+		# check for LAMP
+		command -v apache2 >/dev/null 2>&1  || missingPackage Apache
+		command -v php >/dev/null 2>&1	|| missingPackage PHP
+		# we should not check for mysql on localhost if we allow another host for the database
+		# command -v mysqld >/dev/null 2>&1   || missingPackage MySQL
+		# check for mod_rewrite
+		apache2ctl -M | grep -q rewrite || { echo "Apache2 mod_rewrite is not enabled. Aborting."; exit 1; }
+		# mysql running?
+		# service mysql status | grep -q "stop/waiting" && { echo "MySQL service not running. Aborting."; exit 1; }
+		# other packages
+		# removed mysql-server from list
+		pkgList="apache2 apache2-threaded-dev apache2-utils php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc mysql-client php5-mysql php5-sybase libapache2-mod-auth-mysql libmysqlclient-dev curl"
+		for package in $pkgList; do
+			dpkg-query -l "$package" > /dev/null 2>&1 || missingPackage "$package"
+		done
+	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]] || [[ "$os" = "Red Hat Enterprise" ]]; then
+		# check for LAMP
+		rpm -qa | grep -q "httpd"		|| missingPackage Apache
+		rpm -qa | grep -q "php" 2>&1		|| missingPackage PHP
+		# we should not check for mysql on localhost if we allow another host for the database
+		# rpm -qa | grep -q "mysql-server"	|| missingPackage MySQL
+		# check for extra repos
+		ls /etc/yum.repos.d/ | grep -q 'remi\|webtatic'
+		if [[ "$?" = 0 ]]; then
+			if [[ $(yum list installed|grep -i "56") != "" ]]; then
+				pVer="56"
+			elif [[ $(yum list installed|grep -i "55") != "" ]]; then
+				pVer="55"
+			elif [[ $(yum list installed|grep -i "54") != "" ]]; then
+				pVer="54"
+			else
+				pVer=""
+			fi
+			# removed mysql-server from list
+			pkgList="php php${pVer}-php-mysqlnd php${pVer}-php-common php${pVer}-php-gd php${pVer}-php-mbstring php${pVer}-php-mcrypt php${pVer}-php-devel php${pVer}-php-xml php${pVer}-php-cli php${pVer}-php-pdo php${pVer}-php-mssql mysql mysql-devel httpd httpd-devel httpd-tools curl"
+		else
+			# removed mysql-server from list
+			pkgList="php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli php-pdo php-mssql mysql mysql-devel httpd httpd-devel httpd-tools curl"
+		fi
+		for package in $pkgList; do
+			yum list installed | grep -q "$package[.]" || missingPackage "$package"
+		done
+	fi
+	# check for php > 5.2.0
+	[[ $(phpversion "$(php --version|grep "PHP 5"|awk {'print $2'})") < $(phpversion 5.2.0) ]] && { echo "Installed PHP version is below 5.2.0. Aborting."; exit 1; }
+	# skipping checkIPtables. Admin should know what he is doing.
+	# same for localhostChk.
+
+}
+
+
+# parse command line parameters
+while [[ $# -gt 0 ]]; do
+	key="$1"
+	shift
+
+	case $key in
+		-ui|--unattended-install)
+			UNATTENDED="YES"
+			ACTION="INSTALL"
+			;;
+		--db-host)
+			db_host="$1"
+			shift
+			;;
+		--db-root-id)
+			db_root_id="$1"
+			shift
+			;;
+		--db-root-pass)
+			db_root_pass="$1"
+			shift
+			;;
+		# db user. will be created
+		--db-user)
+			db_user="$1"
+			shift
+			;;
+		# password for db user.
+		--db-pass)
+			db_pass="$1"
+			shift
+			;;
+		# db name. will be created
+		--db-name)
+			db_name="$1"
+			shift
+			;;
+		*)
+			;;
+	esac
+done
+
+if [ "$UNATTENDED" = "YES" ]; then
+	OSCheckUnattended
+	dbConnTest root
+	[[ "$dbConnx" == "yes" ]] || { echo "Could not connect to the database."; exit 1; }
+	case $ACTION in
+		INSTALL)
+			NewInstall
+			;;
+		*)
+			#TODO: display help
+			;;
+	esac
+else
+	# run ask menu for update or install
+	mainMenu
+fi
+
+# vim: tabstop=8:softtabstop=8:shiftwidth=8:noexpandtab 
+
