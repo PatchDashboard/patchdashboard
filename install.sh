@@ -1751,6 +1751,9 @@ if [ "$UNATTENDED" = "YES" ]; then
 			
 			[ ! -f /root/.ssh/id_rsa ] &&  { echo "There needs to be an id_rsa key in /root/.ssh/id_rsa."; exit 1; }
 			
+			[ "${relative_path: -1}" != "/" ] && relative_path=$relative_path"/"
+			[ "${new_web_dir: -1}" != "/" ] && new_web_dir=$new_web_dir"/"
+			
 			OSCheckUnattended
 			dbConnTest root
 			[[ "$dbConnx" == "yes" ]] || { echo "Could not connect to the database."; exit 1; }
