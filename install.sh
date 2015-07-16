@@ -1716,7 +1716,7 @@ function OSCheckUnattended() {
 
 # parse command line parameters
 
-config_keys="db_host db_root_id db_root_pass db_user db_pass db_name new_web_admin new_web_admin_email adm_passwd new_web_duser new_web_duser_email usr_passwd your_company installation_key relative_path new_web_dir web_user" 
+config_keys="db_host db_root_id db_root_pass db_user db_pass db_name new_web_admin new_web_admin_email new_web_admin_passwd new_web_duser new_web_duser_email new_web_duser_passwd your_company installation_key relative_path new_web_dir web_user" 
 
 while [[ $# -gt 0 ]]; do
 	key="$1"
