@@ -1302,7 +1302,8 @@ if [[ -f /etc/apache2/conf.d/patch_manager.conf ]]; then
 	rm -f /etc/apache2/conf.d/patch_manager.conf
 fi
 # setup virtualhost
-cat <<EOA > /etc/apache2/conf.d/patch_manager.conf
+[ -d "/etc/apache2/conf-available" ] && confdir="/etc/apache2/conf-available" || confdir="/etc/apache2/conf.d"
+cat <<EOA > $confdir/patch_manager.conf
 Alias $patchmgr $targetdir
 CustomLog /var/log/apache2/patch_manager/${host_node}_access.log common
 ErrorLog /var/log/apache2/patch_manager/${host_node}_error.log
@@ -1314,6 +1315,8 @@ ErrorLog /var/log/apache2/patch_manager/${host_node}_error.log
         Allow from all
 </Directory>
 EOA
+
+[ -d "/etc/apache2/conf-available" ] && a2enconf patch_manager
 
 elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]] || [[ "$os" = "Red Hat Enterprise" ]]; then
 # create log dir and set perms
