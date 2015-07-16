@@ -1282,8 +1282,8 @@ DB_PASS='$db_pass'
 DB_NAME='$db_name'"
 
 # remove ending forward slash for conf
-patchmgr=$(echo $relative_path|sed 's=/[^/]*$==;s/\.$//')
-targetdir=$(echo $new_web_dir|sed 's=/[^/]*$==;s/\.$//')
+patchmgr=${relative_path%/}
+targetdir=${new_web_dir%/}
 
 # install virtualhost file to default conf.d dir apache/httpd
 if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
