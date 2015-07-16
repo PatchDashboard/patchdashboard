@@ -95,12 +95,6 @@ if [ "$user" != "root" ]; then
 	exit 0
 fi
 
-# create keypair for root
-if [ ! -f /root/.ssh/id_rsa ]; then
-	echo -e "\n\e[32mNotice\e[0m: Creating pub/private keys for $user."
-	ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
-	echo -e "\e[32mNotice\e[0m: Keypair created.\n"
-fi
 
 # get OS information and run applicable function
 if [[ -f /etc/lsb-release && -f /etc/debian_version ]]; then
@@ -1754,6 +1748,9 @@ if [ "$UNATTENDED" = "YES" ]; then
 			for var in $config_keys; do
 				[[ -z "$(eval echo \$$var)" ]] && { echo "Parameter --$(echo $var | sed 's,_,-,g') was required but not set"; exit 1; }
 			done
+			
+			[ ! -f /root/.ssh/id_rsa ] &&  { echo "There needs to be an id_rsa key in /root/.ssh/id_rsa."; exit 1; }
+			
 			OSCheckUnattended
 			dbConnTest root
 			[[ "$dbConnx" == "yes" ]] || { echo "Could not connect to the database."; exit 1; }
@@ -1788,6 +1785,14 @@ if [ "$UNATTENDED" = "YES" ]; then
 			;;
 	esac
 else
+
+	# create keypair for root
+	if [ ! -f /root/.ssh/id_rsa ]; then
+		echo -e "\n\e[32mNotice\e[0m: Creating pub/private keys for $user."
+		ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
+		echo -e "\e[32mNotice\e[0m: Keypair created.\n"
+	fi
+
 	# run ask menu for update or install
 	mainMenu
 fi
