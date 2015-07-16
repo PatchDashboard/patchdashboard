@@ -1719,7 +1719,7 @@ function OSCheckUnattended() {
 
 # parse command line parameters
 
-config_keys = "db_host db_root_id db_root_pass db_user db_pass db_name new_web_admin new_web_admin_email adm_passwd new_web_duser new_web_duser_email usr_passwd comp_id your_company installation_key relative_path new_web_dir web_user";
+config_keys="db_host db_root_id db_root_pass db_user db_pass db_name new_web_admin new_web_admin_email adm_passwd new_web_duser new_web_duser_email usr_passwd your_company installation_key relative_path new_web_dir" 
 
 while [[ $# -gt 0 ]]; do
 	key="$1"
@@ -1735,7 +1735,7 @@ while [[ $# -gt 0 ]]; do
 			;;
 		*)
 			for var in $config_keys; do
-				if [[ "--$(echo $var | sed 's,_,-,')" == "$key" ]]; then
+				if [[ "--$(echo $var | sed 's,_,-,g')" == "$key" ]]; then
 					eval $var=\"$1\"
 					shift
 					break
@@ -1746,14 +1746,14 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [ "$UNATTENDED" = "YES" ]; then
-	OSCheckUnattended
-	dbConnTest root
-	[[ "$dbConnx" == "yes" ]] || { echo "Could not connect to the database."; exit 1; }
 	case $ACTION in
 		INSTALL)
 			for var in $config_keys; do
-				[[ -z ${$var} ]] && { echo "Parameter --$(echo $var | sed 's,_,-,') was required but not set"; exit 1; }
+				[[ -z "$(eval echo \$$var)" ]] && { echo "Parameter --$(echo $var | sed 's,_,-,g') was required but not set"; exit 1; }
 			done
+			OSCheckUnattended
+			dbConnTest root
+			[[ "$dbConnx" == "yes" ]] || { echo "Could not connect to the database."; exit 1; }
 		
 			dbUserDBCreate
 			dbConnTest
