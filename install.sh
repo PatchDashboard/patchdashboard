@@ -493,13 +493,13 @@ function EnableSSL()
         if [ "$new_relative_path" != "$relative_path" ] && [ "$new_relative_path" != "" ]; then
                 relative_path="$new_relative_path"
         fi
-        if [ "${new_relative_path:LEN}" != "/" ]; then
+        if [ "${new_relative_path: -1}" != "/" ]; then
                 new_relative_path=$new_relative_path"/"
         fi
         if [ "$new_web_dir" != "$web_dir" ] && [ "$new_web_dir" != "" ]; then
                 web_dir="$new_web_dir"
         fi
-        if [ "${web_dir:LEN}" != "/" ]; then
+        if [ "${web_dir: -1}" != "/" ]; then
                 web_dir=$web_dir"/"
         fi
 	if [[ $(grep "$ssl_path/certs/ca.crt" /etc/$web_service/conf.d/patch_manager.conf) = "" ]]; then
@@ -961,13 +961,13 @@ function WebUIInfo()
 	if [ "$new_relative_path" != "$relative_path" ] && [ "$new_relative_path" != "" ]; then
         	relative_path="$new_relative_path"
 	fi
-	if [ "${new_relative_path:LEN}" != "/" ]; then
+	if [ "${new_relative_path: -1}" != "/" ]; then
         	new_relative_path=$new_relative_path"/"
 	fi
 	if [ "$new_web_dir" != "$web_dir" ] && [ "$new_web_dir" != "" ]; then
         	web_dir="$new_web_dir"
 	fi
-	if [ "${web_dir:LEN}" != "/" ]; then
+	if [ "${web_dir: -1}" != "/" ]; then
         	web_dir=$web_dir"/"
 	fi
 	# Get apache daemon ID
@@ -1061,13 +1061,13 @@ function WebUIInfoUpdate()
         if [ "$new_relative_path" != "$relative_path" ] && [ "$new_relative_path" != "" ]; then
                 relative_path="$new_relative_path"
         fi
-        if [ "${new_relative_path:LEN}" != "/" ]; then
+        if [ "${new_relative_path: -1}" != "/" ]; then
                 new_relative_path=$new_relative_path"/"
         fi
         if [ "$new_web_dir" != "$web_dir" ] && [ "$new_web_dir" != "" ]; then
                 web_dir="$new_web_dir"
         fi
-        if [ "${web_dir:LEN}" != "/" ]; then
+        if [ "${web_dir: -1}" != "/" ]; then
                 web_dir=$web_dir"/"
         fi
 }
