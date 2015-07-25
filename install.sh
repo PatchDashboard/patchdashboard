@@ -757,7 +757,7 @@ function dbCheck()
 
 function dbConnTest()
 {
-    # check connection to db
+        # check connection to db
 	if [[ "$1" == "root" ]]; then
         db_connx=$(mysql --batch -u $db_root_id -p"$db_root_pass" -h $db_host -e ";" > /dev/null; echo "$?")
 	else
@@ -1476,6 +1476,7 @@ function NewInstall()
 {
 	# run new install
 	echo -e "\n\e[32mMode\e[0m: Running new install\n"
+
 	# run DB functions
 	echo -e "\e[36m# Database Setup information\n\e[0m"
 	dbAskHost
@@ -1486,6 +1487,7 @@ function NewInstall()
 	dbUserDBCreate
 	dbConnTest
 	dbCheck
+
 	# check database connection from user provided details
 	if [[ "$dbConnx" = "no" ]]; then
         	echo -e "\n\e[31mError\e[0m: Unable to connect to: \e[36m$db_host\e[0m, please try again.\n"
@@ -1505,6 +1507,7 @@ function NewInstall()
 		echo -e "\n\e[32mNotice\e[0m: \e[36m$db_name\e[0m does not exist, creating as new."
 		dbCreate
 	fi
+
 	# Ask web information
 	echo -e "\n\e[36m# Webpage Location, User and Admin information.\e[0m\n"
 	WebUIInfo
@@ -1522,7 +1525,6 @@ function NewInstall()
 	# end install
         exit 0
 }
-
 
 function UpdateUpgrade()
 {
@@ -1767,10 +1769,10 @@ if [ "$UNATTENDED" = "YES" ]; then
 			else
 				echo -e "\n\e[32mNotice\e[0m: \e[36m$db_name\e[0m does not exist, creating as new."
 				dbCreate
-			fi			
+			fi
 
 			dbUserCreate
-			
+
 			# Create Company entries in database
 			dbCompCreate
 			# Add crontab entry for every 2 hours
