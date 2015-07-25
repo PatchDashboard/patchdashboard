@@ -38,6 +38,89 @@
 ##
 #################################################################################
 
+
+function show_help {
+	cat <<EOF
+Installer for PatchDashboard.
+
+Run without options for interactive mode. Beware: interactive mode makes changes to your system, like installing packages and changing iptables. This is fine on a clean system, but on a multi-purpose system you might want to go the --unattended-install route.
+
+Options:
+
+-ui|--unattended-install        run installation without user interaction
+                                required options are:
+    --db_host
+    --db_root_id
+    --db_root_pass
+    --db_user
+    --db_pass
+    --db_name
+    --new_web_admin
+    --new_web_admin_email
+    --adm_passwd
+    --new_web_duser
+    --new_web_duser_email
+    --usr_passwd
+    --comp_id
+    --your_company
+    --installation_key
+    --relative_path
+    --new_web_dir
+    --web_user
+
+-uu|--unattended-upgrade        run upgrade without user interaction
+                                required options are:
+    --relative_path
+    --web_dir
+EOF
+}
+
+# parse command line parameters
+
+install_opts="db_host db_root_id db_root_pass db_user db_pass db_name new_web_admin new_web_admin_email adm_passwd new_web_duser new_web_duser_email usr_passwd comp_id your_company installation_key relative_path new_web_dir web_user";
+
+upgrade_opts="web_dir relative_path";
+
+while [[ $# -gt 0 ]]; do
+	key="$1"
+	shift
+
+	case $key in
+		-ui|--unattended-install)
+			UNATTENDED="YES"
+			ACTION="INSTALL"
+			;;
+
+		-uu|--unattended-upgrade)
+			UNATTENDED="YES"
+			ACTION="UPGRADE"
+			;;
+
+			--force)
+			FORCE="yes"
+			;;
+
+		-h)
+			show_help
+			exit
+			;;
+
+		*)
+			for var in $install_opts; do
+				if [[ "--$(echo $var | sed 's,_,-,')" == "$key" ]]; then
+					eval $var=\"$1\"
+					shift
+					break
+				fi
+			done
+			echo -e "Unknown option $key.\n"
+			show_help
+			exit 1
+			;;
+	esac
+done
+
+
 # get hostname into var
 export host_node=`hostname`
 
@@ -1715,39 +1798,10 @@ function OSCheckUnattended() {
 
 }
 
-
-# parse command line parameters
-
-config_keys="db_host db_root_id db_root_pass db_user db_pass db_name new_web_admin new_web_admin_email new_web_admin_passwd new_web_duser new_web_duser_email new_web_duser_passwd your_company installation_key relative_path new_web_dir web_user" 
-
-while [[ $# -gt 0 ]]; do
-	key="$1"
-	shift
-
-	case $key in
-		-ui|--unattended-install)
-			UNATTENDED="YES"
-			ACTION="INSTALL"
-			;;
-		--force)
-			FORCE="yes"
-			;;
-		*)
-			for var in $config_keys; do
-				if [[ "--$(echo $var | sed 's,_,-,g')" == "$key" ]]; then
-					eval $var=\"$1\"
-					shift
-					break
-				fi
-			done
-			;;
-	esac
-done
-
 if [ "$UNATTENDED" = "YES" ]; then
 	case $ACTION in
 		INSTALL)
-			for var in $config_keys; do
+			for var in $install_opts; do
 				[[ -z "$(eval echo \$$var)" ]] && { echo "Parameter --$(echo $var | sed 's,_,-,g') was required but not set"; exit 1; }
 			done
 			
@@ -1759,7 +1813,7 @@ if [ "$UNATTENDED" = "YES" ]; then
 			OSCheckUnattended
 			dbConnTest root
 			[[ "$dbConnx" == "yes" ]] || { echo "Could not connect to the database."; exit 1; }
-		
+
 			dbUserDBCreate
 			dbConnTest
 			dbCheck
@@ -1781,12 +1835,60 @@ if [ "$UNATTENDED" = "YES" ]; then
 			echo -e "\e[36m# Installing Apache related configurations\e[0m\n"
 			ModeType="Install"
 			InstallApp
-		#read in 1378
 			# end install
 			exit 0
 			;;
-		*)
-			#TODO: display help
+		UPGRADE)
+			for var in $upgrade_opts; do
+			[[ -z ${$var} ]] && { echo "Parameter --$(echo $var | sed 's,_,-,') was required but not set"; exit 1; }
+			done
+
+			new_web_dir="$web_dir"
+			new_relative_path=$relative_path"
+
+			OSCheckUnattended
+
+			[[ ! -d /opt/patch_manager/ ]] || { echo "Detected the base directory is missing. Please run the installer in new install mode"; exit 1; }
+
+			# check if db_config.php and db.conf exist
+			if [[ ! -f /opt/patch_manager/db_config.php ]] || [[ ! -f /opt/patch_manager/db.conf ]]; then
+				if [[ -f "${new_web_dir}lib/db_config.php" ]]; then
+					echo -e "Missing: /opt/patch_manager/db_config.php"
+					echo -e "Restore copy from ${new_web_dir}lib/db_config.php\n"
+					cp -f ${new_web_dir}lib/db_config.php /opt/patch_manager/db_config.php
+				else
+					echo -e "Notice: Detected the database configuration files are missing. Please run the installer in new install mode.\n"
+					exit 1;
+				fi
+			fi
+
+			# get database infomation
+			export db_host=$(grep DB_HOST /opt/patch_manager/db_config.php|awk -F"'" {'print $4'})
+			export db_user=$(grep DB_USER /opt/patch_manager/db_config.php|awk -F"'" {'print $4'})
+			export db_pass=$(grep DB_PASS /opt/patch_manager/db_config.php|awk -F"'" {'print $4'})
+			export db_name=$(grep DB_NAME /opt/patch_manager/db_config.php|awk -F"'" {'print $4'})
+
+			# database upgrade
+			echo -e "Database Setup information"
+
+			dbConnTest
+			[[ "$dbConnx" == "yes" ]] || { echo "Could not connect to the database."; exit 1; }
+
+			dbCheck
+
+			if [[ "$dbExists" = "yes" ]]; then
+				echo -e "\n\nNotice: $db_name updating database tables\n"
+				dbUpdate
+			fi
+
+			# Add crontab entry for every 2 hours
+			AddCrontab
+			# Finalize the install
+			echo -e "Installing Apache related configurations"
+			ModeType="Update"
+			InstallApp
+			# end update
+			exit 0
 			;;
 	esac
 else
