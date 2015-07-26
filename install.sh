@@ -38,48 +38,42 @@
 ##
 #################################################################################
 
+install_opts="db_host db_root_id db_root_pass db_user db_pass db_name new_web_admin new_web_admin_email adm_passwd new_web_duser new_web_duser_email usr_passwd your_company installation_key relative_path new_web_dir web_user" 
+upgrade_opts="web_dir relative_path";
 
 function show_help {
 	cat <<EOF
 Installer for PatchDashboard.
 
-Run without options for interactive mode. Beware: interactive mode makes changes to your system, like installing packages and changing iptables. This is fine on a clean system, but on a multi-purpose system you might want to go the --unattended-install route.
 
 Options:
 
 -ui|--unattended-install        run installation without user interaction
                                 required options are:
-    --db_host
-    --db_root_id
-    --db_root_pass
-    --db_user
-    --db_pass
-    --db_name
-    --new_web_admin
-    --new_web_admin_email
-    --adm_passwd
-    --new_web_duser
-    --new_web_duser_email
-    --usr_passwd
-    --comp_id
-    --your_company
-    --installation_key
-    --relative_path
-    --new_web_dir
-    --web_user
+EOF
+	for var in $install_opts; do
+		echo "    --$(echo $var | sed 's,_,-,g')" 
+	done
+	cat <<EOF
 
 -uu|--unattended-upgrade        run upgrade without user interaction
                                 required options are:
-    --relative_path
-    --web_dir
+EOF
+	for var in $upgrade_opts; do
+		echo "    --$(echo $var | sed 's,_,-,g')" 
+	done
+	cat <<EOF
+
+-g|--guided                     Interactive mode. 
+                                Beware: interactive mode makes changes to your system, like installing packages and changing iptables. This is fine on a clean system, but on a multi-purpose system you might want to go the --unattended-install route.
 EOF
 }
 
 # parse command line parameters
 
-install_opts="db_host db_root_id db_root_pass db_user db_pass db_name new_web_admin new_web_admin_email adm_passwd new_web_duser new_web_duser_email usr_passwd comp_id your_company installation_key relative_path new_web_dir web_user";
-
-upgrade_opts="web_dir relative_path";
+GUIDED=""
+UNATTENDED=""
+FORCE="no"
 
 while [[ $# -gt 0 ]]; do
 	key="$1"
@@ -100,26 +94,33 @@ while [[ $# -gt 0 ]]; do
 			FORCE="yes"
 			;;
 
+		-g|--guided)
+			GUIDED="YES"
+			;;
+
 		-h)
 			show_help
 			exit
 			;;
 
 		*)
-			for var in $install_opts; do
-				if [[ "--$(echo $var | sed 's,_,-,')" == "$key" ]]; then
+			found=""
+			for var in $install_opts $upgrade_opts; do
+				if [[ "--$(echo $var | sed 's,_,-,g')" == "$key" ]]; then
 					eval $var=\"$1\"
 					shift
+					found=1
 					break
 				fi
 			done
-			echo -e "Unknown option $key.\n"
-			show_help
-			exit 1
+			if [ -z "$found" ]; then
+				echo -e "Unknown option $key.\n"
+				show_help
+				exit 1
+			fi
 			;;
 	esac
 done
-
 
 # get hostname into var
 export host_node=`hostname`
@@ -150,27 +151,9 @@ function genInstallKey()
 }
 
 
-# default admin and users for the admin web interface
-# admin info
-web_admin="pmdadmin"
-web_admin_passwd=$(genPasswd)
-web_admin_email="no_admin@email.com"
-# user info
-web_duser="pmduser"
-web_duser_passwd=$(genPasswd)
-web_duser_email="no_user@email.com"
-# export to global
-export web_admin web_admin_email web_admin_passwd 
-export web_user web_user_email web_user_passwd
-
-# default target path for php files
-relative_path="/patchmgr/"
-
 # get user running installer
 user=`whoami`
 
-# default elevated mysql id
-export db_root_id="root"
 
 # if user is not root, exit
 if [ "$user" != "root" ]; then
@@ -841,7 +824,7 @@ function dbCheck()
 function dbConnTest()
 {
         # check connection to db
-	if [[ "$1" == "root" ]]; then
+	if [[ ${#} -gt 0 && "$1" == "root" ]]; then
         db_connx=$(mysql --batch -u $db_root_id -p"$db_root_pass" -h $db_host -e ";" > /dev/null; echo "$?")
 	else
         db_connx=$(mysql --batch -u $db_user -p"$db_pass" -h $db_host -e ";" > /dev/null; echo "$?")
@@ -1243,6 +1226,7 @@ fi
 
 function AuthKeyURI()
 {
+	relpath=$relative_path
 	# trim extra char if exists
         install_key=$(echo $install_key|awk {'print $1'})
 	# check if changes were made in shell scripts via sed
@@ -1431,7 +1415,6 @@ if [[ "$ModeType" = "Install" ]]; then
 	echo "$rewrite_config" > /opt/patch_manager/.htaccess
 	echo "$php_config" > /opt/patch_manager/db_config.php 
 	echo "$bash_config" > /opt/patch_manager/db.conf
-
 elif [[ "$ModeType" = "Update" ]]; then
 
 	# get install key from mysql
@@ -1488,21 +1471,23 @@ if [[ -d $new_web_dir ]]; then
 			echo "$php_config" > /opt/patch_manager/db_config.php
                 fi
 	else
-		echo -e "Answer (y)es to overwrite and (n)o to skip.\n"
 		mkdir -p $new_web_dir
-		cp -i -R html/* $new_web_dir
+		if [[ "$UNATTENDED" != "YES" ]]; then
+			echo -e "Answer (y)es to overwrite and (n)o to skip.\n"
+			cp -i -R html/* $new_web_dir
+		fi
 		if [[ ! -f /opt/patch_manager/db.conf ]]; then
                         echo "$bash_config" > /opt/patch_manager/db.conf
                 fi
 
-		if [[ -f /opt/patch_manager/.htaccess ]]; then
+		if [[ -f /opt/patch_manager/.htaccess && "$UNATTENDED" != "YES" ]]; then
                         cp -i -R /opt/patch_manager/.htaccess $new_web_dir
 		else
                         echo "$rewrite_config" > /opt/patch_manager/.htaccess
                 fi
 
-		if [[ -f /opt/patch_manager/db_config.php ]]; then
-                        cp -i -R /opt/patch_manager/db_config.php $new_web_diri/lib/
+		if [[ -f /opt/patch_manager/db_config.php && "$UNATTENDED" != "YES" ]]; then
+                        cp -i -R /opt/patch_manager/db_config.php $new_web_dir/lib/
                 else
                         echo "$php_config" > /opt/patch_manager/db_config.php
                 fi
@@ -1752,7 +1737,7 @@ function OSCheckUnattended() {
 		# we should not check for mysql on localhost if we allow another host for the database
 		# command -v mysqld >/dev/null 2>&1   || missingPackage MySQL
 		# check for mod_rewrite
-		apache2ctl -M | grep -q rewrite || { echo "Apache2 mod_rewrite is not enabled. Aborting."; exit 1; }
+		apache2ctl -M 2>/dev/null | grep -q rewrite || { echo "Apache2 mod_rewrite is not enabled. Aborting."; exit 1; }
 		# mysql running?
 		# service mysql status | grep -q "stop/waiting" && { echo "MySQL service not running. Aborting."; exit 1; }
 		# other packages
@@ -1798,6 +1783,8 @@ function OSCheckUnattended() {
 
 }
 
+[ "$UNATTENDED" = "YES" ] && [ "$GUIDED" == "YES" ] && { echo "Cannot run in unattended and guided mode at the same time."; exit 1; }
+
 if [ "$UNATTENDED" = "YES" ]; then
 	case $ACTION in
 		INSTALL)
@@ -1840,15 +1827,15 @@ if [ "$UNATTENDED" = "YES" ]; then
 			;;
 		UPGRADE)
 			for var in $upgrade_opts; do
-			[[ -z ${$var} ]] && { echo "Parameter --$(echo $var | sed 's,_,-,') was required but not set"; exit 1; }
+				[[ -z "$(eval echo \$$var)" ]] && { echo "Parameter --$(echo $var | sed 's,_,-,g') was required but not set"; exit 1; }
 			done
 
 			new_web_dir="$web_dir"
-			new_relative_path=$relative_path"
+			new_relative_path="$relative_path"
 
 			OSCheckUnattended
 
-			[[ ! -d /opt/patch_manager/ ]] || { echo "Detected the base directory is missing. Please run the installer in new install mode"; exit 1; }
+			[[ -d /opt/patch_manager/ ]] || { echo "Detected the base directory is missing. Please run the installer in new install mode"; exit 1; }
 
 			# check if db_config.php and db.conf exist
 			if [[ ! -f /opt/patch_manager/db_config.php ]] || [[ ! -f /opt/patch_manager/db.conf ]]; then
@@ -1863,10 +1850,10 @@ if [ "$UNATTENDED" = "YES" ]; then
 			fi
 
 			# get database infomation
-			export db_host=$(grep DB_HOST /opt/patch_manager/db_config.php|awk -F"'" {'print $4'})
-			export db_user=$(grep DB_USER /opt/patch_manager/db_config.php|awk -F"'" {'print $4'})
-			export db_pass=$(grep DB_PASS /opt/patch_manager/db_config.php|awk -F"'" {'print $4'})
-			export db_name=$(grep DB_NAME /opt/patch_manager/db_config.php|awk -F"'" {'print $4'})
+			export db_host=$(sed -n 's/.*DB_HOST.*,["'\'']\(.*\)["'\''].*/\1/p' /opt/patch_manager/db_config.php)
+			export db_user=$(sed -n 's/.*DB_USER.*,["'\'']\(.*\)["'\''].*/\1/p' /opt/patch_manager/db_config.php)
+			export db_pass=$(sed -n 's/.*DB_PASS.*,["'\'']\(.*\)["'\''].*/\1/p' /opt/patch_manager/db_config.php)
+			export db_name=$(sed -n 's/.*DB_NAME.*,["'\'']\(.*\)["'\''].*/\1/p' /opt/patch_manager/db_config.php)
 
 			# database upgrade
 			echo -e "Database Setup information"
@@ -1891,7 +1878,26 @@ if [ "$UNATTENDED" = "YES" ]; then
 			exit 0
 			;;
 	esac
-else
+elif [ "$GUIDED" == "YES" ]; then
+
+	# default admin and users for the admin web interface
+	# admin info
+	web_admin="pmdadmin"
+	web_admin_passwd=$(genPasswd)
+	web_admin_email="no_admin@email.com"
+	# user info
+	web_duser="pmduser"
+	web_duser_passwd=$(genPasswd)
+	web_duser_email="no_user@email.com"
+	# export to global
+	export web_admin web_admin_email web_admin_passwd 
+	export web_user web_user_email web_user_passwd
+
+	# default target path for php files
+	relative_path="/patchmgr/"
+
+	# default elevated mysql id
+	export db_root_id="root"
 
 	# create keypair for root
 	if [ ! -f /root/.ssh/id_rsa ]; then
@@ -1902,6 +1908,8 @@ else
 
 	# run ask menu for update or install
 	mainMenu
+else
+	show_help
 fi
 
 # vim: tabstop=8:softtabstop=8:shiftwidth=8:noexpandtab 
