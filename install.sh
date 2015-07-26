@@ -38,7 +38,7 @@
 ##
 #################################################################################
 
-install_opts="db_host db_root_id db_root_pass db_user db_pass db_name new_web_admin new_web_admin_email adm_passwd new_web_duser new_web_duser_email usr_passwd your_company installation_key relative_path new_web_dir web_user" 
+install_opts="db_host db_root_id db_root_pass db_user db_pass db_name new_web_admin new_web_admin_email new_web_admin_passwd new_web_duser new_web_duser_email new_web_duser_passwd your_company installation_key relative_path new_web_dir web_user" 
 upgrade_opts="web_dir relative_path";
 
 function show_help {
@@ -1226,7 +1226,7 @@ fi
 
 function AuthKeyURI()
 {
-	relpath=$relative_path
+	relpath=$(echo $relative_path | sed -e 's/[\/&]/\\&/g')
 	# trim extra char if exists
         install_key=$(echo $install_key|awk {'print $1'})
 	# check if changes were made in shell scripts via sed
