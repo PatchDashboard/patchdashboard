@@ -38,6 +38,90 @@
 ##
 #################################################################################
 
+install_opts="db_host db_root_id db_root_pass db_user db_pass db_name new_web_admin new_web_admin_email new_web_admin_passwd new_web_duser new_web_duser_email new_web_duser_passwd your_company installation_key relative_path new_web_dir web_user" 
+upgrade_opts="web_dir relative_path";
+
+function show_help {
+	cat <<EOF
+Installer for PatchDashboard.
+
+
+Options:
+
+-ui|--unattended-install        run installation without user interaction
+                                required options are:
+EOF
+	for var in $install_opts; do
+		echo "    --$(echo $var | sed 's,_,-,g')" 
+	done
+	cat <<EOF
+
+-uu|--unattended-upgrade        run upgrade without user interaction
+                                required options are:
+EOF
+	for var in $upgrade_opts; do
+		echo "    --$(echo $var | sed 's,_,-,g')" 
+	done
+	cat <<EOF
+
+-g|--guided                     Interactive mode. 
+                                Beware: interactive mode makes changes to your system, like installing packages and changing iptables. This is fine on a clean system, but on a multi-purpose system you might want to go the --unattended-install route.
+EOF
+}
+
+# parse command line parameters
+
+GUIDED=""
+UNATTENDED=""
+FORCE="no"
+
+while [[ $# -gt 0 ]]; do
+	key="$1"
+	shift
+
+	case $key in
+		-ui|--unattended-install)
+			UNATTENDED="YES"
+			ACTION="INSTALL"
+			;;
+
+		-uu|--unattended-upgrade)
+			UNATTENDED="YES"
+			ACTION="UPGRADE"
+			;;
+
+			--force)
+			FORCE="yes"
+			;;
+
+		-g|--guided)
+			GUIDED="YES"
+			;;
+
+		-h)
+			show_help
+			exit
+			;;
+
+		*)
+			found=""
+			for var in $install_opts $upgrade_opts; do
+				if [[ "--$(echo $var | sed 's,_,-,g')" == "$key" ]]; then
+					eval $var=\"$1\"
+					shift
+					found=1
+					break
+				fi
+			done
+			if [ -z "$found" ]; then
+				echo -e "Unknown option $key.\n"
+				show_help
+				exit 1
+			fi
+			;;
+	esac
+done
+
 # get hostname into var
 export host_node=`hostname`
 
@@ -67,27 +151,9 @@ function genInstallKey()
 }
 
 
-# default admin and users for the admin web interface
-# admin info
-web_admin="pmdadmin"
-web_admin_passwd=$(genPasswd)
-web_admin_email="no_admin@email.com"
-# user info
-web_duser="pmduser"
-web_duser_passwd=$(genPasswd)
-web_duser_email="no_user@email.com"
-# export to global
-export web_admin web_admin_email web_admin_passwd 
-export web_user web_user_email web_user_passwd
-
-# default target path for php files
-relative_path="/patchmgr/"
-
 # get user running installer
 user=`whoami`
 
-# default elevated mysql id
-export db_root_id="root"
 
 # if user is not root, exit
 if [ "$user" != "root" ]; then
@@ -95,12 +161,6 @@ if [ "$user" != "root" ]; then
 	exit 0
 fi
 
-# create keypair for root
-if [ ! -f /root/.ssh/id_rsa ]; then
-	echo -e "\n\e[32mNotice\e[0m: Creating pub/private keys for $user."
-	ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
-	echo -e "\e[32mNotice\e[0m: Keypair created.\n"
-fi
 
 # get OS information and run applicable function
 if [[ -f /etc/lsb-release && -f /etc/debian_version ]]; then
@@ -499,13 +559,13 @@ function EnableSSL()
         if [ "$new_relative_path" != "$relative_path" ] && [ "$new_relative_path" != "" ]; then
                 relative_path="$new_relative_path"
         fi
-        if [ "${new_relative_path:LEN}" != "/" ]; then
+        if [ "${new_relative_path: -1}" != "/" ]; then
                 new_relative_path=$new_relative_path"/"
         fi
         if [ "$new_web_dir" != "$web_dir" ] && [ "$new_web_dir" != "" ]; then
                 web_dir="$new_web_dir"
         fi
-        if [ "${web_dir:LEN}" != "/" ]; then
+        if [ "${web_dir: -1}" != "/" ]; then
                 web_dir=$web_dir"/"
         fi
 	if [[ $(grep "$ssl_path/certs/ca.crt" /etc/$web_service/conf.d/patch_manager.conf) = "" ]]; then
@@ -764,7 +824,11 @@ function dbCheck()
 function dbConnTest()
 {
         # check connection to db
+	if [[ ${#} -gt 0 && "$1" == "root" ]]; then
+        db_connx=$(mysql --batch -u $db_root_id -p"$db_root_pass" -h $db_host -e ";" > /dev/null; echo "$?")
+	else
         db_connx=$(mysql --batch -u $db_user -p"$db_pass" -h $db_host -e ";" > /dev/null; echo "$?")
+	fi
 	if [ $db_connx -eq 0 ];then
                 dbConnx=yes
         else
@@ -963,13 +1027,13 @@ function WebUIInfo()
 	if [ "$new_relative_path" != "$relative_path" ] && [ "$new_relative_path" != "" ]; then
         	relative_path="$new_relative_path"
 	fi
-	if [ "${new_relative_path:LEN}" != "/" ]; then
+	if [ "${new_relative_path: -1}" != "/" ]; then
         	new_relative_path=$new_relative_path"/"
 	fi
 	if [ "$new_web_dir" != "$web_dir" ] && [ "$new_web_dir" != "" ]; then
         	web_dir="$new_web_dir"
 	fi
-	if [ "${web_dir:LEN}" != "/" ]; then
+	if [ "${web_dir: -1}" != "/" ]; then
         	web_dir=$web_dir"/"
 	fi
 	# Get apache daemon ID
@@ -1063,13 +1127,13 @@ function WebUIInfoUpdate()
         if [ "$new_relative_path" != "$relative_path" ] && [ "$new_relative_path" != "" ]; then
                 relative_path="$new_relative_path"
         fi
-        if [ "${new_relative_path:LEN}" != "/" ]; then
+        if [ "${new_relative_path: -1}" != "/" ]; then
                 new_relative_path=$new_relative_path"/"
         fi
         if [ "$new_web_dir" != "$web_dir" ] && [ "$new_web_dir" != "" ]; then
                 web_dir="$new_web_dir"
         fi
-        if [ "${web_dir:LEN}" != "/" ]; then
+        if [ "${web_dir: -1}" != "/" ]; then
                 web_dir=$web_dir"/"
         fi
 }
@@ -1162,6 +1226,7 @@ fi
 
 function AuthKeyURI()
 {
+	relpath=$(echo $relative_path | sed -e 's/[\/&]/\\&/g')
 	# trim extra char if exists
         install_key=$(echo $install_key|awk {'print $1'})
 	# check if changes were made in shell scripts via sed
@@ -1284,8 +1349,8 @@ DB_PASS='$db_pass'
 DB_NAME='$db_name'"
 
 # remove ending forward slash for conf
-patchmgr=$(echo $relative_path|sed 's=/[^/]*$==;s/\.$//')
-targetdir=$(echo $new_web_dir|sed 's=/[^/]*$==;s/\.$//')
+patchmgr=${relative_path%/}
+targetdir=${new_web_dir%/}
 
 # install virtualhost file to default conf.d dir apache/httpd
 if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
@@ -1298,7 +1363,8 @@ if [[ -f /etc/apache2/conf.d/patch_manager.conf ]]; then
 	rm -f /etc/apache2/conf.d/patch_manager.conf
 fi
 # setup virtualhost
-cat <<EOA > /etc/apache2/conf.d/patch_manager.conf
+[ -d "/etc/apache2/conf-available" ] && confdir="/etc/apache2/conf-available" || confdir="/etc/apache2/conf.d"
+cat <<EOA > $confdir/patch_manager.conf
 Alias $patchmgr $targetdir
 CustomLog /var/log/apache2/patch_manager/${host_node}_access.log common
 ErrorLog /var/log/apache2/patch_manager/${host_node}_error.log
@@ -1310,6 +1376,8 @@ ErrorLog /var/log/apache2/patch_manager/${host_node}_error.log
         Allow from all
 </Directory>
 EOA
+
+[ -d "/etc/apache2/conf-available" ] && a2enconf patch_manager
 
 elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]] || [[ "$os" = "Red Hat Enterprise" ]]; then
 # create log dir and set perms
@@ -1347,7 +1415,6 @@ if [[ "$ModeType" = "Install" ]]; then
 	echo "$rewrite_config" > /opt/patch_manager/.htaccess
 	echo "$php_config" > /opt/patch_manager/db_config.php 
 	echo "$bash_config" > /opt/patch_manager/db.conf
-
 elif [[ "$ModeType" = "Update" ]]; then
 
 	# get install key from mysql
@@ -1370,17 +1437,22 @@ if [[ -d $new_web_dir ]]; then
 		server_uri=$(grep server_uri=\" ${new_web_dir}client/*.sh|awk -F\" {'print $2'}|head -n 1)
 	else
 		echo -e "\e[31mError\e[0m: The client shell files do not exist, we recommend you run a new install.\n"
+		[[ "$UNATTENDED" == "YES" ]] && exit 1
 		unset wait
 		read -p "Press 'Enter' to return to the Main Menu." wait
 		mainMenu
 	fi
-	unset yn
-	read -p "Do you want to overwrite the existing contents? (y/n) " yn
-	echo
-	while [[ "$yn" = "" ]]; do
+	if [[ "$UNATTENDED" == "YES" ]]; then
+		yn="$FORCE"
+	else
+		unset yn
 		read -p "Do you want to overwrite the existing contents? (y/n) " yn
 		echo
-	done
+		while [[ "$yn" = "" ]]; do
+			read -p "Do you want to overwrite the existing contents? (y/n) " yn
+			echo
+		done
+	fi
 	if [[ "$yn" = "yes" ]] || [[ "$yn" = "y" ]]; then
 		rsync -aq --exclude='.htaccess' --exclude='db_config.php' html/ $new_web_dir
 		if [[ ! -f /opt/patch_manager/db.conf ]]; then
@@ -1399,21 +1471,23 @@ if [[ -d $new_web_dir ]]; then
 			echo "$php_config" > /opt/patch_manager/db_config.php
                 fi
 	else
-		echo -e "Answer (y)es to overwrite and (n)o to skip.\n"
 		mkdir -p $new_web_dir
-		cp -i -R html/* $new_web_dir
+		if [[ "$UNATTENDED" != "YES" ]]; then
+			echo -e "Answer (y)es to overwrite and (n)o to skip.\n"
+			cp -i -R html/* $new_web_dir
+		fi
 		if [[ ! -f /opt/patch_manager/db.conf ]]; then
                         echo "$bash_config" > /opt/patch_manager/db.conf
                 fi
 
-		if [[ -f /opt/patch_manager/.htaccess ]]; then
+		if [[ -f /opt/patch_manager/.htaccess && "$UNATTENDED" != "YES" ]]; then
                         cp -i -R /opt/patch_manager/.htaccess $new_web_dir
 		else
                         echo "$rewrite_config" > /opt/patch_manager/.htaccess
                 fi
 
-		if [[ -f /opt/patch_manager/db_config.php ]]; then
-                        cp -i -R /opt/patch_manager/db_config.php $new_web_diri/lib/
+		if [[ -f /opt/patch_manager/db_config.php && "$UNATTENDED" != "YES" ]]; then
+                        cp -i -R /opt/patch_manager/db_config.php $new_web_dir/lib/
                 else
                         echo "$php_config" > /opt/patch_manager/db_config.php
                 fi
@@ -1494,7 +1568,6 @@ function NewInstall()
 		dbConnTest
 	        dbCheck
 	fi
-
 	if [[ "$dbExists" = "yes" ]]; then
 		echo -e "\n\e[32mNotice\e[0m: \e[36m$db_name\e[0m already exists, updating tables."
 	        dbUpdate
@@ -1650,5 +1723,194 @@ EOF
         fi
 }
 
-# run ask menu for update or install
-mainMenu
+function OSCheckUnattended() {
+
+	function missingPackage() {
+		echo >&2 "$1 does not seem to be installed. Exiting unattended installation."
+		exit 1
+	}
+
+	if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
+		# check for LAMP
+		command -v apache2 >/dev/null 2>&1  || missingPackage Apache
+		command -v php >/dev/null 2>&1	|| missingPackage PHP
+		# we should not check for mysql on localhost if we allow another host for the database
+		# command -v mysqld >/dev/null 2>&1   || missingPackage MySQL
+		# check for mod_rewrite
+		apache2ctl -M 2>/dev/null | grep -q rewrite || { echo "Apache2 mod_rewrite is not enabled. Aborting."; exit 1; }
+		# mysql running?
+		# service mysql status | grep -q "stop/waiting" && { echo "MySQL service not running. Aborting."; exit 1; }
+		# other packages
+		# removed mysql-server from list
+		pkgList="apache2 apache2-threaded-dev apache2-utils php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc mysql-client php5-mysql php5-sybase libapache2-mod-auth-mysql libmysqlclient-dev curl"
+		for package in $pkgList; do
+			dpkg-query -l "$package" > /dev/null 2>&1 || missingPackage "$package"
+		done
+		web_service="apache2"
+	elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]] || [[ "$os" = "Red Hat Enterprise" ]]; then
+		# check for LAMP
+		rpm -qa | grep -q "httpd"		|| missingPackage Apache
+		rpm -qa | grep -q "php" 2>&1		|| missingPackage PHP
+		# we should not check for mysql on localhost if we allow another host for the database
+		# rpm -qa | grep -q "mysql-server"	|| missingPackage MySQL
+		# check for extra repos
+		ls /etc/yum.repos.d/ | grep -q 'remi\|webtatic'
+		if [[ "$?" = 0 ]]; then
+			if [[ $(yum list installed|grep -i "56") != "" ]]; then
+				pVer="56"
+			elif [[ $(yum list installed|grep -i "55") != "" ]]; then
+				pVer="55"
+			elif [[ $(yum list installed|grep -i "54") != "" ]]; then
+				pVer="54"
+			else
+				pVer=""
+			fi
+			# removed mysql-server from list
+			pkgList="php php${pVer}-php-mysqlnd php${pVer}-php-common php${pVer}-php-gd php${pVer}-php-mbstring php${pVer}-php-mcrypt php${pVer}-php-devel php${pVer}-php-xml php${pVer}-php-cli php${pVer}-php-pdo php${pVer}-php-mssql mysql mysql-devel httpd httpd-devel httpd-tools curl"
+		else
+			# removed mysql-server from list
+			pkgList="php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli php-pdo php-mssql mysql mysql-devel httpd httpd-devel httpd-tools curl"
+		fi
+		for package in $pkgList; do
+			yum list installed | grep -q "$package[.]" || missingPackage "$package"
+		done
+		web_service="httpd"
+	fi
+	# check for php > 5.2.0
+	[[ $(phpversion "$(php --version|grep "PHP 5"|awk {'print $2'})") < $(phpversion 5.2.0) ]] && { echo "Installed PHP version is below 5.2.0. Aborting."; exit 1; }
+	# skipping checkIPtables. Admin should know what he is doing.
+	# same for localhostChk.
+
+}
+
+[ "$UNATTENDED" = "YES" ] && [ "$GUIDED" == "YES" ] && { echo "Cannot run in unattended and guided mode at the same time."; exit 1; }
+
+if [ "$UNATTENDED" = "YES" ]; then
+	case $ACTION in
+		INSTALL)
+			for var in $install_opts; do
+				[[ -z "$(eval echo \$$var)" ]] && { echo "Parameter --$(echo $var | sed 's,_,-,g') was required but not set"; exit 1; }
+			done
+			
+			[ ! -f /root/.ssh/id_rsa ] &&  { echo "There needs to be an id_rsa key in /root/.ssh/id_rsa."; exit 1; }
+			
+			[ "${relative_path: -1}" != "/" ] && relative_path=$relative_path"/"
+			[ "${new_web_dir: -1}" != "/" ] && new_web_dir=$new_web_dir"/"
+			
+			OSCheckUnattended
+			dbConnTest root
+			[[ "$dbConnx" == "yes" ]] || { echo "Could not connect to the database."; exit 1; }
+
+			dbUserDBCreate
+			dbConnTest
+			dbCheck
+			if [[ "$dbExists" = "yes" ]]; then
+				echo -e "\n\e[32mNotice\e[0m: \e[36m$db_name\e[0m already exists, updating tables."
+				dbUpdate
+			else
+				echo -e "\n\e[32mNotice\e[0m: \e[36m$db_name\e[0m does not exist, creating as new."
+				dbCreate
+			fi
+
+			dbUserCreate
+
+			# Create Company entries in database
+			dbCompCreate
+			# Add crontab entry for every 2 hours
+			AddCrontab
+			# Finalize the install
+			echo -e "\e[36m# Installing Apache related configurations\e[0m\n"
+			ModeType="Install"
+			InstallApp
+			# end install
+			exit 0
+			;;
+		UPGRADE)
+			for var in $upgrade_opts; do
+				[[ -z "$(eval echo \$$var)" ]] && { echo "Parameter --$(echo $var | sed 's,_,-,g') was required but not set"; exit 1; }
+			done
+
+			new_web_dir="$web_dir"
+			new_relative_path="$relative_path"
+
+			OSCheckUnattended
+
+			[[ -d /opt/patch_manager/ ]] || { echo "Detected the base directory is missing. Please run the installer in new install mode"; exit 1; }
+
+			# check if db_config.php and db.conf exist
+			if [[ ! -f /opt/patch_manager/db_config.php ]] || [[ ! -f /opt/patch_manager/db.conf ]]; then
+				if [[ -f "${new_web_dir}lib/db_config.php" ]]; then
+					echo -e "Missing: /opt/patch_manager/db_config.php"
+					echo -e "Restore copy from ${new_web_dir}lib/db_config.php\n"
+					cp -f ${new_web_dir}lib/db_config.php /opt/patch_manager/db_config.php
+				else
+					echo -e "Notice: Detected the database configuration files are missing. Please run the installer in new install mode.\n"
+					exit 1;
+				fi
+			fi
+
+			# get database infomation
+			export db_host=$(sed -n 's/.*DB_HOST.*,["'\'']\(.*\)["'\''].*/\1/p' /opt/patch_manager/db_config.php)
+			export db_user=$(sed -n 's/.*DB_USER.*,["'\'']\(.*\)["'\''].*/\1/p' /opt/patch_manager/db_config.php)
+			export db_pass=$(sed -n 's/.*DB_PASS.*,["'\'']\(.*\)["'\''].*/\1/p' /opt/patch_manager/db_config.php)
+			export db_name=$(sed -n 's/.*DB_NAME.*,["'\'']\(.*\)["'\''].*/\1/p' /opt/patch_manager/db_config.php)
+
+			# database upgrade
+			echo -e "Database Setup information"
+
+			dbConnTest
+			[[ "$dbConnx" == "yes" ]] || { echo "Could not connect to the database."; exit 1; }
+
+			dbCheck
+
+			if [[ "$dbExists" = "yes" ]]; then
+				echo -e "\n\nNotice: $db_name updating database tables\n"
+				dbUpdate
+			fi
+
+			# Add crontab entry for every 2 hours
+			AddCrontab
+			# Finalize the install
+			echo -e "Installing Apache related configurations"
+			ModeType="Update"
+			InstallApp
+			# end update
+			exit 0
+			;;
+	esac
+elif [ "$GUIDED" == "YES" ]; then
+
+	# default admin and users for the admin web interface
+	# admin info
+	web_admin="pmdadmin"
+	web_admin_passwd=$(genPasswd)
+	web_admin_email="no_admin@email.com"
+	# user info
+	web_duser="pmduser"
+	web_duser_passwd=$(genPasswd)
+	web_duser_email="no_user@email.com"
+	# export to global
+	export web_admin web_admin_email web_admin_passwd 
+	export web_user web_user_email web_user_passwd
+
+	# default target path for php files
+	relative_path="/patchmgr/"
+
+	# default elevated mysql id
+	export db_root_id="root"
+
+	# create keypair for root
+	if [ ! -f /root/.ssh/id_rsa ]; then
+		echo -e "\n\e[32mNotice\e[0m: Creating pub/private keys for $user."
+		ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
+		echo -e "\e[32mNotice\e[0m: Keypair created.\n"
+	fi
+
+	# run ask menu for update or install
+	mainMenu
+else
+	show_help
+fi
+
+# vim: tabstop=8:softtabstop=8:shiftwidth=8:noexpandtab 
+
