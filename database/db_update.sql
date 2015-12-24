@@ -116,6 +116,7 @@ INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('20'
 INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('21','5',6,'2017-03-31');
 INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('22','6',6,'2020-11-30');
 INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('23','7',6,'2024-06-30');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('24','8',2,'2020-05-01');
 DROP table distro_version_old;
 
 DROP TABLE IF EXISTS patches_old;
