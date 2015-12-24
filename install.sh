@@ -201,10 +201,22 @@ function OSInstall()
 		apache_exists=$(which apache2)
 		php5_exists=$(which php)
 		mysqld_exists=$(which mysqld)
+		rsync_exists=$(which rsync)
 		if [[ "$os" = "Linux" ]] && [[ "$apache_exists" = "" ]]; then
 			echo -e "\n\e[31mNotice\e[0m: Please install the full LAMP stack before trying to install this application.\n\n\e[31mNotice\e[0m: https://community.rackspace.com/products/f/25/t/49\n"
                         exit 0
 		fi
+		if [[ "$rsync_exists" = "" ]]; then
+ 			echo -e "\e[31mNotice\e[0m: Rsync does not seem to be installed."
+ 			unset wait
+ 			echo -e "\e[32m";read -p "Press enter to continue install" wait;echo -e "\e[0m"
+ 			echo -e "\e[31mNotice\e[0m: Please wait while prerequisites are installed...\n\n\e[31mNotice\e[0m: Installing Rsync..."
+ 			while true;
+ 			do echo -n .;sleep 1;done &
+ 			apt-get install -y rsync >/dev/null 2>&1
+			kill $!; trap 'kill $!' SIGTERM;
+			echo -e "\n\n\e[32mNotice\e[0m: Rsync Installation Complete\n"
+ 		fi
 		if [[ "$apache_exists" = "" ]]; then
 			echo -e "\e[31mNotice\e[0m: Apache/PHP does not seem to be installed."
 			unset wait
@@ -280,6 +292,18 @@ function OSInstall()
 		httpd_exists=$(rpm -qa | grep "httpd")
 		php_exists=$(rpm -qa | grep "php")
 		mysqld_exists=$(rpm -qa | grep "mysql-server")
+		rsync_exists=$(rpm -qa | grep "rsync")
+ 		if [[ "$rsync_exists" = "" ]]; then
+ 			echo -e "\e[31mNotice\e[0m: Rsync does not seem to be installed."
+ 			unset wait
+ 			echo -e "\e[32m";read -p "Press enter to continue install" wait;echo -e "\e[0m"
+ 			echo -e "\e[31mNotice\e[0m: Please wait while prerequisites are installed...\n\n\e[31mNotice\e[0m: Installing Rsync..."
+ 			while true;
+ 			do echo -n .;sleep 1;done &
+ 			yum install -y rsync >/dev/null 2>&1
+			kill $!; trap 'kill $!' SIGTERM;
+			echo -e "\n\n\e[32mNotice\e[0m: Rsync Installation Complete\n"
+ 		fi
 		if [[ "$httpd_exists" = "" ]]; then
 			echo -e "\e[31mNotice\e[0m: Apache does not seem to be installed."
                         unset wait
@@ -374,7 +398,7 @@ function PackageCheck()
 {
 	echo -e "\e[32mChecking for dependencies and missing packages\n\e[0m"
         if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
-	pkgList="apache2 apache2-threaded-dev apache2-utils php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc mysql-client mysql-server php5-mysql php5-sybase libapache2-mod-auth-mysql libmysqlclient-dev curl"
+	pkgList="apache2 apache2-threaded-dev apache2-utils php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc mysql-client mysql-server php5-mysql php5-sybase libapache2-mod-auth-mysql libmysqlclient-dev curl rsync"
 	echo -e "\e[31mWARNING\e[0m: Please keep in mind this is not a fool proof process, if you have 3rd party repo's, the automated package installer may fail.\n"
 	for package in $pkgList; do
                 dpkg-query -l $package > /dev/null 2>&1
@@ -406,10 +430,10 @@ function PackageCheck()
 		else
 			pVer=""
 		fi
-		pkgList="php php${pVer}-php-mysqlnd php${pVer}-php-common php${pVer}-php-gd php${pVer}-php-mbstring php${pVer}-php-mcrypt php${pVer}-php-devel php${pVer}-php-xml php${pVer}-php-cli php${pVer}-php-pdo php${pVer}-php-mssql mysql mysql-server mysql-devel httpd httpd-devel httpd-tools curl"
+		pkgList="php php${pVer}-php-mysqlnd php${pVer}-php-common php${pVer}-php-gd php${pVer}-php-mbstring php${pVer}-php-mcrypt php${pVer}-php-devel php${pVer}-php-xml php${pVer}-php-cli php${pVer}-php-pdo php${pVer}-php-mssql mysql mysql-server mysql-devel httpd httpd-devel httpd-tools curl rsync"
 	else
 
-		pkgList="php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli php-pdo php-mssql mysql mysql-server mysql-devel httpd httpd-devel httpd-tools curl"
+		pkgList="php php-mysql php-common php-gd php-mbstring php-mcrypt php-devel php-xml php-cli php-pdo php-mssql mysql mysql-server mysql-devel httpd httpd-devel httpd-tools curl rsync"
 	fi
 	for package in $pkgList; do
 		if [[ $(yum list installed|grep "$package[.]") = "" ]]; then
