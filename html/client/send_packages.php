@@ -9,6 +9,7 @@ if (mysql_num_rows($client_check_res) == 1) {
     $row = mysql_fetch_array($client_check_res);
     $server_name = $row['server_name'];
     $data = file_get_contents("php://input");
+    mysql_query("DELETE FROM `patch_allpackages` WHERE `server_name`='$server_name';");
     $package_array = explode("\n", $data);
     foreach ($package_array as $val) {
         $tmp_array = explode(":::", $val);
