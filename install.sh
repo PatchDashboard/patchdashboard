@@ -1384,6 +1384,16 @@ elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]]
 mkdir -p /var/log/httpd/patch_manager/
 chown $web_user:$web_user /var/log/httpd/patch_manager/ -R
 
+if [[ "$http_proxy" ]]; then
+    cat <<EOF >~$web_user/.curlrc
+proxy=$http_proxy
+EOF
+elif [[ "$HTTP_PROXY" ]]; then
+    cat <<EOF >~$web_user/.curlrc
+proxy=$HTTP_PROXY
+EOF
+fi
+
 # remove old conf
 if [[ -f /etc/httpd/conf.d/patch_manager.conf ]]; then
         rm -f /etc/httpd/conf.d/patch_manager.conf
