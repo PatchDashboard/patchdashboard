@@ -23,6 +23,7 @@ if (mysql_num_rows($client_check_res) == 1) {
     }
     foreach ($package_array as $val) {
         $tmp_array = explode(":::", $val);
+        if (! isset($tmp_array[1])) continue;
         $package_name = $tmp_array[0];
         $package_from = $tmp_array[1];
         $package_to = $tmp_array[2];
