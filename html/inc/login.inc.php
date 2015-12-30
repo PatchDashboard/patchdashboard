@@ -83,7 +83,7 @@ else{
                             <div class="account-wall">
                             <img class="profile-img" src="https://lh5.googleusercontent.com/-b0-k99FZlyE/AAAAAAAAAAI/AAAAAAAAAAA/eu7opA4byxI/photo.jpg?sz=120"
                             alt="">
-                            <form method="POST" action="inc/p_login.inc.php">
+                            <form method="POST" action="<?php echo BASE_PATH;?>inc/p_login.inc.php">
                                 <input type="text" name="username" class="form-control" placeholder="Username" required autofocus >
                                 <input type="password" name="pass" class="form-control" placeholder="Password" required>
                                 <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
