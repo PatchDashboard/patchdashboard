@@ -62,8 +62,8 @@ while ($row = mysql_fetch_assoc($res)){
             <table class="table table-striped">
               <thead>
                 <tr>
-                  <th>Sever Name (Alias)</th>
-                  <th>Sever Group</th>
+                  <th>Server Name (Alias)</th>
+                  <th>Server Group</th>
                   <th>Distro</th>
                   <th>Server IP</th>
                   <th>Trusted?</th>
