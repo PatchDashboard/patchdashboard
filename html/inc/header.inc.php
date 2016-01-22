@@ -51,7 +51,7 @@ if (!isset($index_check) || $index_check != "active") {
                 <div id="navbar" class="navbar-collapse collapse">
                     <ul class="nav navbar-nav navbar-right">
                         <li><a href="<?php echo BASE_PATH; ?>">Patch List</a></li>
-                        <li><a href="<?php echo BASE_PATH; ?>/inc/logout.inc.php">Logout</a></li>
+                        <li><a href="<?php echo BASE_PATH; ?>inc/logout.inc.php">Logout</a></li>
                     </ul>
                     <div class="navbar-form navbar-right">
                         <input type="text" class="form-control" id="search" placeholder="Find Servers With Package..." onkeydown="if (event.keyCode == 13)
