@@ -11,7 +11,7 @@ $SERVER_URI = $protocol.$_SERVER['HTTP_HOST'].BASE_PATH;
 $script = "#!/bin/bash
 user=$(whoami)
 if [ \"\$user\" != \"root\" ]; then
-	echo -e \"You need to be root to run the installer.\nPlease run this: sudo curl ${SERVER_URI}client/client-installer.php|bash\"
+	echo -e \"You need to be root to run the installer.\nPlease run this: curl ${SERVER_URI}client/client-installer.php|sudo bash\"
 fi
 ls /opt/patch_manager/db.conf > /dev/null 2>&1
 if [[ \"$?\" = \"0\" ]]; then 
