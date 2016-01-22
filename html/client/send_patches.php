@@ -30,7 +30,7 @@ if (mysql_num_rows($client_check_res) == 1) {
         $url = str_replace("<td><a href='", "", $bug_curl);
         $url_array = explode("'", $url);
         $the_url = $url_array[0];
-        $urgency_curl = shell_exec("bash -c \"curl http://www.ubuntuupdates.org/package/core/precise/main/updates/$package_name|grep '$package_to'|grep 'urgency='\"");
+        $urgency_curl = shell_exec("bash -c \"curl http://www.ubuntuupdates.org/package/core/trusty/main/updates/$package_name|grep '$package_to'|grep 'urgency='\"");
         if (stristr($urgency_curl, "emergency")) {
             $urgency = "emergency";
         } elseif (stristr($urgency_curl, "high")) {
