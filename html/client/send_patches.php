@@ -12,7 +12,7 @@ if (mysql_num_rows($client_check_res) == 1) {
     mysql_query("DELETE FROM `patches` WHERE `server_name`='$server_name';");
     $package_array = explode("\n", $data);
     $suppression_sql = "SELECT * from `supressed` WHERE `server_name` IN('$server_name',0);";
-    $suppression_res = mysql_query($sql);
+    $suppression_res = mysql_query($suppression_sql);
     if (mysql_num_rows($suppression_res) == 0){
         $suppression_array = array("NO_SUPPRESSED_PACKAGES_FOUND");
     }
