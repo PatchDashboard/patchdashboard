@@ -37,19 +37,23 @@ if (isset($client_key) && !empty($client_key)) {
         if (mysql_num_rows($res3) > 0){
             $suppression_sql = "SELECT * FROM `supressed` WHERE `server_name` IN (0,'$server_name');";
             $suppression_res = mysql_query($sql);
-            while ($suppression_row = mysql_fetch_assoc($suppression_res)){
-                $suppression_array[] = $suppression_row['package_name'];
-            }
-            while ($row3 = mysql_fetch_assoc($res3)){
-                $package_name = $row3['package_name'];
-                if (!in_array($package_name, $supressed_array)){
-                    $package_array[] = $package_name;
+            if (mysql_num_rows($suppression_res) > 0) {
+                while ($suppression_row = mysql_fetch_assoc($suppression_res)){
+                    if (isset($suppression_row['package_name'])) {
+                        $suppression_array[] = $suppression_row['package_name'];
+                    }
                 }
+                while ($row3 = mysql_fetch_assoc($res3)){
+                    $package_name = $row3['package_name'];
+                    if (!in_array($package_name, $supressed_array)){
+                        $package_array[] = $package_name;
+                    }
+                }
+                foreach ($package_array as $val){
+                    mysql_query("UPDATE `patches` SET `to_upgrade` = 0, `upgraded` = 1 WHERE `server_name` = '$server_name' AND `package_name` = '$val' LIMIT 1;");
+                }
+                $package_string = implode(" ", $package_array);
             }
-            foreach ($package_array as $val){
-                mysql_query("UPDATE `patches` SET `to_upgrade` = 0, `upgraded` = 1 WHERE `server_name` = '$server_name' AND `package_name` = '$val' LIMIT 1;");
-            }
-            $package_string = implode(" ", $package_array);
         }
         //CMD GOES HERE
         $company = YOUR_COMPANY;
