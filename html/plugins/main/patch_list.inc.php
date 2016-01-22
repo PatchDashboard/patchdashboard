@@ -69,8 +69,7 @@ if (!isset($index_check) || $index_check != "active"){
                   <td><a href='${base_path}search/exact/$package_name_orig' style='color:green'>$package_name</a></td>
                   <td>$current</td>
                   <td>$new</td>
-                  $urgency
-                  $url
+                  $urgency " . (isset($url) ? $url : '') . "
                 </tr>
 ";
  }
