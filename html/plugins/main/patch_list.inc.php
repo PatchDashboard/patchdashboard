@@ -52,7 +52,7 @@ if (!isset($index_check) || $index_check != "active"){
                         $bug = end($url_array);
                         $url = "<td><a href='$bug_url' style='color:black'>Launchpad Bug #$bug</a></td>";
                 }
-        }
+        } else { $url = "<td>&nbsp;</td>"; }
      if (in_array($urgency,array('high','emergency'))){
                 $urgency = "<td style='color:red'><a href='http://www.ubuntuupdates.org/package/core/trusty/main/updates/$package_name_orig' style='color:red' target='_blank'>$urgency</a></td>";
      }
