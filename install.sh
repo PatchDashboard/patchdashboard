@@ -594,6 +594,7 @@ function EnableSSL()
         fi
 	if [[ $(grep "$ssl_path/certs/ca.crt" /etc/$web_service/conf.d/patch_manager.conf) = "" ]]; then
 		targetdir=$(echo $new_web_dir|sed 's=/[^/]*$==;s/\.$//')
+		test -z "$targetdir" && targetdir=/
 		echo -e "\e[32mSSL\e[0m: Adding SSL configuration to /etc/$web_service/conf.d/patch_manager.conf\n"
 
 cat <<EOA >> /etc/$web_service/conf.d/patch_manager.conf
@@ -1372,9 +1373,17 @@ DB_USER='$db_user'
 DB_PASS='$db_pass'
 DB_NAME='$db_name'"
 
-# remove ending forward slash for conf
-patchmgr=${relative_path%/}
-targetdir=${new_web_dir%/}
+# remove ending forward slash for conf, assuming it makes sense
+if test "$relative_path" = /; then
+    patchmgr=/
+else
+    patchmgr=${relative_path%/}
+fi
+if test "$new_web_dir" = /; then
+    targetdir=/
+else
+    targetdir=${new_web_dir%/}
+fi
 
 # install virtualhost file to default conf.d dir apache/httpd
 if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
@@ -1439,6 +1448,7 @@ fi
 
 # main application install
 target_web_dir=$(echo $new_web_dir|sed 's=/[^/]*$==;s/\.$//')
+test -z "$target_web_dir" && target_web_dir=/
 # check install mode
 if [[ "$ModeType" = "Install" ]]; then
 
