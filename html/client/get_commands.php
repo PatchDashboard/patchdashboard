@@ -45,7 +45,7 @@ if (isset($client_key) && !empty($client_key)) {
                 }
                 while ($row3 = mysql_fetch_assoc($res3)){
                     $package_name = $row3['package_name'];
-                    if (!in_array($package_name, $supressed_array)){
+                    if (!in_array($package_name, $suppression_array)){
                         $package_array[] = $package_name;
                     }
                 }
