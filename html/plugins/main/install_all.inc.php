@@ -22,10 +22,15 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] == "true") {
         $suppression_res = mysql_query($sql);
         $suppression_array = array();
         while ($suppression_row = mysql_fetch_assoc($suppression_res)) {
-            $suppression_array[] = "'" . $suppression_row['package_name'] . "'";
+            if (isset($suppression_row['package_name'])) {
+                $suppression_array[] = "'" . $suppression_row['package_name'] . "'";
+            }
         }
-        $suppression_list = implode(", ", $suppression_array);
-        $sql3 = "UPDATE `patches` SET `to_upgrade`=1 WHERE `to_upgrade`=0 AND `server_name`='$server_name' AND `upgraded`=0 AND `package_name` NOT IN ($suppression_list);";
+        $sql3 = "UPDATE `patches` SET `to_upgrade`=1 WHERE `to_upgrade`=0 AND `server_name`='$server_name' AND `upgraded`=0";
+        if (count($suppression_array) > 0) {
+            $suppression_list = implode(", ", $suppression_array);
+            $sql3 .= " AND `package_name` NOT IN ($suppression_list);";
+        }
         mysql_query($sql3);
         $_SESSION['good_notice'] = "All non-suppressed packages set to upgrade on <strong>$server_name</strong>. $message_injection Bionic machine closer than I thought.";
         header('location:' . BASE_PATH . "patches/server/$server_name");
