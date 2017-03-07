@@ -1,7 +1,7 @@
 #!/bin/bash
 if [[ -f /etc/lsb-release && -f /etc/debian_version ]]; then
         os=$(lsb_release -s -d|head -1|awk {'print $1'})
-elif [[ -f /etc/debian_version ]]; then
+elif test -f /etc/debian_version -o -f /etc/devuan_version; then
         os="$(cat /etc/issue|head -n 1|awk {'print $1'})"
 elif [[ -f /etc/redhat-release ]]; then
         os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
@@ -18,7 +18,7 @@ os=$(echo $os|sed -e 's/[^a-zA-Z0-9]//g')
 # begin update checks
 if [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red" ]]; then
         rpm -qa --qf '%{NAME}:::%{VERSION}\n'
-elif [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]]; then
+elif test "$os" = Ubuntu -o "$os" = Debian -o "$os" = Devuan; then
 	dpkg -l|grep "ii"|awk '{print $2":::"$3}'
 elif [[ "$os" = "Linux" ]]; then
 	echo "unspecified $os not supported"
