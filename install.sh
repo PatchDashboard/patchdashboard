@@ -169,6 +169,9 @@ if [[ -f /etc/lsb-release && -f /etc/debian_version ]]; then
 elif [[ -f /etc/debian_version ]]; then
         export os="$(cat /etc/issue|head -n 1|awk {'print $1'})"
         export os_ver="$(cat /etc/debian_version|head -1|awk {'print $1'}|cut -d "." -f 1)"
+elif test -f /etc/devuan_version; then
+        export os="$(cat /etc/issue|head -n 1|awk {'print $1'})"
+        export os_ver="$(cat /etc/devuan_version|head -1|awk {'print $1'}|cut -d "." -f 1)"
 elif [[ -f /etc/redhat-release ]]; then
 	if [[ "$os" = "Red" && $(grep -i enterprise /etc/redhat-release) != "" ]]; then
 		export os="Red Hat Enterprise"
@@ -186,7 +189,7 @@ else
 fi
 
 # get DocumentRoot for error checking (not checked on all distros yet)
-if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
+if test "$os" = Ubuntu -o "$os" = Debian -o -o "$os" = Devuan "$os" = Linux; then
         export doc_root=$(grep -s DocumentRoot /etc/apache2/sites-enabled/*|head -n 1|awk {'print $3'})
 elif [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red Hat" ]] || [[ "$os" = "Red Hat Enterprise" ]]; then
         export doc_root=$(grep -s DocumentRoot /etc/httpd/conf/*|grep -v "#"|head -n 1|awk -F\" {'print $2'})
@@ -197,7 +200,7 @@ function OSInstall()
 {
 	echo -e "Running install for: \e[32m$os $os_ver\e[0m\n"
 
-	if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
+	if test "$os" = Ubuntu -o "$os" = Debian -o "$os" = Devuan -o "$os" = Linux; then
 		apache_exists=$(which apache2)
 		php5_exists=$(which php)
 		mysqld_exists=$(which mysqld)
@@ -397,7 +400,7 @@ function OSInstall()
 function PackageCheck()
 {
 	echo -e "\e[32mChecking for dependencies and missing packages\n\e[0m"
-        if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
+        if test "$os" = Ubuntu -o "$os" = Debian -o "$os" = Devuan -o "$os" = Linux; then
 	pkgList="apache2 apache2-threaded-dev apache2-utils php5 libapache2-mod-php5 php5-mcrypt php5-common php5-gd php5-cgi php5-cli php5-fpm php5-dev php5-xmlrpc mysql-client mysql-server php5-mysql php5-sybase libapache2-mod-auth-mysql libmysqlclient-dev curl rsync"
 	echo -e "\e[31mWARNING\e[0m: Please keep in mind this is not a fool proof process, if you have 3rd party repo's, the automated package installer may fail.\n"
 	for package in $pkgList; do
@@ -465,7 +468,7 @@ function EnableSSL()
 	echo -e "\e[32mEnableSSL\e[0m: Preparing to setup SSL for the Patch Management Dashboard web interface."
         echo -e "\e[32m";read -p "Press enter to continue install" wait;echo -e "\e[0m"
 
-	if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
+	if test "$os" = Ubuntu -o "$os" = Debian -o "$os" = Devuan -o "$os" = Linux; then
 		# set ssl key path
 		ssl_path="/etc/ssl"
 		# install SSL
@@ -668,7 +671,7 @@ function checkIPtables()
 	if [[ $(iptables -L|grep "dpt:http\|dpt:https") = "" ]]; then
 		echo -e "\e[32mIptables\e[0m: Enabling port 80 and 443 on iptables\n"
 		# detect which OS
-		if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
+		if test "$os" = Ubuntu -o "$os" = Debian -o "$os" = Devuan -o "$os" = Linux; then
 			if [[ $(dpkg -s iptables-persistent|grep "Status:"|cut -d " " -f2-4) != "install ok installed" ]]; then
 				# install iptables-persistent
 	                        echo -e "\n\e[32mIptables\e[0m: $os detected, installing iptables-persistent\n"
@@ -1386,7 +1389,7 @@ else
 fi
 
 # install virtualhost file to default conf.d dir apache/httpd
-if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
+if test "$os" = Ubuntu -o "$os" = Debian -o "$os" = Devuan -o "$os" = Linux; then
 # create log dir and set perms
 mkdir -p /var/log/apache2/patch_manager/
 chown $web_user:$web_user /var/log/apache2/patch_manager/ -R
@@ -1774,7 +1777,7 @@ function OSCheckUnattended() {
 		exit 1
 	}
 
-	if [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]] || [[ "$os" = "Linux" ]]; then
+	if test "$os" = Ubuntu -o "$os" = Debian -o "$os" = Devuan -o "$os" = Linux; then
 		# check for LAMP
 		command -v apache2 >/dev/null 2>&1  || missingPackage Apache
 		command -v php >/dev/null 2>&1	|| missingPackage PHP

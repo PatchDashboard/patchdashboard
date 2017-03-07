@@ -30,7 +30,7 @@ fi
 rm -rf /tmp/$client_key > /dev/null 2>&1
 if [[ -f /etc/lsb-release && -f /etc/debian_version ]]; then
         os=$(lsb_release -s -d|head -1|awk {'print $1'})
-elif [[ -f /etc/debian_version ]]; then
+elif test -f /etc/debian_version -o -f /etc/devuan_version; then
         os="$(cat /etc/issue|head -n 1|awk {'print $1'})"
 elif [[ -f /etc/redhat-release ]]; then
         os=$(cat /etc/redhat-release|head -1|awk {'print $1'})
@@ -61,7 +61,7 @@ if [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red" ]]; then
 			echo "$patches_to_install" >> /tmp/$client_key
                 fi
         done
-elif [[ "$os" = "Ubuntu" ]] || [[ "$os" = "Debian" ]]; then
+elif test "$os" = Ubuntu -o "$os" = Debian -o "$os" = Devuan; then
 	need_patched="true"
         apt-get --just-print upgrade 2>&1 | perl -ne 'if (/Inst\s([\w,\-,\d,\.,~,:,\+]+)\s\[([\w,\-,\d,\.,~,:,\+]+)\]\s\(([\w,\-,\d,\.,~,:,\+]+)\)? /i) {print "$1:::$2:::$3\n"}'
 	patches_to_install=$(apt-get --just-print upgrade 2>&1 | perl -ne 'if (/Inst\s([\w,\-,\d,\.,~,:,\+]+)\s\[([\w,\-,\d,\.,~,:,\+]+)\]\s\(([\w,\-,\d,\.,~,:,\+]+)\)? /i) {print "$1:::$2:::$3\n"}')
