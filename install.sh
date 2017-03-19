@@ -1003,26 +1003,28 @@ function WebUIAPWConfirm()
 	# check to make sure passwords match
 	if [[ "$new_web_admin_passwd" != "$new_web_admin_passwd_confirm" ]]; then
 		echo -e "\e[31mError\e[0m: Passwords do not match, try again."
+		unset new_web_admin_passwd
 		WebUIAPWConfirm
 	fi
 }
 function WebUIUPWConfirm()
 {
-        if [[ "$new_web_duser_passwd" = "" ]]; then
-		read -s -p "Web User Password [Default: $web_duser_passwd]: " new_web_duser_passwd
-                echo
-                read -s -p "Web User Password Confirm: " new_web_duser_passwd_confirm
-                echo
-        else
-                echo
-                read -s -p "Web User Password Confirm: " new_web_duser_passwd_confirm
-                echo
-        fi
-        # check to make sure passwords match
-        if [[ "$new_web_duser_passwd" != "$new_web_duser_passwd_confirm" ]]; then
-                echo -e "\e[31mError\e[0m: Passwords do not match, try again."
-                WebUIUPWConfirm
-        fi
+	if [[ "$new_web_duser_passwd" = "" ]]; then
+	read -s -p "Web User Password [Default: $web_duser_passwd]: " new_web_duser_passwd
+		echo
+		read -s -p "Web User Password Confirm: " new_web_duser_passwd_confirm
+		echo
+	else
+		echo
+		read -s -p "Web User Password Confirm: " new_web_duser_passwd_confirm
+		echo
+	fi
+	# check to make sure passwords match
+	if [[ "$new_web_duser_passwd" != "$new_web_duser_passwd_confirm" ]]; then
+		echo -e "\e[31mError\e[0m: Passwords do not match, try again."
+		unset new_web_duser_passwd
+		WebUIUPWConfirm
+	fi
 }
 function WebUIInfo()
 {
