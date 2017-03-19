@@ -42,11 +42,10 @@ if [[ \"$?\" != \"0\" ]]; then
 fi
 grep \"\${client_path}check-in.sh\" \"/etc/cron.d/patch-manager\" > /dev/null 2>&1
 if [[ \"$?\" != \"0\" ]]; then
-	if [[ \"\$count_lines\" -gt \"0\" ]]; then
-		echo -e \"* * * * * root \${client_path}check-in.sh >> /dev/null 2>&1\" >>  /etc/cron.d/patch-manager
-	else
-		echo -e \"* * * * * root \${client_path}check-in.sh >> /dev/null 2>&1\" >  /etc/cron.d/patch-manager
-	fi
+	cat <<EOF >/etc/cron.d/patch-manager
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+* * * * * root \${client_path}check-in.sh >/dev/null 2>&1
+EOF
 else
 	echo \"Crontab entry already exists in: /etc/cron.d/patch-manager\"
 fi

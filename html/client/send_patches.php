@@ -27,11 +27,11 @@ if (mysql_num_rows($client_check_res) == 1) {
         $package_name = $tmp_array[0];
         $package_from = $tmp_array[1];
         $package_to = $tmp_array[2];
-        $bug_curl = shell_exec("bash -c \"curl -s http://www.ubuntuupdates.org/bugs?package_name=$package_name|grep '<td>' 2>/dev/null|head -1\"");
+        $bug_curl = shell_exec("bash -c \"curl -s http://www.ubuntuupdates.org/bugs?package_name=$package_name 2>/dev/null|grep '<td>'|head -1\"");
         $url = str_replace("<td><a href='", "", $bug_curl);
         $url_array = explode("'", $url);
         $the_url = $url_array[0];
-        $urgency_curl = shell_exec("bash -c \"curl http://www.ubuntuupdates.org/package/core/trusty/main/updates/$package_name|grep '$package_to'|grep 'urgency='\"");
+        $urgency_curl = shell_exec("bash -c \"curl http://www.ubuntuupdates.org/package/core/trusty/main/updates/$package_name 2>/dev/null|grep '$package_to'|grep 'urgency='\"");
         if (stristr($urgency_curl, "emergency")) {
             $urgency = "emergency";
         } elseif (stristr($urgency_curl, "high")) {

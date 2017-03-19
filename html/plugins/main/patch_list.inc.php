@@ -52,15 +52,15 @@ if (!isset($index_check) || $index_check != "active"){
                         $bug = end($url_array);
                         $url = "<td><a href='$bug_url' style='color:black'>Launchpad Bug #$bug</a></td>";
                 }
-        }
+        } else { $url = "<td>&nbsp;</td>"; }
      if (in_array($urgency,array('high','emergency'))){
-                $urgency = "<td style='color:red'><a href='http://www.ubuntuupdates.org/package/core/trusty/main/updates/$package_name_orig' style='color:red' target='_blank'>$urgency</a></td>";
+                $urgency = "<td style='color:red'><a href='http://www.ubuntuupdates.org/package/core/xenial/main/updates/$package_name_orig' style='color:red' target='_blank'>$urgency</a></td>";
      }
      elseif ($urgency == "medium"){
-                $urgency = "<td style='color:#FF8C00'><a href='http://www.ubuntuupdates.org/package/core/trusty/main/updates/$package_name_orig' style='color:#FF8C00' target='_blank'>medium</a></td>";
+                $urgency = "<td style='color:#FF8C00'><a href='http://www.ubuntuupdates.org/package/core/xenial/main/updates/$package_name_orig' style='color:#FF8C00' target='_blank'>medium</a></td>";
      }
      elseif ($urgency == "low") {
-                $urgency = "<td><a href='http://www.ubuntuupdates.org/package/core/trusty/main/updates/$package_name_orig' style='color:black' target='_blank'>$urgency</a></td>";
+                $urgency = "<td><a href='http://www.ubuntuupdates.org/package/core/xenial/main/updates/$package_name_orig' style='color:black' target='_blank'>$urgency</a></td>";
      }
      else{
                 $urgency = "<td>$urgency</td>";

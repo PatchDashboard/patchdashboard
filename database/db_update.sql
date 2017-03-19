@@ -70,12 +70,13 @@ CREATE TABLE `distro` (
   KEY `ix_icon_path` (`icon_path`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 INSERT IGNORE INTO distro SELECT * from distro_old;
-INSERT IGNORE INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(1,'Ubuntu','img/icon/ubuntu.png','apt-get -y install');
-INSERT IGNORE INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(2,'Debian','img/icon/debian.png','apt-get -y install');
+INSERT IGNORE INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(1,'Ubuntu','img/icon/ubuntu.png','DEBIAN_FRONTEND=noninteractive apt-get -y install');
+INSERT IGNORE INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(2,'Debian','img/icon/debian.png','DEBIAN_FRONTEND=noninteractive apt-get -y install');
 INSERT IGNORE INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(3,'Fedora','img/icon/fedora.png','yum -y install');
 INSERT IGNORE INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(4,'CentOS','img/icon/centos.png','yum -y install');
 INSERT IGNORE INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(5,'RHEL','img/icon/rhel.png','yum -y install');
 INSERT IGNORE INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(6,'Oracle','img/icon/oracle.png','yum -y install');
+INSERT IGNORE INTO distro(id,distro_name,icon_path,upgrade_command) VALUES(7,'Devuan','img/icon/devuan.png','DEBIAN_FRONTEND=noninteractive apt-get -y install');
 DROP table distro_old;
 
 DROP TABLE IF EXISTS distro_version_old;
@@ -117,6 +118,9 @@ INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('21'
 INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('22','6',6,'2020-11-30');
 INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('23','7',6,'2024-06-30');
 INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('24','8',2,'2020-05-01');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('25','16.04_Desktop',1,'2021-04-30');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('26','16.04_Server',1,'2021-04-30');
+INSERT IGNORE INTO distro_version(id,version_num,distro_id,eol_date) VALUES('27','1',7,'2020-05-01');
 DROP table distro_version_old;
 
 DROP TABLE IF EXISTS patches_old;

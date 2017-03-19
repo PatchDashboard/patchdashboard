@@ -10,6 +10,8 @@ function OSVersion()
         	export osversion=$(lsb_release -s -d)
 	elif [[ -f /etc/debian_version ]]; then
 	        export osversion="Debian $(cat /etc/debian_version)"
+	elif test -f /etc/devuan_version; then
+	        export osversion="Devuan $(cat /etc/devuan_version)"
 	elif [[ -f /etc/redhat-release ]]; then
 	        export osversion=`cat /etc/redhat-release`
 	else
