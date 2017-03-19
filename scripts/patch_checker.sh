@@ -61,7 +61,7 @@ if [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red" ]]; then
 			echo "$patches_to_install" >> /tmp/$client_key
                 fi
         done
-elif test "$os" = Ubuntu -o "$os" = Debian -o "$os" = Devuan; then
+elif test "$os" = Ubuntu -o "$os" = Debian -o "$os" = Devuan -o "$os" = Raspbian; then
 	need_patched="true"
         apt-get --just-print upgrade 2>&1 | perl -ne 'if (/Inst\s([\w,\-,\d,\.,~,:,\+]+)\s\[([\w,\-,\d,\.,~,:,\+]+)\]\s\(([\w,\-,\d,\.,~,:,\+]+)\)? /i) {print "$1:::$2:::$3\n"}'
 	patches_to_install=$(apt-get --just-print upgrade 2>&1 | perl -ne 'if (/Inst\s([\w,\-,\d,\.,~,:,\+]+)\s\[([\w,\-,\d,\.,~,:,\+]+)\]\s\(([\w,\-,\d,\.,~,:,\+]+)\)? /i) {print "$1:::$2:::$3\n"}')
