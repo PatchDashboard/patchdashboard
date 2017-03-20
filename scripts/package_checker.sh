@@ -18,7 +18,7 @@ os=$(echo $os|sed -e 's/[^a-zA-Z0-9]//g')
 # begin update checks
 if [[ "$os" = "CentOS" ]] || [[ "$os" = "Fedora" ]] || [[ "$os" = "Red" ]]; then
         rpm -qa --qf '%{NAME}:::%{VERSION}\n'
-elif test "$os" = Ubuntu -o "$os" = Debian -o "$os" = Devuan; then
+elif test "$os" = Ubuntu -o "$os" = Debian -o "$os" = Devuan -o "$os" = Raspbian; then
 	dpkg -l|grep "ii"|awk '{print $2":::"$3}'
 elif [[ "$os" = "Linux" ]]; then
 	echo "unspecified $os not supported"
