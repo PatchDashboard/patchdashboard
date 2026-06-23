@@ -14,6 +14,8 @@ legacy/       v1 PHP UI, bash agents, and installer (deprecated)
 
 ## Quick start (Docker)
 
+**Development** — hot-reload frontend and API source mounts:
+
 ```bash
 git checkout 2026-overhaul
 docker compose up --build
@@ -28,6 +30,51 @@ After MySQL initializes, run migrations:
 ```bash
 docker compose exec api php /database/migrate.php
 ```
+
+**Production** — built SPA behind nginx, PHP-FPM API, MariaDB (no dev bind mounts):
+
+```bash
+git clone https://github.com/PatchDashboard/patchdashboard
+cd patchdashboard
+./install.sh --docker-prod
+```
+
+Hybrid browser setup on Docker:
+
+```bash
+./install.sh --docker-prod --prepare-web-setup
+# Open the printed http://…/setup?token=… URL
+```
+
+Unattended production Docker:
+
+```bash
+./install.sh --docker-prod --unattended \
+  --public-url=http://patch.example.com \
+  --admin-email=admin@example.com \
+  --admin-pass='change-me' \
+  --company='Acme Inc' \
+  --db-pass='db-secret' \
+  --db-root-pass='root-secret'
+```
+
+The installer writes `.env`, builds images from `docker-compose.prod.yml`, starts the stack, runs migrations, and either bootstraps the admin user or prints a one-time setup URL.
+
+| Service | Role |
+|---------|------|
+| `web` | nginx serves `frontend` build; proxies `/api/` and `/health` to PHP-FPM |
+| `api` | PHP 8.3 FPM Slim API; persistent `api_storage` volume for setup lock/token |
+| `mysql` | MariaDB 11 with schema init from `db_create.sql` |
+
+Manage a running production stack:
+
+```bash
+docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml logs -f web api
+docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Put a TLS-terminating reverse proxy (Caddy, Traefik, cloud LB) in front of the published `HTTP_PORT` for HTTPS in production.
 
 ## VM / bare-metal install
 
@@ -154,16 +201,27 @@ Agent cron (install [`agents/client/cron/patchdashboard`](agents/client/cron/pat
 - **03:00 daily** — `application_cve_scan.sh` (full CVE list for host OS + all images/containers)
 - **Every 5 min** — `check-in.sh` (patch checks + CVE scan if last scan &gt; 24h)
 
+Dashboard server cron (recommended for off-site CVE feed sync):
+
+```bash
+0 2 * * * cd /opt/patchdashboard && php database/cve_sync.php --all
+```
+
+Configure feeds under **CVE feeds** (admin). Set `NVD_API_KEY` in `api/.env` for NVD bulk sync rate limits.
+
 ## New features in v2
 
 - JWT auth with bcrypt password migration from legacy SHA256 hashes
 - Suppression UI (fixes legacy stub pages and `nadda` placeholder bug)
 - Web patch install via API (fixes GitHub #43)
 - Host patch vulnerability lookup via ubuntuupdates.org (legacy parity) with dynamic distro codenames
+- Per-distro CVE feed integration (NVD, GitHub/OSV, Debian, Ubuntu USN, Red Hat, Rocky, AlmaLinux, Fedora)
 - Modern distro seed data (Ubuntu 24.04, Debian 12/13, RHEL 8–10, Rocky, AlmaLinux)
 - Non-root SSH user field on servers (GitHub #8 groundwork)
 - Container vulnerability scanning (Docker, Podman, Proxmox LXC) via Trivy
 - Daily full-application CVE scans (host OS + all container images) via agent cron and 24h check-in fallback
+- Unified vulnerability search at `/vulnerabilities` — filter by CVE, package, severity, server, distro, runtime, and CVSS across Trivy results and synced advisory library
+- **Application CVEs** (`/containers`) — raw Trivy inventory with filters; **Vulnerabilities** (`/vulnerabilities`) — fleet-wide search including distro advisories and pending patches
 - Email + webhook alerting for new container CVEs
 
 ## Legacy compatibility

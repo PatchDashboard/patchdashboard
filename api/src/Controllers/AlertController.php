@@ -21,8 +21,30 @@ final class AlertController
 
     public function updateRules(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $rules = $this->alertService->updateRules((array) ($request->getParsedBody() ?? []));
+        $body = (array) ($request->getParsedBody() ?? []);
+        $rules = $this->alertService->updateRules($body, $this->isAdmin($request));
         return $this->json($response, ['rules' => $rules]);
+    }
+
+    public function slackTemplateDefaults(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        return $this->json($response, $this->alertService->getSlackTemplateDefaults());
+    }
+
+    public function previewSlackTemplate(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        if (!$this->isAdmin($request)) {
+            return $this->json($response, ['error' => 'Admin access required'], 403);
+        }
+
+        $body = (array) ($request->getParsedBody() ?? []);
+        $preview = $this->alertService->previewSlackTemplate([
+            'header' => $body['slack_header'] ?? $body['header'] ?? null,
+            'body' => $body['slack_body_template'] ?? $body['body'] ?? null,
+            'footer' => $body['slack_footer_template'] ?? $body['footer'] ?? null,
+        ]);
+
+        return $this->json($response, ['preview' => $preview]);
     }
 
     public function webhooks(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
@@ -33,11 +55,21 @@ final class AlertController
     public function createWebhook(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $body = (array) ($request->getParsedBody() ?? []);
-        if (empty($body['name']) || empty($body['url'])) {
-            return $this->json($response, ['error' => 'name and url are required'], 422);
+        try {
+            $webhook = $this->alertService->createWebhook($body);
+        } catch (\InvalidArgumentException $e) {
+            return $this->json($response, ['error' => $e->getMessage()], 422);
         }
-        $webhook = $this->alertService->createWebhook($body);
         return $this->json($response, ['webhook' => $webhook], 201);
+    }
+
+    public function updateWebhook(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $webhook = $this->alertService->updateWebhook((int) $args['id'], (array) ($request->getParsedBody() ?? []));
+        if ($webhook === null) {
+            return $this->json($response, ['error' => 'Webhook not found'], 404);
+        }
+        return $this->json($response, ['webhook' => $webhook]);
     }
 
     public function deleteWebhook(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
@@ -56,6 +88,12 @@ final class AlertController
     public function events(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         return $this->json($response, ['events' => $this->alertService->listEvents()]);
+    }
+
+    private function isAdmin(ServerRequestInterface $request): bool
+    {
+        $user = (array) $request->getAttribute('user');
+        return !empty($user['admin']);
     }
 
     private function json(ResponseInterface $response, array $data, int $status = 200): ResponseInterface

@@ -33,16 +33,32 @@ services:
       PW_SALT: W[62~L41|]CU15b
       YOUR_COMPANY: "Test, INC"
       CORS_ORIGIN: http://localhost:5173
+      CONSOLE_WS_PUBLIC_URL: ws://localhost:8090
+      CONSOLE_DEV_STUB: "true"
+      REDIS_URL: redis://redis:6379
     ports:
       - "8080:8080"
     depends_on:
       mysql:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./api:/app
       - ./database:/database:ro
+    entrypoint: []
     command: sh -c "php /database/migrate.php && php -S 0.0.0.0:8080 -t public public/index.php"
     working_dir: /app
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   frontend:
     image: node:22-bookworm
@@ -57,6 +73,26 @@ services:
     environment:
       VITE_API_BASE: ""
       VITE_PROXY_TARGET: http://api:8080
+      VITE_CONSOLE_WS_URL: ws://localhost:8090
+
+  console:
+    build:
+      context: ./console
+      dockerfile: Dockerfile
+    ports:
+      - "8090:8090"
+    environment:
+      CONSOLE_PORT: 8090
+      CONSOLE_DEV_STUB: "true"
+      REDIS_URL: redis://redis:6379
+      CONSOLE_SSH_KEY_PATH: /keys/patchdashboard_ed25519
+    volumes:
+      - ./api/storage/ssh:/keys:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_started
 
 volumes:
   mysql_data:

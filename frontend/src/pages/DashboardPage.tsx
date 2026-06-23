@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { PieChart } from '../components/PieChart';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 
@@ -12,6 +13,7 @@ type DashboardResponse = {
     server_alias: string;
     patch_count: number;
     distro_name?: string;
+    icon_path?: string;
   }>;
 };
 
@@ -39,22 +41,28 @@ export function DashboardPage() {
         <p className="text-slate-400">Overview of patch and container vulnerability status.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="card">
-          <div className="text-sm text-slate-400">Servers healthy</div>
-          <div className="mt-2 text-3xl font-semibold text-sky-300">
-            {dashboard?.percent_good ?? 0}%
+      <div className="grid gap-4 lg:grid-cols-[220px_1fr]">
+        <div className="card flex items-center justify-center">
+          <PieChart
+            percent={dashboard?.percent_good ?? 0}
+            label="Percent of servers not needing upgrades"
+          />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="card">
+            <div className="text-sm text-slate-400">Pending patches</div>
+            <div className="mt-2 text-3xl font-semibold">{dashboard?.total_patches ?? 0}</div>
           </div>
-        </div>
-        <div className="card">
-          <div className="text-sm text-slate-400">Pending patches</div>
-          <div className="mt-2 text-3xl font-semibold">{dashboard?.total_patches ?? 0}</div>
-        </div>
-        <div className="card">
-          <div className="text-sm text-slate-400">Container CVEs</div>
-          <div className="mt-2 text-3xl font-semibold text-orange-300">{vulns?.total ?? 0}</div>
-          <div className="mt-1 text-xs text-slate-400">
-            {vulns?.critical ?? 0} critical · {vulns?.high ?? 0} high
+          <div className="card">
+            <div className="text-sm text-slate-400">Trusted servers</div>
+            <div className="mt-2 text-3xl font-semibold">{dashboard?.server_count ?? 0}</div>
+          </div>
+          <div className="card md:col-span-2">
+            <div className="text-sm text-slate-400">Container CVEs</div>
+            <div className="mt-2 text-3xl font-semibold text-orange-300">{vulns?.total ?? 0}</div>
+            <div className="mt-1 text-xs text-slate-400">
+              {vulns?.critical ?? 0} critical · {vulns?.high ?? 0} high
+            </div>
           </div>
         </div>
       </div>

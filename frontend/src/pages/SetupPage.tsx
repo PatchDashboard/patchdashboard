@@ -11,6 +11,7 @@ type SetupStatus = {
 type CompleteResponse = {
   ok: boolean;
   installKey: string;
+  dashboardPublicKey?: string | null;
 };
 
 export function SetupPage() {
@@ -28,6 +29,7 @@ export function SetupPage() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [installKey, setInstallKey] = useState('');
+  const [dashboardPublicKey, setDashboardPublicKey] = useState('');
   const [completed, setCompleted] = useState(false);
 
   useEffect(() => {
@@ -85,6 +87,7 @@ export function SetupPage() {
         }),
       });
       setInstallKey(result.installKey);
+      setDashboardPublicKey(result.dashboardPublicKey ?? '');
       setCompleted(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Setup failed.');
@@ -105,6 +108,16 @@ export function SetupPage() {
             <div className="text-slate-400">Agent install key (PD_AUTH_KEY)</div>
             <code className="break-all">{installKey}</code>
           </div>
+          {dashboardPublicKey ? (
+            <div className="rounded-lg bg-slate-800 px-3 py-2 text-sm">
+              <div className="text-slate-400">Dashboard SSH public key (for server enrollment)</div>
+              <code className="break-all text-xs">{dashboardPublicKey}</code>
+            </div>
+          ) : null}
+          <p className="text-sm text-slate-400">
+            Enroll servers from Add server or run{' '}
+            <code>agents/client/enroll-server.sh</code> on this host.
+          </p>
           <Link to="/login" className="btn btn-primary block text-center">
             Go to sign in
           </Link>

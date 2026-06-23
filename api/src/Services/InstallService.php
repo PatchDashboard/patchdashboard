@@ -102,11 +102,15 @@ final class InstallService
         }
 
         $this->updateEnvValue('YOUR_COMPANY', $company);
+        $this->ensureDashboardSshKeys();
         $this->runBootstrap($adminUser, $adminEmail, $adminPass, $company);
         $installKey = $this->readInstallKey();
         $this->finalizeInstall();
 
-        return ['installKey' => $installKey];
+        return [
+            'installKey' => $installKey,
+            'dashboardPublicKey' => $this->readDashboardPublicKey(),
+        ];
     }
 
     private function hasBootstrapData(): bool
@@ -204,6 +208,36 @@ final class InstallService
         }
 
         return $key;
+    }
+
+    private function ensureDashboardSshKeys(): void
+    {
+        $script = $this->rootDir . '/database/ensure_ssh_keys.php';
+        if (!is_file($script)) {
+            return;
+        }
+
+        $command = sprintf(
+            'DB_HOST=%s DB_PORT=%s DB_NAME=%s DB_USER=%s DB_PASS=%s php %s 2>&1',
+            escapeshellarg((string) ($_ENV['DB_HOST'] ?? '127.0.0.1')),
+            escapeshellarg((string) ($_ENV['DB_PORT'] ?? '3306')),
+            escapeshellarg((string) ($_ENV['DB_NAME'] ?? 'patchdashboard')),
+            escapeshellarg((string) ($_ENV['DB_USER'] ?? 'patchdashboard')),
+            escapeshellarg((string) ($_ENV['DB_PASS'] ?? '')),
+            escapeshellarg($script)
+        );
+
+        exec($command);
+    }
+
+    private function readDashboardPublicKey(): ?string
+    {
+        $publicPath = dirname(__DIR__, 2) . '/storage/ssh/patchdashboard_ed25519.pub';
+        if (!is_file($publicPath)) {
+            return null;
+        }
+
+        return trim((string) file_get_contents($publicPath));
     }
 
     private function finalizeInstall(): void

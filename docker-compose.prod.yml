@@ -1,0 +1,90 @@
+# Production Docker stack: nginx + built SPA, PHP-FPM API, MariaDB.
+# Usage: cp .env.prod.example .env && ./install/docker-prod.sh
+
+services:
+  mysql:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:?set MARIADB_ROOT_PASSWORD in .env}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-patchdashboard}
+      MARIADB_USER: ${MARIADB_USER:-patchdashboard}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:?set MARIADB_PASSWORD in .env}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/db_create.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: ${PUBLIC_URL:-http://localhost}
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${MARIADB_DATABASE:-patchdashboard}
+      DB_USER: ${MARIADB_USER:-patchdashboard}
+      DB_PASS: ${MARIADB_PASSWORD:?set MARIADB_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      JWT_TTL: 86400
+      PW_SALT: ${PW_SALT:-legacy-salt}
+      YOUR_COMPANY: ${YOUR_COMPANY:-Pending setup}
+      CORS_ORIGIN: ${PUBLIC_URL:-http://localhost}
+      REDIS_URL: redis://redis:6379
+      MAIL_FROM: ${MAIL_FROM:-alerts@patchdashboard.local}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+    volumes:
+      - api_storage:/app/storage
+      - ./database:/database:ro
+    expose:
+      - "9000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "php -r 'exit(0);'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health | grep -q '\"status\"' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  mysql_data:
+  api_storage:

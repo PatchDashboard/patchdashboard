@@ -1,7 +1,7 @@
 PatchMD
 ==============
 
-> **v2.0 overhaul:** See [OVERHAUL.md](OVERHAUL.md) for the new React + PHP API architecture on branch `2026-overhaul`.
+> **v2.0 overhaul:** See [OVERHAUL.md](OVERHAUL.md) for the new React + PHP API architecture on branch `2026-overhaul`. Use `/vulnerabilities` to search CVEs and packages across your fleet and the synced advisory library.
 
 Patch Management Dashboard
 ===============
@@ -58,6 +58,16 @@ docker compose up --build
 ```
 
 See [OVERHAUL.md](OVERHAUL.md) for URLs, migrations, and agent setup.
+
+**Docker (production):**
+
+```bash
+git clone https://github.com/PatchDashboard/patchdashboard
+cd patchdashboard
+./install.sh --docker-prod
+```
+
+Builds nginx + PHP-FPM API + MariaDB containers from `docker-compose.prod.yml`. Use `--prepare-web-setup` for the browser admin wizard, or `./install/docker-prod.sh --help` for unattended flags.
 
 **VM / bare-metal (full CLI install):**
 

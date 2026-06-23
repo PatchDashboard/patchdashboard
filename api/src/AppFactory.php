@@ -12,6 +12,7 @@ use PatchDashboard\Api\Services\AlertService;
 use PatchDashboard\Api\Services\AuthService;
 use PatchDashboard\Api\Services\ContainerScanService;
 use PatchDashboard\Api\Services\DistroService;
+use PatchDashboard\Api\Services\MfaService;
 use PatchDashboard\Api\Services\PatchService;
 use PatchDashboard\Api\Services\ServerService;
 use PatchDashboard\Api\Services\SuppressionService;
@@ -33,8 +34,13 @@ final class AppFactory
                 return $logger;
             },
             \PDO::class => fn (): \PDO => Database::connect(),
+            MfaService::class => fn (ContainerInterface $c): MfaService => new MfaService(
+                $c->get(\PDO::class),
+                $_ENV['MFA_ENCRYPTION_KEY'] ?? $_ENV['JWT_SECRET'] ?? 'insecure-dev-secret',
+            ),
             AuthService::class => fn (ContainerInterface $c) => new AuthService(
                 $c->get(\PDO::class),
+                $c->get(MfaService::class),
                 $_ENV['JWT_SECRET'] ?? 'insecure-dev-secret',
                 (int) ($_ENV['JWT_TTL'] ?? 86400),
                 $_ENV['PW_SALT'] ?? ''

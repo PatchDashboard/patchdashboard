@@ -64,6 +64,7 @@ final class SetupController
             return $this->json($response, [
                 'ok' => true,
                 'installKey' => $result['installKey'],
+                'dashboardPublicKey' => $result['dashboardPublicKey'] ?? null,
             ]);
         } catch (\InvalidArgumentException $e) {
             return $this->json($response, ['error' => $e->getMessage()], 422);

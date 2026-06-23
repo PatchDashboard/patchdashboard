@@ -30,6 +30,14 @@ tmp_file="/tmp/pd-check-in-${PD_CLIENT_KEY}"
 echo "${response}" > "${tmp_file}"
 # shellcheck disable=SC1090
 source "${tmp_file}"
+
+if [[ "${revoked:-FALSE}" == "TRUE" ]]; then
+    rm -f "${tmp_file}"
+    rm -f "${PD_CLIENT_PATH}/.patchrc"
+    echo "PatchDashboard agent credentials revoked; removed local client key." >&2
+    exit 0
+fi
+
 rm -f "${tmp_file}"
 
     if [[ "${allowed:-FALSE}" == "TRUE" && "${key_to_check:-FALSE}" == "${PD_AUTH_KEY}" ]]; then

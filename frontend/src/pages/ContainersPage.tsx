@@ -1,7 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import clsx from 'clsx';
+import { VulnerabilityFilters } from '../components/VulnerabilityFilters';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
+import {
+  buildVulnerabilitySearchParams,
+  runtimeLabel,
+  severityClass,
+  type VulnerabilitySearchParams,
+} from '../lib/vulnerabilitySearch';
 
 type Container = {
   id: number;
@@ -18,53 +26,68 @@ type Vulnerability = {
   package_name?: string;
   container_name: string;
   server_alias: string;
+  server_id?: number;
+  runtime?: string;
   title?: string;
+  installed_version?: string;
+  fixed_version?: string;
 };
 
-function runtimeLabel(runtime: string) {
-  switch (runtime) {
-    case 'host':
-      return 'Host OS';
-    case 'image':
-      return 'Image';
-    default:
-      return runtime.toUpperCase();
-  }
+function paramsToSearchParams(params: VulnerabilitySearchParams): URLSearchParams {
+  const next = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      next.set(key, value);
+    }
+  });
+  return next;
 }
 
-function severityClass(severity: string) {
-  switch (severity.toUpperCase()) {
-    case 'CRITICAL':
-      return 'badge-critical';
-    case 'HIGH':
-      return 'badge-high';
-    case 'MEDIUM':
-      return 'badge-medium';
-    default:
-      return 'badge-low';
-  }
+function buildVulnQuery(params: VulnerabilitySearchParams): string {
+  const search = paramsToSearchParams(params);
+  const qs = search.toString();
+  return qs ? `?${qs}` : '';
 }
 
 export function ContainersPage() {
   const { token } = useAuth();
+  const [urlParams, setUrlParams] = useSearchParams();
   const [containers, setContainers] = useState<Container[]>([]);
   const [vulnerabilities, setVulnerabilities] = useState<Vulnerability[]>([]);
+  const [servers, setServers] = useState<Array<{ id: number; server_alias: string }>>([]);
+  const [distros, setDistros] = useState<Array<{ id: number; distro_name: string }>>([]);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const filters = useMemo(() => buildVulnerabilitySearchParams(urlParams), [urlParams]);
 
   async function loadData() {
     if (!token) return;
     const [inventory, vulns] = await Promise.all([
       api<{ containers: Container[] }>('/api/v1/containers', {}, token),
-      api<{ vulnerabilities: Vulnerability[] }>('/api/v1/containers/vulnerabilities', {}, token),
+      api<{ vulnerabilities: Vulnerability[] }>(
+        `/api/v1/containers/vulnerabilities${buildVulnQuery(filters)}`,
+        {},
+        token,
+      ),
     ]);
     setContainers(inventory.containers);
     setVulnerabilities(vulns.vulnerabilities);
   }
 
   useEffect(() => {
-    loadData().catch(() => setMessage('Failed to load CVE data.'));
+    if (!token) return;
+    api<{ servers: Array<{ id: number; server_alias: string }> }>('/api/v1/servers', {}, token).then((data) =>
+      setServers(data.servers),
+    );
+    api<{ distros: Array<{ id: number; distro_name: string }> }>('/api/v1/distros', {}, token).then((data) =>
+      setDistros(data.distros),
+    );
   }, [token]);
+
+  useEffect(() => {
+    loadData().catch(() => setMessage('Failed to load CVE data.'));
+  }, [token, urlParams]);
 
   async function refreshAll() {
     if (!token) return;
@@ -88,6 +111,9 @@ export function ContainersPage() {
           <p className="text-slate-400">
             Full CVE inventory for host OS packages, container images, and LXC guests. Agents refresh daily.
           </p>
+          <Link className="mt-2 inline-block text-sm text-sky-400 hover:underline" to="/vulnerabilities">
+            Search across fleet and advisory library
+          </Link>
         </div>
         <button className="btn btn-primary" type="button" disabled={loading} onClick={refreshAll}>
           {loading ? 'Queueing...' : 'Refresh all CVE scans'}
@@ -95,6 +121,14 @@ export function ContainersPage() {
       </div>
 
       {message ? <div className="rounded-lg bg-sky-500/10 px-3 py-2 text-sm text-sky-200">{message}</div> : null}
+
+      <VulnerabilityFilters
+        params={filters}
+        servers={servers}
+        distros={distros}
+        showSource={false}
+        onChange={(next) => setUrlParams(paramsToSearchParams(next))}
+      />
 
       <div className="card overflow-x-auto">
         <h2 className="mb-4 text-lg font-medium">Scanned applications</h2>
@@ -131,6 +165,7 @@ export function ContainersPage() {
               <th className="pb-2 pr-4">Severity</th>
               <th className="pb-2 pr-4">Application</th>
               <th className="pb-2 pr-4">Server</th>
+              <th className="pb-2 pr-4">Runtime</th>
               <th className="pb-2">Package</th>
             </tr>
           </thead>
@@ -138,20 +173,16 @@ export function ContainersPage() {
             {vulnerabilities.map((vuln) => (
               <tr key={`${vuln.cve_id}-${vuln.container_name}-${vuln.server_alias}`} className="border-t border-slate-800">
                 <td className="py-3 pr-4">
-                  <a
-                    className="text-sky-300 hover:underline"
-                    href={`https://nvd.nist.gov/vuln/detail/${vuln.cve_id}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
+                  <Link className="text-sky-300 hover:underline" to={`/vulnerabilities?cve=${encodeURIComponent(vuln.cve_id)}`}>
                     {vuln.cve_id}
-                  </a>
+                  </Link>
                 </td>
                 <td className="py-3 pr-4">
                   <span className={clsx('badge', severityClass(vuln.severity))}>{vuln.severity}</span>
                 </td>
                 <td className="py-3 pr-4">{vuln.container_name}</td>
                 <td className="py-3 pr-4">{vuln.server_alias}</td>
+                <td className="py-3 pr-4">{runtimeLabel(vuln.runtime)}</td>
                 <td className="py-3">{vuln.package_name ?? '—'}</td>
               </tr>
             ))}

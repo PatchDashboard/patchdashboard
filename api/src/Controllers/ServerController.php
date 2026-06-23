@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace PatchDashboard\Api\Controllers;
 
 use PatchDashboard\Api\Services\ServerService;
+use PatchDashboard\Api\Services\SshKeyService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 final class ServerController
 {
-    public function __construct(private ServerService $serverService)
-    {
+    public function __construct(
+        private ServerService $serverService,
+        private SshKeyService $sshKeyService,
+    ) {
     }
 
     public function index(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
@@ -46,14 +49,172 @@ final class ServerController
 
     public function deactivate(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        $this->serverService->setTrusted((int) $args['id'], false);
-        return $this->json($response, ['status' => 'deactivated']);
+        try {
+            $result = $this->serverService->revokeTrust((int) $args['id'], $this->sshKeyService);
+        } catch (\InvalidArgumentException) {
+            return $this->json($response, ['error' => 'Server not found'], 404);
+        }
+
+        return $this->json($response, [
+            'status' => 'untrusted',
+            'client_key_revoked' => $result['client_key_revoked'],
+            'ssh_key_removed' => $result['ssh_key_removed'],
+        ]);
+    }
+
+    public function enroll(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        if (!$this->isAdmin($request)) {
+            return $this->json($response, ['error' => 'Admin access required'], 403);
+        }
+
+        $body = (array) ($request->getParsedBody() ?? []);
+        $serverIp = trim((string) ($body['server_ip'] ?? ''));
+        $sshUser = trim((string) ($body['ssh_user'] ?? 'root'));
+        $serverAlias = trim((string) ($body['server_alias'] ?? ''));
+
+        if ($serverIp === '') {
+            return $this->json($response, ['error' => 'server_ip is required'], 422);
+        }
+
+        $params = $request->getServerParams();
+        $https = (!empty($params['HTTPS']) && $params['HTTPS'] !== 'off')
+            || ($request->getHeaderLine('X-Forwarded-Proto') === 'https');
+        $host = $request->getHeaderLine('Host') ?: 'localhost';
+        $apiBase = ($https ? 'https' : 'http') . '://' . $host;
+        $authKey = $this->serverService->getInstallKey();
+
+        if ($authKey === '') {
+            return $this->json($response, ['error' => 'Install key is not configured'], 500);
+        }
+
+        try {
+            $keys = $this->sshKeyService->ensureKeyPair();
+        } catch (\Throwable $e) {
+            return $this->json($response, ['error' => 'Unable to prepare SSH keys: ' . $e->getMessage()], 500);
+        }
+
+        $sshDeployed = $this->sshKeyService->deployAuthorizedKey($serverIp, $sshUser);
+        $enrollment = $this->sshKeyService->runEnrollmentScript(
+            $serverIp,
+            $sshUser,
+            $apiBase,
+            $authKey,
+            $serverAlias !== '' ? $serverAlias : null
+        );
+
+        $server = $this->serverService->findByIpOrName($serverIp, $serverAlias !== '' ? $serverAlias : null);
+        if ($server !== null) {
+            $this->serverService->markSshEnrolled((int) $server['id'], $keys['fingerprint']);
+            if ($serverAlias !== '' && $serverAlias !== ($server['server_alias'] ?? '')) {
+                $this->serverService->update((int) $server['id'], ['server_alias' => $serverAlias]);
+            }
+        }
+
+        if (!$enrollment['ok']) {
+            return $this->json($response, [
+                'error' => 'Enrollment failed',
+                'ssh_deployed' => $sshDeployed,
+                'output' => $enrollment['output'],
+                'dashboard_public_key' => $keys['public_key'],
+            ], 502);
+        }
+
+        return $this->json($response, [
+            'status' => 'enrolled',
+            'ssh_deployed' => $sshDeployed,
+            'output' => $enrollment['output'],
+            'server' => $server,
+            'message' => 'Agent installed. Trust the server under Servers when it appears.',
+        ], 201);
     }
 
     public function delete(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $this->serverService->delete((int) $args['id']);
         return $this->json($response, ['status' => 'deleted']);
+    }
+
+    public function onboarding(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $params = $request->getServerParams();
+        $https = (!empty($params['HTTPS']) && $params['HTTPS'] !== 'off')
+            || ($request->getHeaderLine('X-Forwarded-Proto') === 'https');
+        $host = $request->getHeaderLine('Host') ?: 'localhost';
+        $baseUrl = ($https ? 'https' : 'http') . '://' . $host;
+
+        $publicKey = null;
+        $fingerprint = null;
+        try {
+            $keys = $this->sshKeyService->ensureKeyPair();
+            $publicKey = $keys['public_key'];
+            $fingerprint = $keys['fingerprint'];
+        } catch (\Throwable) {
+            $publicKey = $this->sshKeyService->getPublicKey();
+        }
+
+        $installRoot = dirname(__DIR__, 3);
+        $enrollScript = $installRoot . '/agents/client/enroll-server.sh';
+
+        return $this->json($response, [
+            'https' => $https,
+            'base_url' => $baseUrl,
+            'push_script' => '/opt/patchdashboard/agents/client/check-in.sh',
+            'pull_installer' => $baseUrl . '/legacy/html/client/client_installer.php',
+            'recommend_pull' => $https,
+            'dashboard_public_key' => $publicKey,
+            'dashboard_ssh_fingerprint' => $fingerprint,
+            'enroll_script' => $enrollScript,
+            'enroll_command_example' => sprintf(
+                'sudo %s --host SERVER_IP --user root --api-base %s --auth-key YOUR_PD_AUTH_KEY',
+                $enrollScript,
+                $baseUrl
+            ),
+        ]);
+    }
+
+    private function isAdmin(ServerRequestInterface $request): bool
+    {
+        $user = (array) $request->getAttribute('user');
+        return !empty($user['admin']);
+    }
+
+    public function reboot(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        return $this->schedulePower($request, $response, (int) $args['id'], 'reboot');
+    }
+
+    public function shutdown(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        return $this->schedulePower($request, $response, (int) $args['id'], 'shutdown');
+    }
+
+    private function schedulePower(
+        ServerRequestInterface $request,
+        ResponseInterface $response,
+        int $id,
+        string $action
+    ): ResponseInterface {
+        $body = (array) ($request->getParsedBody() ?? []);
+        $mode = (string) ($body['mode'] ?? 'graceful');
+        if (!in_array($mode, ['graceful', 'forced', 'scheduled'], true)) {
+            return $this->json($response, ['error' => 'mode must be graceful, forced, or scheduled'], 422);
+        }
+
+        $scheduledAt = isset($body['scheduled_at']) ? (string) $body['scheduled_at'] : null;
+        if ($mode === 'scheduled' && ($scheduledAt === null || trim($scheduledAt) === '')) {
+            return $this->json($response, ['error' => 'scheduled_at is required for scheduled mode'], 422);
+        }
+
+        if (!$this->serverService->schedulePowerCommand($id, $action, $mode, $scheduledAt)) {
+            return $this->json($response, ['error' => 'Server not found, not trusted, or invalid schedule time'], 404);
+        }
+
+        return $this->json($response, [
+            'status' => $action === 'reboot' ? 'reboot_scheduled' : 'shutdown_scheduled',
+            'mode' => $mode,
+            'scheduled_at' => $scheduledAt,
+        ]);
     }
 
     private function json(ResponseInterface $response, array $data, int $status = 200): ResponseInterface

@@ -27,9 +27,21 @@ export async function api<T>(
     headers,
   });
 
-  const data = await response.json().catch(() => ({}));
+  const text = await response.text();
+  let data: Record<string, unknown> = {};
+  if (text !== '') {
+    try {
+      data = JSON.parse(text) as Record<string, unknown>;
+    } catch {
+      throw new ApiError(
+        response.ok ? 'Invalid JSON response from API' : text.slice(0, 200) || 'Request failed',
+        response.status,
+      );
+    }
+  }
+
   if (!response.ok) {
-    throw new ApiError(data.error ?? 'Request failed', response.status);
+    throw new ApiError(typeof data.error === 'string' ? data.error : 'Request failed', response.status);
   }
   return data as T;
 }

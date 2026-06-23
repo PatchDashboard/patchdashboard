@@ -34,7 +34,29 @@ final class AuthController
 
     public function me(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $user = (array) $request->getAttribute('user');
+        $jwtUser = (array) $request->getAttribute('user');
+        $user = $this->authService->getUserById((int) $jwtUser['sub']);
+        if ($user === null) {
+            return $this->json($response, ['error' => 'User not found'], 404);
+        }
+        return $this->json($response, ['user' => $user]);
+    }
+
+    public function updateMe(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $jwtUser = (array) $request->getAttribute('user');
+        $body = (array) ($request->getParsedBody() ?? []);
+
+        if (isset($body['confirm_password'], $body['password']) && $body['password'] !== $body['confirm_password']) {
+            return $this->json($response, ['error' => 'Passwords do not match'], 422);
+        }
+
+        unset($body['confirm_password'], $body['admin'], $body['active'], $body['user_id']);
+
+        $user = $this->authService->updateProfile((int) $jwtUser['sub'], $body);
+        if ($user === null) {
+            return $this->json($response, ['error' => 'User not found'], 404);
+        }
         return $this->json($response, ['user' => $user]);
     }
 

@@ -1,0 +1,15 @@
+{
+  "name": "patchdashboard-console",
+  "private": true,
+  "version": "0.1.0-dev",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs"
+  },
+  "dependencies": {
+    "redis": "^4.7.0",
+    "ssh2": "^1.16.0",
+    "ws": "^8.18.2"
+  }
+}

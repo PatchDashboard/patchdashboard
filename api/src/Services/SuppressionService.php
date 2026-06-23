@@ -23,6 +23,33 @@ final class SuppressionService
         return array_column($rows, 'package_name');
     }
 
+    public function isSuppressed(string $packageName, string $serverName): bool
+    {
+        $table = $this->suppressionTable();
+        $stmt = $this->pdo->prepare(
+            "SELECT 1 FROM {$table}
+             WHERE package_name = :package_name
+               AND server_name IN ('0', :server_name)
+             LIMIT 1"
+        );
+        $stmt->execute(['package_name' => $packageName, 'server_name' => $serverName]);
+        return (bool) $stmt->fetchColumn();
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function suppressedPackageNamesForServer(string $serverName): array
+    {
+        $table = $this->suppressionTable();
+        $stmt = $this->pdo->prepare(
+            "SELECT DISTINCT package_name FROM {$table}
+             WHERE server_name IN ('0', :server_name)"
+        );
+        $stmt->execute(['server_name' => $serverName]);
+        return array_column($stmt->fetchAll(), 'package_name');
+    }
+
     public function create(string $packageName, string $serverName): array
     {
         $table = $this->suppressionTable();

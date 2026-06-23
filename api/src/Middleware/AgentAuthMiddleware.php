@@ -22,6 +22,16 @@ final class AgentAuthMiddleware implements MiddlewareInterface
 
         $pdo = \PatchDashboard\Api\Config\Database::connect();
         $serverService = new ServerService($pdo);
+
+        if ($serverService->isClientKeyRevoked($clientKey)) {
+            $request = $request->withAttribute('agent', [
+                'client_key' => $clientKey,
+                'registered' => false,
+                'revoked' => true,
+            ]);
+            return $handler->handle($request);
+        }
+
         $server = $serverService->findByClientKey($clientKey);
 
         if ($server === null) {

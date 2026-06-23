@@ -12,7 +12,6 @@ final class PatchService
 
     public function dashboard(SuppressionService $suppressions): array
     {
-        $suppressed = $suppressions->packageNames();
         $servers = $this->pdo->query('SELECT * FROM servers WHERE trusted = 1 ORDER BY server_alias')->fetchAll();
 
         $rows = [];
@@ -20,7 +19,10 @@ final class PatchService
         $serversNeedingPatches = 0;
 
         foreach ($servers as $server) {
-            $count = $this->patchCountForServer($server['server_name'], $suppressed);
+            $count = $this->patchCountForServer(
+                $server['server_name'],
+                $suppressions->suppressedPackageNamesForServer($server['server_name'])
+            );
             if ($count > 0) {
                 $serversNeedingPatches++;
             }
@@ -49,29 +51,23 @@ final class PatchService
             'percent_good' => $percentGood,
             'server_count' => $serverCount,
             'total_patches' => $totalPatches,
+            'pending_patch_count' => $totalPatches,
             'servers' => $rows,
         ];
     }
 
     public function forServer(string $serverName, SuppressionService $suppressions): array
     {
-        $suppressed = $suppressions->packageNames();
-        $placeholders = $this->placeholders($suppressed);
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM patches WHERE server_name = :server_name AND package_name != "" ORDER BY package_name'
+        );
+        $stmt->execute(['server_name' => $serverName]);
+        $rows = $stmt->fetchAll();
 
-        $sql = 'SELECT * FROM patches WHERE server_name = :server_name AND package_name != ""';
-        $params = ['server_name' => $serverName];
-
-        if ($placeholders !== '') {
-            $sql .= " AND package_name NOT IN ({$placeholders})";
-            foreach ($suppressed as $i => $pkg) {
-                $params["s{$i}"] = $pkg;
-            }
-        }
-
-        $sql .= ' ORDER BY package_name';
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll();
+        return array_map(function (array $patch) use ($suppressions, $serverName) {
+            $patch['suppressed'] = $suppressions->isSuppressed((string) $patch['package_name'], $serverName);
+            return $patch;
+        }, $rows);
     }
 
     public function installAll(int $serverId, SuppressionService $suppressions): int
@@ -83,10 +79,10 @@ final class PatchService
             return 0;
         }
 
-        $suppressed = $suppressions->packageNames();
+        $suppressed = $suppressions->suppressedPackageNamesForServer($row['server_name']);
         $placeholders = $this->placeholders($suppressed);
 
-        $sql = 'UPDATE patches SET to_upgrade = 1 WHERE server_name = :server_name AND package_name != ""';
+        $sql = 'UPDATE patches SET to_upgrade = 1 WHERE server_name = :server_name AND package_name != "" AND upgraded = 0';
         $params = ['server_name' => $row['server_name']];
 
         if ($placeholders !== '') {
@@ -101,6 +97,29 @@ final class PatchService
         return $stmt->rowCount();
     }
 
+    public function buildUpgradeCommand(string $serverName, array $packageNames): ?string
+    {
+        $installable = array_values(array_filter($packageNames));
+        if ($installable === []) {
+            return null;
+        }
+
+        $stmt = $this->pdo->prepare(
+            'SELECT d.upgrade_command
+             FROM servers s
+             LEFT JOIN distro d ON d.id = s.distro_id
+             WHERE s.server_name = :server_name
+             LIMIT 1'
+        );
+        $stmt->execute(['server_name' => $serverName]);
+        $row = $stmt->fetch();
+        if (!$row || empty($row['upgrade_command'])) {
+            return null;
+        }
+
+        return trim((string) $row['upgrade_command'] . ' ' . implode(' ', $installable));
+    }
+
     public function packagesForServer(string $serverName): array
     {
         $stmt = $this->pdo->prepare(
@@ -110,13 +129,27 @@ final class PatchService
         return $stmt->fetchAll();
     }
 
-    public function searchPackages(string $query): array
+    public function searchPackages(string $query, bool $exact = false): array
     {
+        if ($exact) {
+            $stmt = $this->pdo->prepare(
+                'SELECT p.server_name, p.package_name, p.package_version, s.id AS server_id
+                 FROM patch_allpackages p
+                 LEFT JOIN servers s ON s.server_name = p.server_name
+                 WHERE p.package_name = :query
+                 ORDER BY p.server_name, p.package_name
+                 LIMIT 200'
+            );
+            $stmt->execute(['query' => $query]);
+            return $stmt->fetchAll();
+        }
+
         $stmt = $this->pdo->prepare(
-            'SELECT server_name, package_name, package_version
-             FROM patch_allpackages
-             WHERE package_name LIKE :query OR server_name LIKE :query
-             ORDER BY server_name, package_name
+            'SELECT p.server_name, p.package_name, p.package_version, s.id AS server_id
+             FROM patch_allpackages p
+             LEFT JOIN servers s ON s.server_name = p.server_name
+             WHERE p.package_name LIKE :query OR p.server_name LIKE :query
+             ORDER BY p.server_name, p.package_name
              LIMIT 200'
         );
         $stmt->execute(['query' => '%' . $query . '%']);
@@ -153,7 +186,8 @@ final class PatchService
                     $context['codename'] !== null ? (string) $context['codename'] : null,
                     $context['version_num'] !== null ? (string) $context['version_num'] : null,
                     $parts[0],
-                    $parts[2]
+                    $parts[2],
+                    isset($context['distro_id']) ? (int) $context['distro_id'] : null,
                 );
                 $urgency = $meta['urgency'];
                 $bugUrl = $meta['bug_url'];
@@ -224,7 +258,7 @@ final class PatchService
     }
 
     /**
-     * @return array{distro_name: string, codename: ?string, version_num: ?string}|null
+     * @return array{distro_name: string, distro_id: int, codename: ?string, version_num: ?string}|null
      */
     public function getDistroContextForServer(string $serverName): ?array
     {
@@ -232,12 +266,12 @@ final class PatchService
     }
 
     /**
-     * @return array{distro_name: string, codename: ?string, version_num: ?string}|null
+     * @return array{distro_name: string, distro_id: int, codename: ?string, version_num: ?string}|null
      */
     private function getServerDistroContext(string $serverName): ?array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT d.distro_name, dv.codename, dv.version_num
+            'SELECT d.distro_name, d.id AS distro_id, dv.codename, dv.version_num
              FROM servers s
              JOIN distro d ON d.id = s.distro_id
              LEFT JOIN distro_version dv ON dv.id = s.distro_version

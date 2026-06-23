@@ -31,6 +31,10 @@ final class AgentController
         $body = (array) ($request->getParsedBody() ?? []);
 
         if (empty($agent['registered'])) {
+            if (!empty($agent['revoked'])) {
+                return $this->legacyResponse($response, false, '', false, false, true);
+            }
+
             $this->serverService->registerFromAgent(
                 $clientKey,
                 $clientHost !== '' ? $clientHost : 'UNKNOWN SERVER',
@@ -44,6 +48,9 @@ final class AgentController
         }
 
         if (empty($agent['trusted'])) {
+            if (!empty($agent['revoked'])) {
+                return $this->legacyResponse($response, false, '', false, false, true);
+            }
             return $this->legacyResponse($response, false, '', false, false);
         }
 
@@ -108,15 +115,54 @@ final class AgentController
             return $this->json($response, ['commands' => []]);
         }
 
-        $serverName = (string) $agent['server']['server_name'];
+        $server = $agent['server'];
+        $serverName = (string) $server['server_name'];
+        $serverId = (int) $server['id'];
         $pdo = \PatchDashboard\Api\Config\Database::connect();
+
+        $suppressionService = new \PatchDashboard\Api\Services\SuppressionService($pdo);
+        $suppressed = $suppressionService->suppressedPackageNamesForServer($serverName);
+        $suppressedLookup = array_fill_keys($suppressed, true);
+
         $stmt = $pdo->prepare(
-            'SELECT package_name FROM patches WHERE server_name = :server_name AND to_upgrade = 1 AND upgraded = 0'
+            'SELECT package_name FROM patches
+             WHERE server_name = :server_name AND to_upgrade = 1 AND upgraded = 0'
         );
         $stmt->execute(['server_name' => $serverName]);
-        $packages = array_column($stmt->fetchAll(), 'package_name');
+        $packages = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $name = (string) $row['package_name'];
+            if (!isset($suppressedLookup[$name])) {
+                $packages[] = $name;
+            }
+        }
 
-        return $this->json($response, ['commands' => ['upgrade_packages' => $packages]]);
+        if ($packages !== []) {
+            $mark = $pdo->prepare(
+                'UPDATE patches SET to_upgrade = 0, upgraded = 1
+                 WHERE server_name = :server_name AND package_name = :package_name'
+            );
+            foreach ($packages as $package) {
+                $mark->execute(['server_name' => $serverName, 'package_name' => $package]);
+            }
+        }
+
+        $power = $this->serverService->consumePendingPowerCommand($serverId);
+
+        $commands = [
+            'upgrade_packages' => $packages,
+        ];
+
+        if ($power !== null) {
+            $commands['power'] = $power;
+            $commands['reboot'] = $power['action'] === 'reboot';
+            $commands['shutdown'] = $power['action'] === 'shutdown';
+        } else {
+            $commands['reboot'] = false;
+            $commands['shutdown'] = false;
+        }
+
+        return $this->json($response, ['commands' => $commands]);
     }
 
     private function legacyResponse(
@@ -124,14 +170,16 @@ final class AgentController
         bool $allowed,
         string $installKey,
         bool $checkPatches,
-        bool $checkCveScan = false
+        bool $checkCveScan = false,
+        bool $revoked = false
     ): ResponseInterface {
         $body = sprintf(
-            "allowed='%s'\nkey_to_check='%s'\ncheck_patches='%s'\ncheck_cve_scan='%s'",
+            "allowed='%s'\nkey_to_check='%s'\ncheck_patches='%s'\ncheck_cve_scan='%s'\nrevoked='%s'",
             $allowed ? 'TRUE' : 'FALSE',
             $allowed ? $installKey : 'FALSE',
             $checkPatches ? 'TRUE' : 'FALSE',
-            $checkCveScan ? 'TRUE' : 'FALSE'
+            $checkCveScan ? 'TRUE' : 'FALSE',
+            $revoked ? 'TRUE' : 'FALSE'
         );
         $response->getBody()->write($body);
         return $response->withHeader('Content-Type', 'text/plain');

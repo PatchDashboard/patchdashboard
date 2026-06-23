@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [[ -f /etc/patchdashboard/agent.env ]]; then
+    # shellcheck disable=SC1091
+    source /etc/patchdashboard/agent.env
+fi
+
 PD_API_BASE="${PD_API_BASE:-__SERVER_URI_SET_ME__}"
 PD_AUTH_KEY="${PD_AUTH_KEY:-__SERVER_AUTHKEY_SET_ME__}"
 

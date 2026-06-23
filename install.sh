@@ -6,6 +6,11 @@
 set -euo pipefail
 
 MY_PATH="$(cd "$(dirname "$0")" && pwd)"
+
+case " ${*} " in
+    *" --docker-prod "*) exec "${MY_PATH}/install/docker-prod.sh" "$@" ;;
+esac
+
 TEMPLATE_DIR="${MY_PATH}/install/templates"
 
 INSTALL_ROOT="${INSTALL_ROOT:-/opt/patchdashboard}"
@@ -51,6 +56,10 @@ Hybrid mode runs pre- and post-install system checks (packages, services,
 directories, permissions, database, and HTTP endpoints) before printing the
 setup URL.
 
+Docker production (nginx + PHP-FPM API + MariaDB in containers):
+  ./install.sh --docker-prod
+  ./install.sh --docker-prod --prepare-web-setup
+
 Unattended full install:
   sudo ./install.sh --unattended \\
     --web-url=http://patch.example.com \\
@@ -79,6 +88,7 @@ Options:
 
 Legacy v1 installer: ./legacy/install.sh
 Docker development:   docker compose up --build
+Docker production:    ./install.sh --docker-prod
 EOF
 }
 
@@ -236,6 +246,7 @@ debian_select_php_packages() {
         "php${version}-mbstring"
         "php${version}-xml"
         "php${version}-curl"
+        "php${version}-zip"
     )
     if [[ "$sapi" == "fpm" ]]; then
         packages+=("php${version}-fpm")
@@ -276,7 +287,7 @@ install_packages_redhat() {
 
     local -a web_packages=()
     local -a php_packages=(
-        php-cli php-mysqlnd php-mbstring php-xml php-curl
+        php-cli php-mysqlnd php-mbstring php-xml php-curl php-zip
     )
 
     if [[ "$WEBSERVER" == "apache" ]]; then
@@ -820,6 +831,11 @@ bootstrap_admin() {
         --company="$COMPANY"
 }
 
+ensure_dashboard_ssh_keys() {
+    log "Generating PatchDashboard SSH keypair for server enrollment"
+    php "${INSTALL_ROOT}/database/ensure_ssh_keys.php" >/dev/null
+}
+
 write_setup_token() {
     log "Generating one-time web setup token"
     detect_web_runtime_user
@@ -985,15 +1001,19 @@ PatchDashboard installation complete.
 
   Agent install key (PD_AUTH_KEY): ${install_key}
 
+  Dashboard SSH public key:
+$(cat "${INSTALL_ROOT}/api/storage/ssh/patchdashboard_ed25519.pub" 2>/dev/null || echo '    (run database/ensure_ssh_keys.php)')
+
 Next steps:
   1. Open ${WEB_URL} and sign in.
-  2. On managed nodes, install agents (preserves client/ + lib/ layout):
-       mkdir -p /opt/patchdashboard-agent
-       rsync -a ${INSTALL_ROOT}/agents/ /opt/patchdashboard-agent/
-       # cron entries should call /opt/patchdashboard-agent/client/check-in.sh
-       # and /opt/patchdashboard-agent/client/application_cve_scan.sh
-  3. On each node set PD_API_BASE=${WEB_URL} and PD_AUTH_KEY=${install_key}
-  4. See ${INSTALL_ROOT}/agents/client/cron/patchdashboard for cron schedule
+  2. Enroll managed nodes (installs SSH key + agent credentials):
+       sudo ${INSTALL_ROOT}/agents/client/enroll-server.sh \\
+         --host SERVER_IP --user root --api-base ${WEB_URL} --auth-key '${install_key}'
+  3. Or install manually on each node:
+       sudo ${INSTALL_ROOT}/agents/client/install-agent.sh
+       # credentials in /etc/patchdashboard/agent.env
+  4. Trust enrolled servers under Servers in the dashboard.
+  5. See ${INSTALL_ROOT}/agents/client/cron/patchdashboard for cron schedule
 
 To re-run migrations after upgrades:
   DB_HOST=${DB_HOST} DB_NAME=${DB_NAME} DB_USER=${DB_USER} DB_PASS='***' \\
@@ -1035,6 +1055,7 @@ main() {
     fi
 
     bootstrap_admin
+    ensure_dashboard_ssh_keys
     write_install_lock
     print_summary
 }

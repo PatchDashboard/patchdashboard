@@ -6,6 +6,7 @@ namespace PatchDashboard\Api\Controllers;
 
 use PatchDashboard\Api\Services\PatchService;
 use PatchDashboard\Api\Services\PatchVulnerabilityService;
+use PatchDashboard\Api\Services\ServerService;
 use PatchDashboard\Api\Services\SuppressionService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -15,7 +16,8 @@ final class PatchController
     public function __construct(
         private PatchService $patchService,
         private SuppressionService $suppressionService,
-        private PatchVulnerabilityService $patchVulnerabilityService
+        private PatchVulnerabilityService $patchVulnerabilityService,
+        private ServerService $serverService
     ) {
     }
 
@@ -27,11 +29,22 @@ final class PatchController
     public function forServer(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $serverId = (int) $args['id'];
-        $server = $this->getServerName($serverId);
-        if ($server === null) {
+        $pdo = \PatchDashboard\Api\Config\Database::connect();
+        $stmt = $pdo->prepare(
+            'SELECT s.*, d.distro_name, d.upgrade_command, dv.version_num, dv.codename
+             FROM servers s
+             LEFT JOIN distro d ON d.id = s.distro_id
+             LEFT JOIN distro_version dv ON dv.id = s.distro_version
+             WHERE s.id = :id
+             LIMIT 1'
+        );
+        $stmt->execute(['id' => $serverId]);
+        $serverRow = $stmt->fetch();
+        if (!$serverRow) {
             return $this->json($response, ['error' => 'Server not found'], 404);
         }
 
+        $server = (string) $serverRow['server_name'];
         $patches = $this->patchService->forServer($server, $this->suppressionService);
         $context = $this->patchService->getDistroContextForServer($server);
 
@@ -47,9 +60,20 @@ final class PatchController
             return $patch;
         }, $patches);
 
+        $installable = array_column(
+            array_filter($patches, fn (array $p) => empty($p['suppressed'])),
+            'package_name'
+        );
+
         return $this->json($response, [
+            'server' => [
+                'id' => (int) $serverRow['id'],
+                'server_name' => $serverRow['server_name'],
+                'server_alias' => $serverRow['server_alias'],
+            ],
             'patches' => $patches,
             'distro' => $context,
+            'upgrade_command' => $this->patchService->buildUpgradeCommand($server, $installable),
         ]);
     }
 
@@ -69,31 +93,59 @@ final class PatchController
 
     public function installAll(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        $updated = $this->patchService->installAll((int) $args['id'], $this->suppressionService);
-        return $this->json($response, ['updated' => $updated]);
+        $body = (array) ($request->getParsedBody() ?? []);
+        $reboot = !empty($body['reboot']);
+        $rebootMode = (string) ($body['reboot_mode'] ?? 'graceful');
+        if ($reboot && !in_array($rebootMode, ['graceful', 'forced'], true)) {
+            $rebootMode = 'graceful';
+        }
+        $serverId = (int) $args['id'];
+        $updated = $this->patchService->installAll($serverId, $this->suppressionService);
+        $rebootScheduled = false;
+        if ($reboot && $updated > 0) {
+            $rebootScheduled = $this->serverService->schedulePowerCommand($serverId, 'reboot', $rebootMode, null);
+        }
+        return $this->json($response, [
+            'updated' => $updated,
+            'reboot_scheduled' => $rebootScheduled,
+            'reboot_mode' => $rebootScheduled ? $rebootMode : null,
+        ]);
     }
 
     public function packagesForServer(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        $server = $this->getServerName((int) $args['id']);
-        if ($server === null) {
+        $pdo = \PatchDashboard\Api\Config\Database::connect();
+        $stmt = $pdo->prepare('SELECT id, server_name, server_alias FROM servers WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => (int) $args['id']]);
+        $serverRow = $stmt->fetch();
+        if (!$serverRow) {
             return $this->json($response, ['error' => 'Server not found'], 404);
         }
 
+        $server = (string) $serverRow['server_name'];
         return $this->json($response, [
+            'server' => [
+                'id' => (int) $serverRow['id'],
+                'server_name' => $serverRow['server_name'],
+                'server_alias' => $serverRow['server_alias'],
+            ],
             'packages' => $this->patchService->packagesForServer($server),
         ]);
     }
 
     public function searchPackages(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $query = trim((string) ($request->getQueryParams()['q'] ?? ''));
+        $params = $request->getQueryParams();
+        $query = trim((string) ($params['q'] ?? ''));
+        $exact = filter_var($params['exact'] ?? false, FILTER_VALIDATE_BOOLEAN);
         if ($query === '') {
-            return $this->json($response, ['results' => []]);
+            return $this->json($response, ['results' => [], 'query' => '']);
         }
 
         return $this->json($response, [
-            'results' => $this->patchService->searchPackages($query),
+            'query' => $query,
+            'exact' => $exact,
+            'results' => $this->patchService->searchPackages($query, $exact),
         ]);
     }
 
