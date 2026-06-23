@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 2026-overhaul]
+  pull_request:
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - name: Install API dependencies
+        working-directory: api
+        run: composer install --no-interaction
+      - name: PHP syntax check
+        run: find api/src api/public api/config database -name '*.php' -print0 | xargs -0 -n1 php -l
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install
+      - name: Typecheck frontend
+        working-directory: frontend
+        run: npm run lint
+
+  agents:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shellcheck agents
+        run: |
+          sudo apt-get update && sudo apt-get install -y shellcheck
+          find agents -name '*.sh' -print0 | xargs -0 shellcheck -e SC1091

@@ -1,1 +1,8 @@
 /nbproject/private/
+/api/vendor/
+/api/.env
+/api/storage/install.lock
+/api/storage/setup.token
+/frontend/node_modules/
+/frontend/dist/
+.env

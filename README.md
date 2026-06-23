@@ -1,6 +1,8 @@
 PatchMD
 ==============
 
+> **v2.0 overhaul:** See [OVERHAUL.md](OVERHAUL.md) for the new React + PHP API architecture on branch `2026-overhaul`.
+
 Patch Management Dashboard
 ===============
 Patch Management Dashboard does one thing, but it does it well:
@@ -45,11 +47,56 @@ Please give it a spin. If you have any issues, please submit a [new issue](https
 Install
 ===============
 
-To install:
+### v2 (recommended)
 
-* simply clone this git (git clone https://github.com/PatchDashboard/patchdashboard)
-* cd into patchdashboard (cd /opt/patchdashboard)
-* run install.sh (./install.sh)
+**Docker (development):**
+
+```bash
+git clone https://github.com/PatchDashboard/patchdashboard
+cd patchdashboard
+docker compose up --build
+```
+
+See [OVERHAUL.md](OVERHAUL.md) for URLs, migrations, and agent setup.
+
+**VM / bare-metal (full CLI install):**
+
+```bash
+git clone https://github.com/PatchDashboard/patchdashboard
+cd patchdashboard
+sudo ./install.sh
+```
+
+Creates the admin user on the CLI. Default web stack is **nginx + PHP-FPM**; pass `--webserver=apache` for Apache + mod_php. See [OVERHAUL.md](OVERHAUL.md#vm--bare-metal-install) for details.
+
+**Hybrid web setup (nginx + PHP-FPM, recommended for VMs):**
+
+CLI installs nginx, PHP-FPM, MariaDB, builds the app, and runs system checks. You finish setup in the browser using a one-time URL:
+
+```bash
+sudo ./install.sh --prepare-web-setup
+# explicit nginx (default):
+sudo ./install.sh --prepare-web-setup --webserver=nginx
+```
+
+When the installer finishes, open the printed `http://…/setup?token=…` link, create the admin account, then sign in at `/login`. Full walkthrough: [OVERHAUL.md — Hybrid web setup](OVERHAUL.md#vm--bare-metal-install).
+
+Unattended hybrid example:
+
+```bash
+sudo ./install.sh --unattended --prepare-web-setup \
+  --web-url=http://patch.example.com \
+  --webserver=nginx \
+  --db-pass='db-secret'
+```
+
+Use `./install.sh --help` for all options.
+
+### v1 (legacy)
+
+* clone this git (git clone https://github.com/PatchDashboard/patchdashboard)
+* cd into patchdashboard (cd patchdashboard)
+* run the v1 installer (`./legacy/install.sh`)
 
 It will ask you some questions. Simply provide the answers, or accept the default answers found in the "[]" boxes
 If it does not have anything in "[]", you must provide an answer.

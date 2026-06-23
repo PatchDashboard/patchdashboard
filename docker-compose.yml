@@ -1,0 +1,62 @@
+services:
+  mysql:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: patchdashboard
+      MARIADB_USER: patchdashboard
+      MARIADB_PASSWORD: patchdashboard
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/db_create.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    environment:
+      APP_ENV: development
+      APP_DEBUG: "true"
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: patchdashboard
+      DB_USER: patchdashboard
+      DB_PASS: patchdashboard
+      JWT_SECRET: dev-jwt-secret-change-me
+      PW_SALT: W[62~L41|]CU15b
+      YOUR_COMPANY: "Test, INC"
+      CORS_ORIGIN: http://localhost:5173
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./api:/app
+      - ./database:/database:ro
+    command: sh -c "php /database/migrate.php && php -S 0.0.0.0:8080 -t public public/index.php"
+    working_dir: /app
+
+  frontend:
+    image: node:22-bookworm
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    environment:
+      VITE_API_BASE: ""
+      VITE_PROXY_TARGET: http://api:8080
+
+volumes:
+  mysql_data:

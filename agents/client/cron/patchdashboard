@@ -1,0 +1,9 @@
+# PatchDashboard pull-agent cron (install to /etc/cron.d/patchdashboard)
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# Daily full CVE scan of all installed applications (host OS, images, containers, LXC)
+0 3 * * * root /opt/patch_manager/application_cve_scan.sh >/dev/null 2>&1
+
+# Frequent check-in for patch checks and fallback CVE scheduling
+*/5 * * * * root /opt/patch_manager/check-in.sh >/dev/null 2>&1
