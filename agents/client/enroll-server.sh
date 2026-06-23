@@ -14,10 +14,12 @@ Options:
   --alias ALIAS        Optional server alias for the dashboard
   --api-base URL       PatchDashboard API base URL (default: PD_API_BASE env)
   --auth-key KEY       Agent install key PD_AUTH_KEY (default: PD_AUTH_KEY env)
-  --ssh-key PATH       Dashboard private SSH key (default: PDASH_SSH_KEY env)
+  --ssh-key PATH       Private SSH key for reaching the server (default: PDASH_SSH_KEY env,
+                       then api/storage/ssh/enrollment_bootstrap, then patchdashboard_ed25519)
 
 Environment:
-  PD_API_BASE, PD_AUTH_KEY, PDASH_SSH_KEY
+  PD_API_BASE, PD_AUTH_KEY, PDASH_SSH_KEY, SSH_PASSWORD, SSH_PASSWORD_FILE
+  PDASH_DASHBOARD_PUB  Path to dashboard public key installed on the server
 EOF
 }
 
@@ -30,7 +32,17 @@ SSH_USER=""
 ALIAS=""
 API_BASE="${PD_API_BASE:-}"
 AUTH_KEY="${PD_AUTH_KEY:-}"
-SSH_KEY="${PDASH_SSH_KEY:-${INSTALL_ROOT}/api/storage/ssh/patchdashboard_ed25519}"
+SSH_PASSWORD="${SSH_PASSWORD:-}"
+SSH_PASSWORD_FILE="${SSH_PASSWORD_FILE:-}"
+SSH_KEY="${PDASH_SSH_KEY:-}"
+DASHBOARD_PUBLIC="${PDASH_DASHBOARD_PUB:-${INSTALL_ROOT}/api/storage/ssh/patchdashboard_ed25519.pub}"
+
+if [[ -z "${SSH_KEY}" && -f "${INSTALL_ROOT}/api/storage/ssh/enrollment_bootstrap" ]]; then
+    SSH_KEY="${INSTALL_ROOT}/api/storage/ssh/enrollment_bootstrap"
+fi
+if [[ -z "${SSH_KEY}" && -z "${SSH_PASSWORD}" ]]; then
+    SSH_KEY="${INSTALL_ROOT}/api/storage/ssh/patchdashboard_ed25519"
+fi
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -55,40 +67,67 @@ if [[ -z "${API_BASE}" || -z "${AUTH_KEY}" ]]; then
     exit 1
 fi
 
-if [[ ! -f "${SSH_KEY}" ]]; then
-    echo "Dashboard SSH private key not found at ${SSH_KEY}. Run database/ensure_ssh_keys.php first." >&2
+if [[ -z "${SSH_PASSWORD}" && -z "${SSH_PASSWORD_FILE}" && ! -f "${SSH_KEY}" ]]; then
+    echo "Set SSH_PASSWORD, SSH_PASSWORD_FILE, or provide an SSH private key (PDASH_SSH_KEY)." >&2
     exit 1
 fi
 
-PUBLIC_KEY="${SSH_KEY}.pub"
-if [[ ! -f "${PUBLIC_KEY}" ]]; then
-    echo "Dashboard SSH public key not found at ${PUBLIC_KEY}." >&2
+if [[ ! -f "${DASHBOARD_PUBLIC}" ]]; then
+    echo "Dashboard public key not found at ${DASHBOARD_PUBLIC}. Run database/ensure_ssh_keys.php first." >&2
+    exit 1
+fi
+
+if [[ -n "${SSH_PASSWORD}" || -n "${SSH_PASSWORD_FILE}" ]] && ! command -v sshpass >/dev/null 2>&1; then
+    echo "sshpass is required for password-based SSH enrollment." >&2
     exit 1
 fi
 
 MARKER="patchdashboard-managed"
-PUB_LINE="$(tr -d '\n' < "${PUBLIC_KEY}") ${MARKER}"
+PUB_LINE="$(tr -d '\n' < "${DASHBOARD_PUBLIC}") ${MARKER}"
 
-ssh_base=(ssh -i "${SSH_KEY}" -o BatchMode=yes -o StrictHostKeyChecking=accept-new)
+run_ssh() {
+    if [[ -n "${SSH_PASSWORD_FILE}" ]]; then
+        sshpass -f "${SSH_PASSWORD_FILE}" ssh \
+            -o PreferredAuthentications=password \
+            -o PubkeyAuthentication=no \
+            -o StrictHostKeyChecking=accept-new \
+            "${SSH_USER}@${HOST}" "$@"
+        return
+    fi
+
+    if [[ -n "${SSH_PASSWORD}" ]]; then
+        SSHPASS="${SSH_PASSWORD}" sshpass -e ssh \
+            -o PreferredAuthentications=password \
+            -o PubkeyAuthentication=no \
+            -o StrictHostKeyChecking=accept-new \
+            "${SSH_USER}@${HOST}" "$@"
+        return
+    fi
+
+    ssh -i "${SSH_KEY}" \
+        -o BatchMode=yes \
+        -o StrictHostKeyChecking=accept-new \
+        "${SSH_USER}@${HOST}" "$@"
+}
 
 echo "Installing dashboard SSH key on ${SSH_USER}@${HOST}..."
-"${ssh_base[@]}" "${SSH_USER}@${HOST}" \
+run_ssh \
     "mkdir -p ~/.ssh && chmod 700 ~/.ssh && touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && grep -qF '${MARKER}' ~/.ssh/authorized_keys 2>/dev/null || echo '${PUB_LINE}' >> ~/.ssh/authorized_keys"
 
 echo "Deploying agent to ${HOST}..."
-tar -C "${AGENT_ROOT}" -cf - . | "${ssh_base[@]}" "${SSH_USER}@${HOST}" \
+tar -C "${AGENT_ROOT}" -cf - . | run_ssh \
     "mkdir -p /opt/patchdashboard-agent && tar -C /opt/patchdashboard-agent -xf -"
 
 echo "Writing agent credentials on ${HOST}..."
-"${ssh_base[@]}" "${SSH_USER}@${HOST}" \
+run_ssh \
     "mkdir -p /etc/patchdashboard && printf 'PD_API_BASE=%q\nPD_AUTH_KEY=%q\n' '${API_BASE}' '${AUTH_KEY}' > /etc/patchdashboard/agent.env && chmod 640 /etc/patchdashboard/agent.env"
 
 echo "Running agent install on ${HOST}..."
-"${ssh_base[@]}" "${SSH_USER}@${HOST}" \
+run_ssh \
     "PD_API_BASE='${API_BASE}' PD_AUTH_KEY='${AUTH_KEY}' bash /opt/patchdashboard-agent/client/install-agent.sh"
 
 echo "Running initial check-in on ${HOST}..."
-"${ssh_base[@]}" "${SSH_USER}@${HOST}" \
+run_ssh \
     "PD_API_BASE='${API_BASE}' PD_AUTH_KEY='${AUTH_KEY}' bash /opt/patchdashboard-agent/client/check-in.sh"
 
 if [[ -n "${ALIAS}" ]]; then

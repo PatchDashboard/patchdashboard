@@ -5,7 +5,7 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction || composer
 
 FROM php:8.3-cli-bookworm
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libzip-dev \
+    && apt-get install -y --no-install-recommends libzip-dev openssh-client sshpass \
     && docker-php-ext-install pdo pdo_mysql zip \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app

@@ -5,6 +5,8 @@
 /api/storage/setup.token
 /api/storage/ssh/patchdashboard_ed25519
 /api/storage/ssh/patchdashboard_ed25519.pub
+/api/storage/ssh/enrollment_bootstrap
+/api/storage/ssh/enrollment_bootstrap.pub
 /frontend/node_modules/
 /frontend/dist/
 /console/node_modules/

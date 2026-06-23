@@ -261,7 +261,7 @@ install_packages_debian() {
     log "Installing packages on ${OS_PRETTY} (${WEBSERVER} + PHP)"
     export DEBIAN_FRONTEND=noninteractive
     apt-get update
-    apt-get install -y ca-certificates curl git gnupg lsb-release rsync unzip
+    apt-get install -y ca-certificates curl git gnupg lsb-release rsync unzip openssh-client sshpass
 
     local -a web_packages=()
     local php_sapi="fpm"
@@ -298,7 +298,7 @@ install_packages_redhat() {
         php_packages=(php-fpm "${php_packages[@]}")
     fi
 
-    dnf install -y "${web_packages[@]}" mariadb-server mariadb nodejs npm git rsync unzip \
+    dnf install -y "${web_packages[@]}" mariadb-server mariadb nodejs npm git rsync unzip openssh-clients sshpass \
         "${php_packages[@]}"
     if ! command -v composer >/dev/null 2>&1; then
         curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer

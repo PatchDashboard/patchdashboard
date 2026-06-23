@@ -72,6 +72,8 @@ final class ServerController
         $serverIp = trim((string) ($body['server_ip'] ?? ''));
         $sshUser = trim((string) ($body['ssh_user'] ?? 'root'));
         $serverAlias = trim((string) ($body['server_alias'] ?? ''));
+        $sshPassword = (string) ($body['ssh_password'] ?? '');
+        $sshPassword = $sshPassword !== '' ? $sshPassword : null;
 
         if ($serverIp === '') {
             return $this->json($response, ['error' => 'server_ip is required'], 422);
@@ -94,13 +96,14 @@ final class ServerController
             return $this->json($response, ['error' => 'Unable to prepare SSH keys: ' . $e->getMessage()], 500);
         }
 
-        $sshDeployed = $this->sshKeyService->deployAuthorizedKey($serverIp, $sshUser);
+        $sshDeployed = $this->sshKeyService->deployAuthorizedKey($serverIp, $sshUser, $sshPassword);
         $enrollment = $this->sshKeyService->runEnrollmentScript(
             $serverIp,
             $sshUser,
             $apiBase,
             $authKey,
-            $serverAlias !== '' ? $serverAlias : null
+            $serverAlias !== '' ? $serverAlias : null,
+            $sshPassword,
         );
 
         $server = $this->serverService->findByIpOrName($serverIp, $serverAlias !== '' ? $serverAlias : null);
@@ -156,6 +159,8 @@ final class ServerController
         $installRoot = dirname(__DIR__, 3);
         $enrollScript = $installRoot . '/agents/client/enroll-server.sh';
 
+        $bootstrap = $this->sshKeyService->getBootstrapKeyPair();
+
         return $this->json($response, [
             'https' => $https,
             'base_url' => $baseUrl,
@@ -164,6 +169,9 @@ final class ServerController
             'recommend_pull' => $https,
             'dashboard_public_key' => $publicKey,
             'dashboard_ssh_fingerprint' => $fingerprint,
+            'bootstrap_ssh_configured' => $bootstrap !== null,
+            'bootstrap_public_key' => $bootstrap['public_key'] ?? null,
+            'bootstrap_ssh_fingerprint' => $bootstrap['fingerprint'] ?? null,
             'enroll_script' => $enrollScript,
             'enroll_command_example' => sprintf(
                 'sudo %s --host SERVER_IP --user root --api-base %s --auth-key YOUR_PD_AUTH_KEY',

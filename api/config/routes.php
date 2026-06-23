@@ -10,6 +10,7 @@ use PatchDashboard\Api\Controllers\ConsoleController;
 use PatchDashboard\Api\Controllers\CveFeedController;
 use PatchDashboard\Api\Controllers\CveController;
 use PatchDashboard\Api\Controllers\DistroController;
+use PatchDashboard\Api\Controllers\EnrollmentSshController;
 use PatchDashboard\Api\Controllers\HealthController;
 use PatchDashboard\Api\Controllers\MfaController;
 use PatchDashboard\Api\Controllers\PatchController;
@@ -44,6 +45,9 @@ return function (App $app): void {
         $group->group('', function (RouteCollectorProxy $auth): void {
             $auth->get('/dashboard', [PatchController::class, 'dashboard']);
             $auth->get('/servers/onboarding', [ServerController::class, 'onboarding']);
+            $auth->get('/settings/enrollment-ssh-key', [EnrollmentSshController::class, 'show']);
+            $auth->put('/settings/enrollment-ssh-key', [EnrollmentSshController::class, 'update']);
+            $auth->delete('/settings/enrollment-ssh-key', [EnrollmentSshController::class, 'delete']);
             $auth->get('/servers', [ServerController::class, 'index']);
             $auth->get('/servers/{id}', [ServerController::class, 'show']);
             $auth->patch('/servers/{id}', [ServerController::class, 'update']);
