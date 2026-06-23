@@ -63,6 +63,22 @@ detect_capabilities() {
     [[ -f /etc/pve/version ]] && PD_CAP_PROXMOX=1
 }
 
+detect_container_environment() {
+    export PD_IS_CONTAINER=0
+
+    if [[ -f /.dockerenv || -f /run/.containerenv ]]; then
+        PD_IS_CONTAINER=1
+        return
+    fi
+
+    if command -v systemd-detect-virt >/dev/null 2>&1; then
+        case "$(systemd-detect-virt -c 2>/dev/null || true)" in
+            none|"") ;;
+            *) PD_IS_CONTAINER=1 ;;
+        esac
+    fi
+}
+
 sanitize_os_label() {
     echo "$1" | sed -e 's/[^a-zA-Z0-9]//g'
 }

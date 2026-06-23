@@ -25,7 +25,7 @@ const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true, badgeKey: 'patches' as const },
   { to: '/search', label: 'Search', icon: Search },
   { to: '/servers', label: 'Servers', icon: Server },
-  { to: '/containers', label: 'Application CVEs', icon: Box },
+  { to: '/containers', label: 'Containers', icon: Box },
   { to: '/vulnerabilities', label: 'Vulnerabilities', icon: ShieldAlert },
   { to: '/suppressions', label: 'Suppressions', icon: MinusCircle },
   { to: '/alerts', label: 'Alerts', icon: Bell },

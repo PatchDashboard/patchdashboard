@@ -16,6 +16,7 @@ import { ServerConsolePage } from './pages/ServerConsolePage';
 import { ServerEditPage } from './pages/ServerEditPage';
 import { ServerPackagesPage } from './pages/ServerPackagesPage';
 import { ServerPatchesPage } from './pages/ServerPatchesPage';
+import { ServerWorkloadsPage } from './pages/ServerWorkloadsPage';
 import { ServersPage } from './pages/ServersPage';
 import { SuppressionsPage } from './pages/SuppressionsPage';
 import { VulnerabilitiesPage } from './pages/VulnerabilitiesPage';
@@ -52,6 +53,7 @@ export default function App() {
         <Route path="servers/:id/edit" element={<ServerEditPage />} />
         <Route path="servers/:id/console" element={<ServerConsolePage />} />
         <Route path="servers/:id/patches" element={<ServerPatchesPage />} />
+        <Route path="servers/:id/workloads" element={<ServerWorkloadsPage />} />
         <Route path="servers/:id/packages" element={<ServerPackagesPage />} />
         <Route path="containers" element={<ContainersPage />} />
         <Route path="vulnerabilities" element={<VulnerabilitiesPage />} />

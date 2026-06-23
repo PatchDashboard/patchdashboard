@@ -55,7 +55,7 @@ final class ServerService
         return $this->pdo->query($sql)->fetchAll();
     }
 
-    public function listAll(): array
+    public function listAll(bool $hostsOnly = false): array
     {
         $sql = <<<'SQL'
             SELECT s.*,
@@ -66,7 +66,13 @@ final class ServerService
             LEFT JOIN distro_version dv ON dv.id = s.distro_version
             ORDER BY s.server_alias
         SQL;
-        return $this->pdo->query($sql)->fetchAll();
+        $rows = array_map(fn (array $row) => $this->enrichServerRow($row), $this->pdo->query($sql)->fetchAll());
+
+        if (!$hostsOnly) {
+            return $rows;
+        }
+
+        return array_values(array_filter($rows, fn (array $row) => !$this->isContainerHost($row)));
     }
 
     public function findById(int $id): ?array
@@ -81,7 +87,48 @@ final class ServerService
         );
         $stmt->execute(['id' => $id]);
         $row = $stmt->fetch();
-        return $row ?: null;
+
+        return $row ? $this->enrichServerRow($row) : null;
+    }
+
+    /**
+     * @param array<string, mixed>|null $capabilities
+     */
+    public function updateHostCapabilities(string $clientKey, ?array $capabilities): void
+    {
+        if ($capabilities === null) {
+            return;
+        }
+
+        $this->pdo->prepare('UPDATE servers SET host_capabilities = :host_capabilities WHERE client_key = :client_key')
+            ->execute([
+                'client_key' => $clientKey,
+                'host_capabilities' => json_encode($capabilities),
+            ]);
+    }
+
+    /**
+     * @param array<string, mixed> $server
+     */
+    public function isContainerHost(array $server): bool
+    {
+        $capabilities = $server['host_capabilities'] ?? null;
+        if (is_string($capabilities)) {
+            $capabilities = json_decode($capabilities, true);
+        }
+
+        return is_array($capabilities) && !empty($capabilities['container']);
+    }
+
+    /**
+     * @param array<string, mixed> $server
+     * @return array<string, mixed>
+     */
+    private function enrichServerRow(array $server): array
+    {
+        $server['is_container'] = $this->isContainerHost($server);
+
+        return $server;
     }
 
     public function registerFromAgent(
@@ -253,6 +300,30 @@ final class ServerService
             }
         }
 
+        if (array_key_exists('is_container', $data)) {
+            $existing = $this->findById($id);
+            if ($existing === null) {
+                return null;
+            }
+
+            $capabilities = $existing['host_capabilities'] ?? null;
+            if (is_string($capabilities)) {
+                $capabilities = json_decode($capabilities, true) ?: [];
+            }
+            if (!is_array($capabilities)) {
+                $capabilities = [];
+            }
+
+            if (!empty($data['is_container'])) {
+                $capabilities['container'] = true;
+            } else {
+                unset($capabilities['container']);
+            }
+
+            $fields[] = 'host_capabilities = :host_capabilities';
+            $params['host_capabilities'] = json_encode($capabilities);
+        }
+
         if ($fields === []) {
             return $this->findById($id);
         }
@@ -391,6 +462,10 @@ final class ServerService
     {
         $server = $this->findById($id);
         if ($server === null || !(bool) $server['trusted']) {
+            return false;
+        }
+
+        if ($this->isContainerHost($server)) {
             return false;
         }
 

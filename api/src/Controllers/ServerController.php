@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PatchDashboard\Api\Controllers;
 
+use PatchDashboard\Api\Services\ContainerScanService;
 use PatchDashboard\Api\Services\ServerService;
 use PatchDashboard\Api\Services\SshKeyService;
 use Psr\Http\Message\ResponseInterface;
@@ -13,13 +14,51 @@ final class ServerController
 {
     public function __construct(
         private ServerService $serverService,
+        private ContainerScanService $containerScanService,
         private SshKeyService $sshKeyService,
     ) {
     }
 
     public function index(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        return $this->json($response, ['servers' => $this->serverService->listAll()]);
+        $params = $request->getQueryParams();
+        $hostsOnly = ($params['hosts_only'] ?? '1') !== '0';
+        $summaries = $this->containerScanService->workloadSummariesByServer();
+        $servers = array_map(function (array $server) use ($summaries) {
+            $summary = $summaries[(int) $server['id']] ?? [
+                'workloads' => 0,
+                'host_scans' => 0,
+                'container_workloads' => 0,
+                'host_cves' => 0,
+                'container_cves' => 0,
+            ];
+            $server['monitoring'] = $summary;
+
+            return $server;
+        }, $this->serverService->listAll($hostsOnly));
+
+        return $this->json($response, ['servers' => $servers]);
+    }
+
+    public function workloads(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $serverId = (int) $args['id'];
+        $server = $this->serverService->findById($serverId);
+        if ($server === null || $this->serverService->isContainerHost($server)) {
+            return $this->json($response, ['error' => 'Server not found'], 404);
+        }
+
+        $data = $this->containerScanService->serverWorkloads($serverId);
+
+        return $this->json($response, [
+            'server' => [
+                'id' => $serverId,
+                'server_alias' => $server['server_alias'],
+                'server_name' => $server['server_name'],
+                'trusted' => (int) ($server['trusted'] ?? 0),
+            ],
+            ...$data,
+        ]);
     }
 
     public function show(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
@@ -215,6 +254,13 @@ final class ServerController
         }
 
         if (!$this->serverService->schedulePowerCommand($id, $action, $mode, $scheduledAt)) {
+            $server = $this->serverService->findById($id);
+            if ($server !== null && $this->serverService->isContainerHost($server)) {
+                return $this->json($response, [
+                    'error' => 'Power commands are disabled for container workloads. Untrust to remove this node.',
+                ], 403);
+            }
+
             return $this->json($response, ['error' => 'Server not found, not trusted, or invalid schedule time'], 404);
         }
 

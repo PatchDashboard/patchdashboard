@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PatchDashboard\Api\Controllers;
 
+use PatchDashboard\Api\Services\ContainerScanService;
 use PatchDashboard\Api\Services\PatchService;
 use PatchDashboard\Api\Services\PatchVulnerabilityService;
 use PatchDashboard\Api\Services\ServerService;
@@ -17,13 +18,31 @@ final class PatchController
         private PatchService $patchService,
         private SuppressionService $suppressionService,
         private PatchVulnerabilityService $patchVulnerabilityService,
-        private ServerService $serverService
+        private ServerService $serverService,
+        private ContainerScanService $containerScanService,
     ) {
     }
 
     public function dashboard(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        return $this->json($response, $this->patchService->dashboard($this->suppressionService));
+        $data = $this->patchService->dashboard($this->suppressionService);
+        $nested = $this->containerScanService->nestedContainersByServer();
+
+        $servers = [];
+        foreach ($data['servers'] as $row) {
+            $server = $this->serverService->findById((int) $row['server_id']);
+            if ($server !== null && $this->serverService->isContainerHost($server)) {
+                continue;
+            }
+
+            $row['containers'] = $nested[(int) $row['server_id']] ?? [];
+            $servers[] = $row;
+        }
+
+        $data['servers'] = $servers;
+        $data['server_count'] = count($servers);
+
+        return $this->json($response, $data);
     }
 
     public function forServer(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
@@ -70,6 +89,7 @@ final class PatchController
                 'id' => (int) $serverRow['id'],
                 'server_name' => $serverRow['server_name'],
                 'server_alias' => $serverRow['server_alias'],
+                'is_container' => $this->serverService->isContainerHost($serverRow),
             ],
             'patches' => $patches,
             'distro' => $context,
@@ -100,6 +120,16 @@ final class PatchController
             $rebootMode = 'graceful';
         }
         $serverId = (int) $args['id'];
+        $server = $this->serverService->findById($serverId);
+        if ($server === null) {
+            return $this->json($response, ['error' => 'Server not found'], 404);
+        }
+        if ($this->serverService->isContainerHost($server)) {
+            return $this->json($response, [
+                'error' => 'Patch install is disabled for container workloads. Untrust to remove this node.',
+            ], 403);
+        }
+
         $updated = $this->patchService->installAll($serverId, $this->suppressionService);
         $rebootScheduled = false;
         if ($reboot && $updated > 0) {

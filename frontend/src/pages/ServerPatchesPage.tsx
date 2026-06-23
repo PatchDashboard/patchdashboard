@@ -5,6 +5,7 @@ import { ServerPowerControls } from '../components/ServerPowerControls';
 import { SuppressPackageActions } from '../components/SuppressPackageActions';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
+import { containerServerNotice } from '../lib/servers';
 import type { PowerMode } from '../lib/serverPower';
 
 type Patch = {
@@ -49,6 +50,7 @@ export function ServerPatchesPage() {
   const { token } = useAuth();
   const [serverAlias, setServerAlias] = useState('');
   const [serverName, setServerName] = useState('');
+  const [isContainer, setIsContainer] = useState(false);
   const [patches, setPatches] = useState<Patch[]>([]);
   const [upgradeCommand, setUpgradeCommand] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -59,12 +61,13 @@ export function ServerPatchesPage() {
   async function loadPatches() {
     if (!token || !id) return;
     const data = await api<{
-      server: { server_alias: string; server_name: string };
+      server: { server_alias: string; server_name: string; is_container?: boolean };
       patches: Patch[];
       upgrade_command?: string | null;
     }>(`/api/v1/servers/${id}/patches`, {}, token);
     setServerAlias(data.server.server_alias);
     setServerName(data.server.server_name);
+    setIsContainer(Boolean(data.server.is_container));
     setPatches(data.patches);
     setUpgradeCommand(data.upgrade_command ?? null);
   }
@@ -124,27 +127,35 @@ export function ServerPatchesPage() {
           <button className="btn btn-secondary" type="button" disabled={loading} onClick={refreshVulnerabilities}>
             {loading ? 'Refreshing...' : 'Refresh vulnerabilities'}
           </button>
-          <button className="btn btn-primary" type="button" onClick={() => installAll(false)}>
-            Install all
-          </button>
-          <select
-            className="input w-auto"
-            value={installRebootMode}
-            onChange={(e) => setInstallRebootMode(e.target.value as PowerMode)}
-            aria-label="Reboot mode after install"
-          >
-            <option value="graceful">Graceful reboot</option>
-            <option value="forced">Forced reboot</option>
-          </select>
-          <button className="btn btn-secondary" type="button" onClick={() => installAll(true)}>
-            Install all + reboot
-          </button>
+          {!isContainer ? (
+            <>
+              <button className="btn btn-primary" type="button" onClick={() => installAll(false)}>
+                Install all
+              </button>
+              <select
+                className="input w-auto"
+                value={installRebootMode}
+                onChange={(e) => setInstallRebootMode(e.target.value as PowerMode)}
+                aria-label="Reboot mode after install"
+              >
+                <option value="graceful">Graceful reboot</option>
+                <option value="forced">Forced reboot</option>
+              </select>
+              <button className="btn btn-secondary" type="button" onClick={() => installAll(true)}>
+                Install all + reboot
+              </button>
+            </>
+          ) : null}
         </div>
       </div>
 
+      {isContainer ? (
+        <div className="rounded-lg bg-amber-500/10 px-3 py-2 text-sm text-amber-100">{containerServerNotice}</div>
+      ) : null}
+
       {message ? <div className="rounded-lg bg-sky-500/10 px-3 py-2 text-sm text-sky-200">{message}</div> : null}
 
-      {token && id ? (
+      {token && id && !isContainer ? (
         <ServerPowerControls
           serverId={Number(id)}
           token={token}
@@ -159,7 +170,7 @@ export function ServerPatchesPage() {
         <div className="rounded-lg bg-sky-500/10 px-3 py-2 text-sm text-sky-200">{powerMessage}</div>
       ) : null}
 
-      {upgradeCommand ? (
+      {upgradeCommand && !isContainer ? (
         <div className="card">
           <h2 className="mb-2 text-sm font-medium text-slate-300">Manual install command</h2>
           <pre className="overflow-x-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-200">{upgradeCommand}</pre>

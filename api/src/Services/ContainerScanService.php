@@ -6,6 +6,8 @@ namespace PatchDashboard\Api\Services;
 
 final class ContainerScanService
 {
+    private const VALID_RUNTIMES = ['host', 'image', 'docker', 'podman', 'lxc'];
+
     public function __construct(
         private \PDO $pdo,
         private AlertService $alertService
@@ -23,9 +25,10 @@ final class ContainerScanService
         $seenKeys = [];
 
         foreach ($containers as $container) {
-            $containerId = $this->upsertContainer($serverId, $container);
-            $key = ($container['runtime'] ?? 'docker') . ':' . ($container['runtime_id'] ?? $container['name'] ?? '');
-            $seenKeys[] = $key;
+            $runtime = $this->normalizeRuntime($container);
+            $runtimeId = (string) ($container['runtime_id'] ?? $container['name'] ?? uniqid());
+            $containerId = $this->upsertContainer($serverId, $container, $runtime, $runtimeId);
+            $seenKeys[] = $runtime . ':' . $runtimeId;
             $existing = $this->existingCveIds($containerId);
             $incoming = [];
 
@@ -78,14 +81,14 @@ final class ContainerScanService
         return $stmt->fetchAll();
     }
 
-    public function listVulnerabilities(?string $severity = null): array
+    public function listVulnerabilities(?string $severity = null, ?int $serverId = null): array
     {
         if (!$this->tableExists('container_vulnerabilities')) {
             return [];
         }
 
         $sql = <<<'SQL'
-            SELECT cv.*, c.name AS container_name, c.runtime, s.server_alias, s.id AS server_id
+            SELECT cv.*, c.name AS container_name, c.runtime, c.image_ref, s.server_alias, s.id AS server_id
             FROM container_vulnerabilities cv
             JOIN containers c ON c.id = cv.container_id
             JOIN servers s ON s.id = c.server_id
@@ -97,6 +100,10 @@ final class ContainerScanService
             $sql .= ' AND cv.severity = :severity';
             $params['severity'] = strtoupper($severity);
         }
+        if ($serverId !== null) {
+            $sql .= ' AND s.id = :server_id';
+            $params['server_id'] = $serverId;
+        }
 
         $sql .= ' ORDER BY cv.severity DESC, cv.cve_id';
 
@@ -105,40 +112,233 @@ final class ContainerScanService
         return $stmt->fetchAll();
     }
 
-    public function summary(): array
+    /**
+     * @return array<int, array{workloads: int, container_workloads: int, host_cves: int, container_cves: int}>
+     */
+    public function workloadSummariesByServer(): array
     {
-        if (!$this->tableExists('container_vulnerabilities')) {
-            return ['critical' => 0, 'high' => 0, 'medium' => 0, 'low' => 0, 'total' => 0];
+        if (!$this->tableExists('containers')) {
+            return [];
         }
 
         $rows = $this->pdo->query(
-            "SELECT severity, COUNT(*) AS count
-             FROM container_vulnerabilities
-             WHERE resolved_at IS NULL
-             GROUP BY severity"
+            'SELECT c.server_id,
+                    COUNT(*) AS workloads,
+                    SUM(CASE WHEN c.runtime = \'host\' THEN 1 ELSE 0 END) AS host_scans,
+                    SUM(CASE WHEN c.runtime != \'host\' THEN 1 ELSE 0 END) AS container_workloads
+             FROM containers c
+             GROUP BY c.server_id'
         )->fetchAll();
 
+        $summaries = [];
+        foreach ($rows as $row) {
+            $summaries[(int) $row['server_id']] = [
+                'workloads' => (int) $row['workloads'],
+                'host_scans' => (int) $row['host_scans'],
+                'container_workloads' => (int) $row['container_workloads'],
+                'host_cves' => 0,
+                'container_cves' => 0,
+            ];
+        }
+
+        if (!$this->tableExists('container_vulnerabilities')) {
+            return $summaries;
+        }
+
+        $cveRows = $this->pdo->query(
+            'SELECT c.server_id,
+                    SUM(CASE WHEN c.runtime = \'host\' THEN 1 ELSE 0 END) AS host_cves,
+                    SUM(CASE WHEN c.runtime != \'host\' THEN 1 ELSE 0 END) AS container_cves
+             FROM container_vulnerabilities cv
+             JOIN containers c ON c.id = cv.container_id
+             WHERE cv.resolved_at IS NULL
+             GROUP BY c.server_id'
+        )->fetchAll();
+
+        foreach ($cveRows as $row) {
+            $serverId = (int) $row['server_id'];
+            $summaries[$serverId] ??= [
+                'workloads' => 0,
+                'host_scans' => 0,
+                'container_workloads' => 0,
+                'host_cves' => 0,
+                'container_cves' => 0,
+            ];
+            $summaries[$serverId]['host_cves'] = (int) $row['host_cves'];
+            $summaries[$serverId]['container_cves'] = (int) $row['container_cves'];
+        }
+
+        return $summaries;
+    }
+
+    /**
+     * @return array<int, list<array{id: int, name: string, runtime: string, image_ref: ?string, cve_count: int}>>
+     */
+    public function nestedContainersByServer(): array
+    {
+        if (!$this->tableExists('containers')) {
+            return [];
+        }
+
+        $sql = <<<'SQL'
+            SELECT c.server_id, c.id, c.name, c.runtime, c.image_ref,
+                   COUNT(cv.id) AS cve_count
+            FROM containers c
+            LEFT JOIN container_vulnerabilities cv
+              ON cv.container_id = c.id AND cv.resolved_at IS NULL
+            WHERE c.runtime != 'host'
+            GROUP BY c.id, c.server_id, c.name, c.runtime, c.image_ref
+            ORDER BY c.name
+        SQL;
+
+        $nested = [];
+        foreach ($this->pdo->query($sql)->fetchAll() as $row) {
+            $serverId = (int) $row['server_id'];
+            $nested[$serverId] ??= [];
+            $nested[$serverId][] = [
+                'id' => (int) $row['id'],
+                'name' => (string) $row['name'],
+                'runtime' => (string) $row['runtime'],
+                'image_ref' => $row['image_ref'] !== null ? (string) $row['image_ref'] : null,
+                'cve_count' => (int) $row['cve_count'],
+            ];
+        }
+
+        return $nested;
+    }
+
+    /**
+     * @return array{
+     *   workloads: list<array<string, mixed>>,
+     *   host_workloads: list<array<string, mixed>>,
+     *   container_workloads: list<array<string, mixed>>,
+     *   vulnerabilities: list<array<string, mixed>>,
+     *   host_vulnerabilities: list<array<string, mixed>>,
+     *   container_vulnerabilities: list<array<string, mixed>>
+     * }
+     */
+    public function serverWorkloads(int $serverId): array
+    {
+        $workloads = $this->list($serverId);
+        $vulnerabilities = $this->listVulnerabilities(null, $serverId);
+
+        $hostWorkloads = [];
+        $containerWorkloads = [];
+        foreach ($workloads as $row) {
+            if (($row['runtime'] ?? '') === 'host') {
+                $hostWorkloads[] = $row;
+            } else {
+                $containerWorkloads[] = $row;
+            }
+        }
+
+        $hostVulnerabilities = [];
+        $containerVulnerabilities = [];
+        foreach ($vulnerabilities as $row) {
+            if (($row['runtime'] ?? '') === 'host') {
+                $hostVulnerabilities[] = $row;
+            } else {
+                $containerVulnerabilities[] = $row;
+            }
+        }
+
+        return [
+            'workloads' => $workloads,
+            'host_workloads' => $hostWorkloads,
+            'container_workloads' => $containerWorkloads,
+            'vulnerabilities' => $vulnerabilities,
+            'host_vulnerabilities' => $hostVulnerabilities,
+            'container_vulnerabilities' => $containerVulnerabilities,
+        ];
+    }
+
+    public function summary(): array
+    {
+        if (!$this->tableExists('container_vulnerabilities')) {
+            return $this->emptySummary();
+        }
+
+        $base = <<<'SQL'
+            SELECT LOWER(cv.severity) AS severity, COUNT(*) AS count
+            FROM container_vulnerabilities cv
+            JOIN containers c ON c.id = cv.container_id
+            WHERE cv.resolved_at IS NULL
+        SQL;
+
+        $overall = $this->summarizeSeverityRows(
+            $this->pdo->query($base . ' GROUP BY cv.severity')->fetchAll()
+        );
+
+        $host = $this->summarizeSeverityRows(
+            $this->pdo->query($base . " AND c.runtime = 'host' GROUP BY cv.severity")->fetchAll()
+        );
+
+        $containers = $this->summarizeSeverityRows(
+            $this->pdo->query($base . " AND c.runtime != 'host' GROUP BY cv.severity")->fetchAll()
+        );
+
+        $workloads = $this->pdo->query(
+            "SELECT
+                SUM(CASE WHEN runtime = 'host' THEN 1 ELSE 0 END) AS host_scans,
+                SUM(CASE WHEN runtime != 'host' THEN 1 ELSE 0 END) AS container_workloads
+             FROM containers"
+        )->fetch() ?: [];
+
+        return array_merge($overall, [
+            'host' => $host,
+            'containers' => $containers,
+            'workloads' => [
+                'host' => (int) ($workloads['host_scans'] ?? 0),
+                'containers' => (int) ($workloads['container_workloads'] ?? 0),
+            ],
+        ]);
+    }
+
+    /**
+     * @param list<array{severity?: string, count?: int|string}> $rows
+     * @return array{critical: int, high: int, medium: int, low: int, total: int}
+     */
+    private function summarizeSeverityRows(array $rows): array
+    {
         $summary = ['critical' => 0, 'high' => 0, 'medium' => 0, 'low' => 0, 'total' => 0];
         foreach ($rows as $row) {
-            $key = strtolower((string) $row['severity']);
+            $key = strtolower((string) ($row['severity'] ?? ''));
             if (isset($summary[$key])) {
                 $summary[$key] = (int) $row['count'];
             }
-            $summary['total'] += (int) $row['count'];
+            $summary['total'] += (int) ($row['count'] ?? 0);
         }
 
         return $summary;
     }
 
-    private function upsertContainer(int $serverId, array $container): int
+    /**
+     * @return array{
+     *   critical: int, high: int, medium: int, low: int, total: int,
+     *   host: array{critical: int, high: int, medium: int, low: int, total: int},
+     *   containers: array{critical: int, high: int, medium: int, low: int, total: int},
+     *   workloads: array{host: int, containers: int}
+     * }
+     */
+    private function emptySummary(): array
     {
-        $runtimeId = (string) ($container['runtime_id'] ?? $container['name'] ?? uniqid());
+        $zero = ['critical' => 0, 'high' => 0, 'medium' => 0, 'low' => 0, 'total' => 0];
+
+        return array_merge($zero, [
+            'host' => $zero,
+            'containers' => $zero,
+            'workloads' => ['host' => 0, 'containers' => 0],
+        ]);
+    }
+
+    private function upsertContainer(int $serverId, array $container, string $runtime, string $runtimeId): int
+    {
         $stmt = $this->pdo->prepare(
             'SELECT id FROM containers WHERE server_id = :server_id AND runtime = :runtime AND runtime_id = :runtime_id'
         );
         $stmt->execute([
             'server_id' => $serverId,
-            'runtime' => $container['runtime'] ?? 'docker',
+            'runtime' => $runtime,
             'runtime_id' => $runtimeId,
         ]);
         $existing = $stmt->fetch();
@@ -164,7 +364,7 @@ final class ContainerScanService
         );
         $insert->execute([
             'server_id' => $serverId,
-            'runtime' => $container['runtime'] ?? 'docker',
+            'runtime' => $runtime,
             'runtime_id' => $runtimeId,
             'name' => $container['name'] ?? $runtimeId,
             'image_ref' => $container['image'] ?? null,
@@ -173,6 +373,30 @@ final class ContainerScanService
         ]);
 
         return (int) $this->pdo->lastInsertId();
+    }
+
+    /**
+     * @param array<string, mixed> $container
+     */
+    private function normalizeRuntime(array $container): string
+    {
+        $runtime = strtolower(trim((string) ($container['runtime'] ?? '')));
+        $runtimeId = (string) ($container['runtime_id'] ?? '');
+        $imageRef = (string) ($container['image'] ?? $container['image_ref'] ?? '');
+
+        if ($runtime === 'host' || $runtimeId === 'rootfs' || str_starts_with($imageRef, 'os:')) {
+            return 'host';
+        }
+
+        if ($runtime === 'image' || str_starts_with($runtimeId, 'docker:') || str_starts_with($runtimeId, 'podman:')) {
+            return 'image';
+        }
+
+        if (in_array($runtime, self::VALID_RUNTIMES, true)) {
+            return $runtime;
+        }
+
+        return 'docker';
     }
 
     private function upsertVulnerability(int $containerId, array $vuln): void

@@ -13,6 +13,7 @@ import {
   fetchCveDetail,
   isPackageLikeQuery,
   runtimeLabel,
+  remediationLabel,
   searchVulnerabilities,
   SERVER_SCOPE_ALL,
   serverScopeLabel,
@@ -318,7 +319,8 @@ type InstalledSortKey =
   | 'container_name'
   | 'package_name'
   | 'installed_version'
-  | 'fixed_version';
+  | 'fixed_version'
+  | 'remediation';
 
 const installedSortGetters: Record<InstalledSortKey, (row: InstalledVulnerability) => unknown> = {
   cve_id: (row) => row.cve_id ?? '',
@@ -329,6 +331,7 @@ const installedSortGetters: Record<InstalledSortKey, (row: InstalledVulnerabilit
   package_name: (row) => row.package_name,
   installed_version: (row) => row.installed_version ?? '',
   fixed_version: (row) => row.fixed_version ?? '',
+  remediation: (row) => remediationLabel(row.runtime, row.kind),
 };
 
 function InstalledTable({
@@ -355,6 +358,7 @@ function InstalledTable({
           <SortableTh label="Server" sortKey="server_alias" sort={sort} onSort={handleSort} />
           <SortableTh label="Application" sortKey="container_name" sort={sort} onSort={handleSort} />
           <SortableTh label="Package" sortKey="package_name" sort={sort} onSort={handleSort} />
+          <SortableTh label="Remediation" sortKey="remediation" sort={sort} onSort={handleSort} />
           <SortableTh label="Installed" sortKey="installed_version" sort={sort} onSort={handleSort} />
           <SortableTh label="Fixed" sortKey="fixed_version" sort={sort} onSort={handleSort} className="pr-0" />
         </tr>
@@ -395,8 +399,25 @@ function InstalledRow({
           {row.server_alias}
         </Link>
       </td>
-      <td className="py-3 pr-4">{row.container_name ?? '—'}</td>
+      <td className="py-3 pr-4">
+        {row.container_name ?? '—'}
+        {row.runtime ? (
+          <span className="ml-2 text-xs text-slate-500">({runtimeLabel(row.runtime)})</span>
+        ) : null}
+      </td>
       <td className="py-3 pr-4">{row.package_name}</td>
+      <td className="py-3 pr-4">
+        <span
+          className={clsx(
+            'rounded px-2 py-0.5 text-xs',
+            remediationLabel(row.runtime, row.kind) === 'Patchable'
+              ? 'bg-emerald-500/15 text-emerald-200'
+              : 'bg-slate-800 text-slate-300',
+          )}
+        >
+          {remediationLabel(row.runtime, row.kind)}
+        </span>
+      </td>
       <td className="py-3 pr-4">{row.installed_version ?? '—'}</td>
       <td className="py-3">{row.fixed_version ?? '—'}</td>
     </tr>

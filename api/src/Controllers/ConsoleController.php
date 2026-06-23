@@ -34,6 +34,12 @@ final class ConsoleController
             return $this->json($response, ['error' => 'Server must be trusted before opening a console'], 422);
         }
 
+        if ($this->serverService->isContainerHost($server)) {
+            return $this->json($response, [
+                'error' => 'Console access is disabled for container workloads.',
+            ], 403);
+        }
+
         $host = trim((string) ($server['server_ip'] ?? ''));
         if ($host === '') {
             return $this->json($response, ['error' => 'Server has no IP address configured'], 422);

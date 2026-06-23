@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ServerPowerControls } from '../components/ServerPowerControls';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
+import { containerServerNotice, isContainerServer } from '../lib/servers';
 
 type Server = {
   id: number;
@@ -13,6 +14,7 @@ type Server = {
   distro_version: number;
   trusted: number;
   last_seen?: string;
+  is_container?: boolean;
 };
 
 type Distro = {
@@ -53,6 +55,7 @@ export function ServerEditPage() {
           server_ip: server.server_ip,
           distro_id: server.distro_id,
           distro_version: server.distro_version,
+          is_container: server.is_container ?? false,
         }),
       },
       token,
@@ -77,6 +80,7 @@ export function ServerEditPage() {
   const versionOptions =
     distros.find((d) => d.id === server.distro_id)?.versions ??
     distros.flatMap((d) => d.versions);
+  const container = isContainerServer(server);
 
   return (
     <div className="space-y-6">
@@ -86,7 +90,7 @@ export function ServerEditPage() {
           <p className="text-slate-400">{server.server_alias}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {server.trusted ? (
+          {server.trusted && !container ? (
             <Link className="btn btn-secondary" to={`/servers/${server.id}/console`}>
               Console
             </Link>
@@ -96,6 +100,10 @@ export function ServerEditPage() {
           </Link>
         </div>
       </div>
+
+      {container ? (
+        <div className="rounded-lg bg-amber-500/10 px-3 py-2 text-sm text-amber-100">{containerServerNotice}</div>
+      ) : null}
 
       {message ? <div className="rounded-lg bg-sky-500/10 px-3 py-2 text-sm text-sky-200">{message}</div> : null}
 
@@ -158,6 +166,14 @@ export function ServerEditPage() {
             ))}
           </select>
         </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={Boolean(server.is_container)}
+            onChange={(e) => setServer({ ...server, is_container: e.target.checked })}
+          />
+          <span>Container workload (disable patch install, reboot, and console)</span>
+        </label>
         <div className="flex gap-2">
           <button className="btn btn-primary" type="submit">
             Save
@@ -168,7 +184,7 @@ export function ServerEditPage() {
         </div>
       </form>
 
-      {token && server.trusted ? (
+      {token && server.trusted && !container ? (
         <ServerPowerControls serverId={server.id} token={token} />
       ) : null}
     </div>

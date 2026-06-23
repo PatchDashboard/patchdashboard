@@ -63,6 +63,7 @@ return function (App $app): void {
             $auth->post('/servers/{id}/patches/enrich-vulnerabilities', [PatchController::class, 'enrichVulnerabilities']);
             $auth->post('/servers/{id}/patches/install', [PatchController::class, 'installAll']);
             $auth->get('/servers/{id}/packages', [PatchController::class, 'packagesForServer']);
+            $auth->get('/servers/{id}/workloads', [ServerController::class, 'workloads']);
             $auth->get('/search/packages', [PatchController::class, 'searchPackages']);
 
             $auth->get('/suppressions', [SuppressionController::class, 'index']);

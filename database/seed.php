@@ -304,6 +304,23 @@ function seedContainers(PDO $pdo, array $serverIds): void
                 ['CVE-2024-22020', 'HIGH', 'nodejs', '20.11.0', '20.18.1', 'Node.js mock CVE'],
             ]],
         ],
+        'web02.example.com' => [
+            ['docker', 'web02-nginx', 'nginx-proxy', 'nginx:1.24-alpine', 'running', [
+                ['CVE-2024-7347', 'MEDIUM', 'nginx', '1.24.0', '1.24.0-r1', 'NGINX buffer issue'],
+            ]],
+            ['docker', 'web02-frontend', 'react-frontend-static', 'node:20-alpine', 'running', []],
+        ],
+        'db01.example.com' => [
+            ['docker', 'db01-mariadb', 'mariadb-container', 'mariadb:10.11', 'running', [
+                ['CVE-2024-21096', 'LOW', 'mariadb', '10.11.11', '10.11.14', 'MariaDB mock CVE'],
+            ]],
+            ['docker', 'db01-redis', 'redis-cache', 'redis:7-alpine', 'running', []],
+        ],
+        'legacy01.example.com' => [
+            ['docker', 'legacy-app', 'legacy-app', 'centos:7', 'running', [
+                ['CVE-2024-6387', 'HIGH', 'openssh', '7.4p1', '8.9p1', 'regreSSHion mock CVE'],
+            ]],
+        ],
         'pve01.example.com' => [
             ['lxc', '100', 'monitoring', 'debian:12', 'running', [
                 ['CVE-2024-37371', 'CRITICAL', 'krb5', '1.20.1-2', '1.20.1-6+deb12u2', 'Kerberos mock CVE'],

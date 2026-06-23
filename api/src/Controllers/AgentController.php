@@ -55,6 +55,9 @@ final class AgentController
         }
 
         $this->serverService->touchLastSeen($clientKey);
+        if (!empty($body['capabilities']) && is_array($body['capabilities'])) {
+            $this->serverService->updateHostCapabilities($clientKey, $body['capabilities']);
+        }
         $checkPatches = $this->serverService->shouldCheckPatches($clientKey);
         $checkCveScan = $this->serverService->shouldRunCveScan($clientKey);
         $installKey = $this->serverService->getInstallKey();
@@ -118,36 +121,39 @@ final class AgentController
         $server = $agent['server'];
         $serverName = (string) $server['server_name'];
         $serverId = (int) $server['id'];
+        $isContainer = $this->serverService->isContainerHost($server);
         $pdo = \PatchDashboard\Api\Config\Database::connect();
 
         $suppressionService = new \PatchDashboard\Api\Services\SuppressionService($pdo);
         $suppressed = $suppressionService->suppressedPackageNamesForServer($serverName);
         $suppressedLookup = array_fill_keys($suppressed, true);
 
-        $stmt = $pdo->prepare(
-            'SELECT package_name FROM patches
-             WHERE server_name = :server_name AND to_upgrade = 1 AND upgraded = 0'
-        );
-        $stmt->execute(['server_name' => $serverName]);
         $packages = [];
-        foreach ($stmt->fetchAll() as $row) {
-            $name = (string) $row['package_name'];
-            if (!isset($suppressedLookup[$name])) {
-                $packages[] = $name;
-            }
-        }
-
-        if ($packages !== []) {
-            $mark = $pdo->prepare(
-                'UPDATE patches SET to_upgrade = 0, upgraded = 1
-                 WHERE server_name = :server_name AND package_name = :package_name'
+        if (!$isContainer) {
+            $stmt = $pdo->prepare(
+                'SELECT package_name FROM patches
+                 WHERE server_name = :server_name AND to_upgrade = 1 AND upgraded = 0'
             );
-            foreach ($packages as $package) {
-                $mark->execute(['server_name' => $serverName, 'package_name' => $package]);
+            $stmt->execute(['server_name' => $serverName]);
+            foreach ($stmt->fetchAll() as $row) {
+                $name = (string) $row['package_name'];
+                if (!isset($suppressedLookup[$name])) {
+                    $packages[] = $name;
+                }
+            }
+
+            if ($packages !== []) {
+                $mark = $pdo->prepare(
+                    'UPDATE patches SET to_upgrade = 0, upgraded = 1
+                     WHERE server_name = :server_name AND package_name = :package_name'
+                );
+                foreach ($packages as $package) {
+                    $mark->execute(['server_name' => $serverName, 'package_name' => $package]);
+                }
             }
         }
 
-        $power = $this->serverService->consumePendingPowerCommand($serverId);
+        $power = $isContainer ? null : $this->serverService->consumePendingPowerCommand($serverId);
 
         $commands = [
             'upgrade_packages' => $packages,

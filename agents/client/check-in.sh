@@ -10,12 +10,13 @@ source "${SCRIPT_DIR}/../lib/api-client.sh"
 pd_load_client_key
 detect_os
 detect_capabilities
+detect_container_environment
 
 client_host="$(hostname -f 2>/dev/null || hostname)"
 client_os="$(sanitize_os_label "${PD_OS_LABEL}")"
 client_os_ver="${PD_OS_VERSION}"
 
-capabilities_json="{\"docker\":${PD_CAP_DOCKER},\"podman\":${PD_CAP_PODMAN},\"proxmox\":${PD_CAP_PROXMOX}}"
+capabilities_json="{\"docker\":${PD_CAP_DOCKER},\"podman\":${PD_CAP_PODMAN},\"proxmox\":${PD_CAP_PROXMOX},\"container\":${PD_IS_CONTAINER}}"
 
 response="$(curl -k -s \
     -H "X-CLIENT-KEY: ${PD_CLIENT_KEY}" \
