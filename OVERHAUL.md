@@ -1,37 +1,62 @@
-# PatchDashboard v2.0 Overhaul
+# PatchDashboard v2.0
 
-Branch `2026-overhaul` modernizes PatchDashboard into a React SPA + PHP 8 REST API with consolidated bash agents and container vulnerability alerting.
+Branch `2026-overhaul` replaces the legacy PHP UI with a React SPA, PHP 8 Slim API, consolidated bash agents, optional Redis-backed services, and integrated CVE/advisory sync.
 
 ## Architecture
 
 ```
 frontend/     React 19 + Vite + Tailwind SPA
 api/          PHP 8.3 Slim 4 REST API (/api/v1)
+console/      Node WebSocket service for browser SSH sessions
 agents/       Pull-model client scripts + shared libs
-database/     Schema, migrations, and seed data
-legacy/       v1 PHP UI, bash agents, and installer (deprecated)
+database/     Schema (db_create.sql), numbered migrations, seed/bootstrap
+legacy/       v1 PHP UI and installer (deprecated)
 ```
 
-## Quick start (Docker)
+```
+┌─────────────┐     REST/JWT      ┌─────────────┐
+│   Browser   │◄─────────────────►│  PHP API    │
+│  (React)    │                   │  (Slim)     │
+└──────┬──────┘                   └──────┬──────┘
+       │ WebSocket                       │ MySQL
+       ▼                                 ▼
+┌─────────────┐     Redis         ┌─────────────┐
+│  console/   │◄─────────────────►│   MariaDB   │
+└─────────────┘                   └─────────────┘
+       ▲
+       │ SSH (production) or dev stub
+       ▼
+┌─────────────┐     check-in      ┌─────────────┐
+│   Agents    │──────────────────►│  PHP API    │
+│  (bash)     │   patches/CVE     └─────────────┘
+└─────────────┘
+```
 
-**Development** — hot-reload frontend and API source mounts:
+## Quick start (Docker development)
 
 ```bash
 git checkout 2026-overhaul
 docker compose up --build
 ```
 
-- Frontend: http://localhost:5173
-- API: http://localhost:8080/health
-- MySQL: localhost:3306 (`patchdashboard` / `patchdashboard`)
+| Service | Port | Role |
+|---------|------|------|
+| `frontend` | 5173 | Vite dev server; proxies API |
+| `api` | 8080 | PHP built-in server; runs migrations on start |
+| `mysql` | 3306 | MariaDB 11; schema from `db_create.sql` |
+| `redis` | 6379 | Console session store |
+| `console` | 8090 | WebSocket SSH console (`CONSOLE_DEV_STUB=true` by default) |
 
-After MySQL initializes, run migrations:
+- Frontend: http://localhost:5173
+- API health: http://localhost:8080/health
+
+Optional seed data:
 
 ```bash
-docker compose exec api php /database/migrate.php
+docker compose exec api php /database/seed.php --fresh
 ```
 
-**Production** — built SPA behind nginx, PHP-FPM API, MariaDB (no dev bind mounts):
+## Production Docker
 
 ```bash
 git clone https://github.com/PatchDashboard/patchdashboard
@@ -39,14 +64,14 @@ cd patchdashboard
 ./install.sh --docker-prod
 ```
 
-Hybrid browser setup on Docker:
+Hybrid browser setup:
 
 ```bash
 ./install.sh --docker-prod --prepare-web-setup
 # Open the printed http://…/setup?token=… URL
 ```
 
-Unattended production Docker:
+Unattended example:
 
 ```bash
 ./install.sh --docker-prod --unattended \
@@ -58,176 +83,210 @@ Unattended production Docker:
   --db-root-pass='root-secret'
 ```
 
-The installer writes `.env`, builds images from `docker-compose.prod.yml`, starts the stack, runs migrations, and either bootstraps the admin user or prints a one-time setup URL.
-
 | Service | Role |
 |---------|------|
-| `web` | nginx serves `frontend` build; proxies `/api/` and `/health` to PHP-FPM |
-| `api` | PHP 8.3 FPM Slim API; persistent `api_storage` volume for setup lock/token |
-| `mysql` | MariaDB 11 with schema init from `db_create.sql` |
+| `web` | nginx serves React build; proxies `/api/` and `/health` to PHP-FPM |
+| `api` | PHP 8.3 FPM Slim API |
+| `mysql` | MariaDB 11 |
+| `redis` | Shared session store for console |
 
-Manage a running production stack:
+Manage stack: `docker compose -f docker-compose.prod.yml ps|logs|up -d --build`
 
-```bash
-docker compose -f docker-compose.prod.yml ps
-docker compose -f docker-compose.prod.yml logs -f web api
-docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d --build
-```
-
-Put a TLS-terminating reverse proxy (Caddy, Traefik, cloud LB) in front of the published `HTTP_PORT` for HTTPS in production.
+Put TLS termination (Caddy, Traefik, cloud LB) in front of the published HTTP port for HTTPS.
 
 ## VM / bare-metal install
 
-For a dedicated Linux VM instead of Docker, use the v2 installer at `./install.sh`.
-
-**Hybrid web setup (nginx + PHP-FPM)** — recommended when you want the CLI to prepare the VM and finish admin/company in the browser. This is the default web stack (`--webserver=nginx`).
+**Hybrid web setup (recommended)** — CLI prepares nginx + PHP-FPM + MariaDB; admin account created in browser:
 
 ```bash
-git clone https://github.com/PatchDashboard/patchdashboard
-cd patchdashboard
 sudo ./install.sh --prepare-web-setup
-# same as: sudo ./install.sh --prepare-web-setup --webserver=nginx
+# Open printed Setup URL: http://your-host/setup?token=…
 ```
 
-The installer prompts for the public dashboard URL, then:
-
-1. **Pre-check** — OS support, disk space, MariaDB root access, no existing `install.lock`
-2. **Packages** — nginx, PHP 8.2+ FPM (`php*-fpm`, `pdo_mysql`), MariaDB, Node.js, Composer
-3. **Deploy** — copies the app to `/opt/patchdashboard` (override with `--install-root`)
-4. **Database** — creates DB/user, imports `db_create.sql`, runs migrations
-5. **Build** — `composer install` in `api/`, `npm run build` for the React SPA
-6. **Web stack** — nginx site (`install/templates/nginx-site.conf`):
-   - static files from `frontend/dist/`
-   - `/api/*` and `/health` → PHP via PHP-FPM socket
-7. **Post-check** — verifies nginx, PHP-FPM, DB connectivity, file permissions, `/health`, and `/api/v1/setup/status`
-8. **Token** — writes a one-time token to `api/storage/setup.token` and prints:
-
-```
-Setup URL: http://your-host/setup?token=...
-```
-
-Open that URL in a browser. The `/setup` wizard asks for company name, admin username, email, and password. On success it:
-
-- creates the admin user and `company` row (including agent `install_key`)
-- updates `api/.env`
-- writes `api/storage/install.lock` and **deletes** the setup token
-
-Sign in at `/login`. Use the install key shown on the setup completion page as `PD_AUTH_KEY` on agents.
-
-Unattended hybrid (nginx, no admin prompts on CLI):
-
-```bash
-sudo ./install.sh --unattended --prepare-web-setup \
-  --web-url=http://patch.example.com \
-  --webserver=nginx \
-  --db-pass='choose-a-strong-db-password'
-```
-
-**Apache + mod_php** — use `--webserver=apache` instead of nginx if you prefer Apache; the browser setup flow is the same.
-
-**Full CLI install** (interactive or unattended) — skips the browser wizard; creates the admin user on the CLI and writes `install.lock` immediately:
+**Full CLI install** — admin created on CLI, no browser wizard:
 
 ```bash
 sudo ./install.sh
-# or unattended:
-sudo ./install.sh --unattended \
-  --web-url=http://patch.example.com \
-  --webserver=nginx \
-  --admin-email=admin@example.com \
-  --admin-pass='change-me' \
-  --company='Acme Inc' \
-  --db-pass='db-secret'
 ```
 
-Supported distros: Debian 12+, Ubuntu 22.04+, Rocky/Alma/RHEL 9+. Default install root: `/opt/patchdashboard`. Legacy v1 installer: `./legacy/install.sh`.
+Supported distros: Debian 12+, Ubuntu 22.04+, Rocky/Alma/RHEL 9+. Default root: `/opt/patchdashboard`.
 
-### Hybrid setup: nginx/PHP-FPM layout
+### Hybrid setup layout
 
 | Path | Purpose |
 |------|---------|
-| `/opt/patchdashboard/frontend/dist/` | React SPA (nginx `root`) |
-| `/opt/patchdashboard/api/public/index.php` | Slim front controller (PHP-FPM) |
-| `/opt/patchdashboard/api/.env` | DB credentials, JWT secret (mode `640`) |
-| `/opt/patchdashboard/api/storage/setup.token` | One-time web setup token (removed after setup) |
-| `/opt/patchdashboard/api/storage/install.lock` | Written when setup completes |
-| `/etc/nginx/sites-available/patchdashboard` | Generated nginx vhost |
+| `frontend/dist/` | React SPA (nginx root) |
+| `api/public/index.php` | Slim front controller |
+| `api/.env` | DB, JWT, Redis, console, alert config |
+| `api/storage/setup.token` | One-time web setup token (deleted after use) |
+| `api/storage/install.lock` | Marks completed installation |
+| `api/storage/ssh/` | Dashboard Ed25519 keypair for enrollment/console |
 
-PHP-FPM runs as `www-data` (Debian/Ubuntu) or the user owning the FPM socket. `api/storage/` is `770 root:www-data` so the setup wizard can write `install.lock` via PHP.
+## Web UI
 
-### Troubleshooting hybrid setup
+| Route | Description |
+|-------|-------------|
+| `/` | Dashboard — patch counts, distro breakdown |
+| `/search` | Fleet-wide package search |
+| `/servers` | Server list, trust/untrust, power actions, console link |
+| `/servers/add` | SSH enrollment (admin) |
+| `/servers/:id/edit` | Server settings |
+| `/servers/:id/patches` | Pending patches; install all; suppress; CVE enrich |
+| `/servers/:id/packages` | Installed packages; suppress |
+| `/servers/:id/console` | Web SSH (admin, trusted servers, password confirmation) |
+| `/containers` | Application CVEs — raw Trivy inventory |
+| `/vulnerabilities` | Unified vulnerability search (Trivy + advisories + patches) |
+| `/suppressions` | Per-server suppression management |
+| `/preferences` | Alert opt-in; global suppressions |
+| `/profile` | Account settings; **MFA enrollment** |
+| `/alerts` | Alert rules, webhooks, Slack integration |
+| `/cve-feeds` | Enable/add/sync CVE feeds (admin) |
+| `/users` | User CRUD (admin) |
+| `/plugins` | Plugin page visibility (admin) |
 
-- **Post-check fails on PHP-FPM socket** — ensure `php8.2-fpm` or `php8.3-fpm` is running: `systemctl status php8.3-fpm`
-- **Health check fails** — run `nginx -t`, confirm `Host` header matches your URL hostname, curl manually: `curl -H 'Host: patch.example.com' http://127.0.0.1/health`
-- **Invalid setup link** — use the full URL printed by the installer; token is single-use and removed after setup
-- **Already installed** — remove `api/storage/install.lock` only if you intend to reinstall; you may need to reset DB users/company manually
+Global package search box in the sidebar header searches the advisory library and fleet packages.
+
+## Features
+
+### Authentication
+
+- JWT sessions (`Authorization: Bearer`); legacy SHA256 passwords transparently rehashed to bcrypt on login
+- **TOTP MFA** — optional per user; Profile → Enable MFA (QR code + manual key); login prompts for 6-digit code when enabled
+- Console and MFA disable require password re-entry
+
+### Servers & agents
+
+- **Enrollment** — admin adds server via SSH (`/servers/add` or `agents/client/enroll-server.sh`); installs agent env, cron, and dashboard SSH key
+- **Trust / untrust** — untrust revokes agent key, removes SSH key from `authorized_keys`, blocks console
+- **Check-in** — agents POST patches, packages, container scans; receive install/reboot/shutdown commands
+- **Power commands** — reboot/shutdown queued per server (configurable command templates per distro)
+- **Non-root SSH user** — optional `ssh_user` field per server
+
+Agent environment on nodes: `/etc/patchdashboard/agent.env` with `PD_API_BASE`, `PD_CLIENT_KEY`, etc.
+
+Agent cron (`agents/client/cron/patchdashboard`):
+
+- **03:00 daily** — `application_cve_scan.sh` (host OS + all container images)
+- **Every 5 min** — `check-in.sh` (patch check; CVE rescan if &gt; 24h since last)
+
+### Patches & suppressions
+
+- View pending updates per server; sortable columns
+- **Install all** pending patches via API (admin)
+- **Suppress** packages globally, per server, or inline from patch/package/vulnerability tables
+- Live patch urgency lookup via UbuntuUpdates.org for supported distros
+
+### Vulnerabilities & CVE data
+
+- **Application CVEs** (`/containers`) — Trivy results from agents; filter by severity, server, image
+- **Vulnerabilities** (`/vulnerabilities`) — cross-fleet search with filters for CVE ID, package, severity, distro, runtime, CVSS
+- **CVE feed sync** — bulk import into local catalog and per-distro advisories
+
+Feed providers (configure at **CVE feeds**, admin):
+
+| Provider | Scope | Source |
+|----------|-------|--------|
+| NVD | Global | NIST API (incremental by last-modified window) |
+| GitHub | Global | OSV unified export (GHSA records) |
+| Debian / Ubuntu USN / Red Hat / Rocky / AlmaLinux / Fedora | Per distro | OSV bulk zips |
+| UbuntuUpdates | Per distro | On-demand live lookup |
+
+Enable feeds with the checkbox; **Add feed** for providers not yet configured for a distro. Sync manually or on schedule:
+
+```bash
+php database/cve_sync.php --all
+php database/cve_sync.php --feed=12
+php database/cve_sync.php --provider=nvd --distro=Ubuntu
+```
+
+Recommended cron on dashboard host:
+
+```bash
+0 2 * * * cd /opt/patchdashboard && php database/cve_sync.php --all
+```
+
+Set `NVD_API_KEY` in `api/.env` for NVD rate limits. Optional `CVE_SYNC_MEMORY_LIMIT=512M` for large OSV imports.
+
+### Web SSH console
+
+- Admin opens console from server list or edit page
+- User re-enters dashboard password before session token is issued
+- One-time WebSocket token stored in Redis (5-minute TTL)
+- **Development:** `CONSOLE_DEV_STUB=true` — terminal stub, no real SSH
+- **Production:** set `CONSOLE_DEV_STUB=false`; console service connects with dashboard key from `api/storage/ssh/`
+
+Configure `CONSOLE_WS_PUBLIC_URL` (browser-facing WebSocket URL) and `REDIS_URL`.
+
+### Alerting
+
+- Rules for new container CVEs by severity threshold
+- **Email** — SMTP settings in `api/.env`
+- **Webhooks** — generic HTTP POST with JSON payload
+- **Slack** — incoming webhook; customizable card template; optional `SLACK_WEBHOOK_URL` in env auto-registers on Alerts page load
+- Per-user **receive alerts** toggle on Preferences
+
+### Administration
+
+- User management (admin): create, disable, assign admin role
+- Plugin pages: enable/disable legacy plugin routes in nav
+- Setup wizard (`/setup?token=…`) for hybrid installs — company name, admin account, install key
+
+## Environment variables
+
+See `api/.env.example` and `.env.prod.example`. Key settings:
+
+| Variable | Purpose |
+|----------|---------|
+| `JWT_SECRET` / `JWT_TTL` | Session signing and lifetime |
+| `MFA_ENCRYPTION_KEY` | Encrypts stored TOTP secrets (defaults to `JWT_SECRET`) |
+| `NVD_API_KEY` | NVD bulk sync rate limits |
+| `GITHUB_TOKEN` | GitHub advisory API (optional) |
+| `CVE_SYNC_MEMORY_LIMIT` | PHP memory for CVE sync CLI |
+| `REDIS_URL` | Console session store |
+| `CONSOLE_WS_PUBLIC_URL` | Browser WebSocket URL for console |
+| `CONSOLE_DEV_STUB` | `true` = stub terminal; `false` = real SSH |
+| `SLACK_WEBHOOK_URL` | Optional default Slack webhook |
+| `SMTP_*` / `MAIL_FROM` | Outbound email for alerts |
 
 ## Local development (without Docker)
 
 ### API
 
 ```bash
-cd api
-cp .env.example .env
-composer install
-composer start
+cd api && cp .env.example .env && composer install && composer start
 ```
 
 ### Frontend
 
 ```bash
-cd frontend
-npm install
-npm run dev
+cd frontend && npm install && npm run dev
 ```
 
 ### Database
 
-Import `database/db_create.sql`, then:
+```bash
+php database/migrate.php
+php database/seed.php --fresh   # optional demo data
+```
+
+Requires local MariaDB/MySQL and Redis if testing console sessions.
+
+## Database migrations
+
+Numbered SQL in `database/migrations/` (001–014). Applied by:
 
 ```bash
 php database/migrate.php
-php database/seed.php --fresh   # mock servers, users, patches, containers
 ```
 
-### Agents
-
-Install scripts from `agents/client/` to `/opt/patch_manager/` on managed nodes. Set:
-
-- `PD_API_BASE` — API base URL (e.g. `https://patch.example.com/`)
-- `PD_AUTH_KEY` — install key from `company.install_key`
-
-Agent cron (install [`agents/client/cron/patchdashboard`](agents/client/cron/patchdashboard) to `/etc/cron.d/patchdashboard`):
-
-- **03:00 daily** — `application_cve_scan.sh` (full CVE list for host OS + all images/containers)
-- **Every 5 min** — `check-in.sh` (patch checks + CVE scan if last scan &gt; 24h)
-
-Dashboard server cron (recommended for off-site CVE feed sync):
-
-```bash
-0 2 * * * cd /opt/patchdashboard && php database/cve_sync.php --all
-```
-
-Configure feeds under **CVE feeds** (admin). Set `NVD_API_KEY` in `api/.env` for NVD bulk sync rate limits.
-
-## New features in v2
-
-- JWT auth with bcrypt password migration from legacy SHA256 hashes
-- Suppression UI (fixes legacy stub pages and `nadda` placeholder bug)
-- Web patch install via API (fixes GitHub #43)
-- Host patch vulnerability lookup via ubuntuupdates.org (legacy parity) with dynamic distro codenames
-- Per-distro CVE feed integration (NVD, GitHub/OSV, Debian, Ubuntu USN, Red Hat, Rocky, AlmaLinux, Fedora)
-- Modern distro seed data (Ubuntu 24.04, Debian 12/13, RHEL 8–10, Rocky, AlmaLinux)
-- Non-root SSH user field on servers (GitHub #8 groundwork)
-- Container vulnerability scanning (Docker, Podman, Proxmox LXC) via Trivy
-- Daily full-application CVE scans (host OS + all container images) via agent cron and 24h check-in fallback
-- Unified vulnerability search at `/vulnerabilities` — filter by CVE, package, severity, server, distro, runtime, and CVSS across Trivy results and synced advisory library
-- **Application CVEs** (`/containers`) — raw Trivy inventory with filters; **Vulnerabilities** (`/vulnerabilities`) — fleet-wide search including distro advisories and pending patches
-- Email + webhook alerting for new container CVEs
+Notable migrations: plugin pages, power commands, Slack integration, CVE feeds, vulnerability search indexes, server trust/SSH keys, user MFA columns.
 
 ## Legacy compatibility
 
-Agent check-in supports the legacy plain-text response format. Legacy client endpoints under `legacy/html/client/` remain until all agents are upgraded.
+- Agent check-in accepts legacy plain-text responses during rollout
+- Legacy client endpoints under `legacy/html/client/` remain until agents are upgraded
+- v1 installer: `./legacy/install.sh`
 
 ## Status
 
-This is an active overhaul branch. Use Docker Compose or the v2 stack under `api/` and `frontend/`. Legacy v1 files live under `legacy/`.
+Active development on `2026-overhaul`. Use Docker Compose or `./install.sh` for v2. Legacy files are reference-only under `legacy/`.
