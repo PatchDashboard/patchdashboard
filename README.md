@@ -1,3 +1,7 @@
+> **Archived / unmaintained.** PatchDashboard has not been actively developed since 2016 and is kept for historical reference only. The v1 code targets old PHP/MySQL stacks and should not be deployed.
+>
+> For a maintained, self-hosted Linux patch monitoring and management dashboard, see [PatchMon](https://github.com/PatchMon/PatchMon).
+
 PatchMD
 ==============
 
